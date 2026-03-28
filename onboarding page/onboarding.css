@@ -1,0 +1,132 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* BODY */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #fef3e2;
+  background: #0f1b3d;
+}
+
+/* BACKGROUND */
+.gradient-bg {
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, #1f2f6b, #0f1b3d 60%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+/* NAVBAR */
+.top-nav {
+  position: sticky;
+  top: 0;
+  padding: 15px 40px;
+  background: rgba(24, 38, 84, 0.6);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.nav-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  color: #d2d7c3;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.nav-links a {
+  margin: 0 10px;
+  color: #d2d7c3;
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.nav-links a:hover {
+  opacity: 1;
+}
+
+/* BUTTONS */
+.btn-primary, .btn-ghost {
+  padding: 8px 15px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #d2d7c3;
+  border: 1px solid rgba(210,215,195,0.3);
+  backdrop-filter: blur(10px);
+}
+
+.btn-primary {
+  background: rgba(210,215,195,0.1);
+}
+
+.btn-primary:hover {
+  background: rgba(210,215,195,0.2);
+}
+
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* CARD */
+.auth-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 30px;
+  border: 1px solid rgba(255,255,255,0.1);
+  max-width: 700px;
+  width: 100%;
+}
+
+/* HEADER */
+.auth-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* FORM */
+.form-group {
+  margin-bottom: 15px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(0,0,0,0.2);
+  color: white;
+}
+
+/* BUTTONS */
+button {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-next {
+  background: rgba(210,215,195,0.2);
+  color: #d2d7c3;
+}
+
+.btn-back {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+}
