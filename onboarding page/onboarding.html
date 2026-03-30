@@ -4,85 +4,58 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Create Account - Trade Grid</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="onboarding.css">
 </head>
 <body>
+  <div class="gradient-bg">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h1>Create Your Profile</h1>
+        <p>Tell us about your business</p>
+      </div>
 
-<!-- NAVBAR -->
-<nav class="top-nav">
-  <div class="nav-container">
-    <a href="landing.html" class="logo">Trade Grid</a>
-    
-    <div class="nav-links">
-      <a href="landing.html">HOME</a>
-      <a href="about.html">ABOUT US</a>
-      <a href="markets.html">MARKETS</a>
-      <a href="contact.html">CONTACT US</a>
-    </div>
+      <form>
+        <div class="form-group">
+          <label>Company Name</label>
+          <input type="text" placeholder="Your company name">
+        </div>
 
-    <div class="auth-buttons">
-      <a href="login.html" class="btn-ghost">Sign In</a>
-      <a href="onboarding.html" class="btn-primary">Get Started</a>
+        <div class="form-group">
+          <label>Business Type</label>
+          <select>
+            <option>Select type</option>
+            <option>Importer</option>
+            <option>Exporter</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Industry</label>
+          <select>
+            <option>Select industry</option>
+            <option>Electronics</option>
+            <option>Food</option>
+            <option>Textiles</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Products</label>
+          <input type="text" placeholder="Products/services">
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <textarea rows="3"></textarea>
+        </div>
+
+        <div class="form-buttons">
+          <button class="btn-back">Back</button>
+          <button class="btn-next">Next</button>
+        </div>
+
+      </form>
     </div>
   </div>
-</nav>
-
-<!-- BACKGROUND -->
-<div class="gradient-bg">
-
-  <div class="auth-card">
-
-    <div class="auth-header">
-      <h1>Create Your Profile</h1>
-      <p>Tell us about your business</p>
-    </div>
-
-    <form>
-
-      <div class="form-group">
-        <label>Company Name</label>
-        <input type="text" placeholder="Your company name">
-      </div>
-
-      <div class="form-group">
-        <label>Business Type</label>
-        <select>
-          <option>Select type</option>
-          <option>Importer</option>
-          <option>Exporter</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Industry</label>
-        <select>
-          <option>Select industry</option>
-          <option>Electronics</option>
-          <option>Food</option>
-          <option>Textiles</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Products</label>
-        <input type="text" placeholder="Products/services">
-      </div>
-
-      <div class="form-group">
-        <label>Description</label>
-        <textarea rows="3"></textarea>
-      </div>
-
-      <div class="form-buttons">
-        <button class="btn-back">Back</button>
-        <button class="btn-next">Next</button>
-      </div>
-
-    </form>
-
-  </div>
-
-</div>
-
 </body>
 </html>
