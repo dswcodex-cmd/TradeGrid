@@ -87,7 +87,21 @@ body {
 .btn-primary:hover {
   background: rgba(210, 215, 195, 0.2);
 }
+.btn-secondary {
+  background: rgba(210, 215, 195, 0.1);
+  border: 1px solid rgba(210, 215, 195, 0.3);
+  padding: 10px 18px;
+  border-radius: 20px;
+  color: #d2d7c3;
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  transition: 0.3s;
+  text-align: center;
+}
 
+.btn-secondary:hover {
+  background: rgba(210, 215, 195, 0.2);
+}
 .btn-ghost {
   border: 1px solid rgba(210, 215, 195, 0.3);
   padding: 10px 18px;

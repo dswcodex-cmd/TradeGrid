@@ -1,3 +1,4 @@
+/* RESET */
 * {
   margin: 0;
   padding: 0;
@@ -15,19 +16,14 @@ body {
 .gradient-bg {
   min-height: 100vh;
   background: radial-gradient(circle at top left, #1f2f6b, #0f1b3d 60%);
-  position: relative;
-}
-
-.container {
-  max-width: 800px;
-  margin: auto;
-  padding: 100px 20px;
+  padding: 40px 20px;
 }
 
 /* NAVBAR */
 .top-nav {
   position: sticky;
   top: 0;
+  z-index: 1000;
   padding: 15px 40px;
   background: rgba(24, 38, 84, 0.6);
   backdrop-filter: blur(12px);
@@ -53,14 +49,14 @@ body {
   color: #d2d7c3;
   font-size: 14px;
   opacity: 0.8;
-  transition: 0.3s;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-links a.active {
   opacity: 1;
 }
 
-/* NAV BUTTONS */
+/* BUTTONS */
 .btn-primary {
   background: rgba(210, 215, 195, 0.1);
   border: 1px solid rgba(210, 215, 195, 0.3);
@@ -68,7 +64,10 @@ body {
   border-radius: 10px;
   color: #d2d7c3;
   text-decoration: none;
-  backdrop-filter: blur(10px);
+}
+
+.btn-primary:hover {
+  background: rgba(210, 215, 195, 0.2);
 }
 
 .btn-ghost {
@@ -77,91 +76,83 @@ body {
   border-radius: 10px;
   text-decoration: none;
   color: #d2d7c3;
-  backdrop-filter: blur(10px);
 }
 
-/* CARD (same as feature-card style) */
-.auth-card {
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+/* LAYOUT */
+.container {
+  max-width: 1100px;
+  margin: auto;
+}
+
+.contact-layout {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 30px;
+  margin-top: 30px;
+}
+
+/* CARDS */
+.content-card {
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(15px);
   border-radius: 20px;
-  padding: 30px;
+  padding: 25px;
   border: 1px solid rgba(255,255,255,0.1);
-  transition: 0.3s;
 }
 
-.auth-card:hover {
-  transform: translateY(-5px);
-  border: 1px solid rgba(210, 215, 195, 0.3);
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+/* LEFT SIDE */
+.contact-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-/* HEADER */
-.auth-header {
-  text-align: center;
-  margin-bottom: 30px;
+.contact-method p {
+  opacity: 0.8;
 }
 
-.auth-header h1 {
-  font-size: 40px;
-  margin-bottom: 10px;
+/* HOURS */
+.hours-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.hero-description {
-  font-size: 16px;
-  opacity: 0.85;
+.hours-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(0,0,0,0.2);
+  border-radius: 10px;
 }
 
 /* FORM */
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-input, select, textarea {
+input, textarea {
   width: 100%;
-  padding: 12px;
-  border-radius: 12px;
+  padding: 10px;
+  border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(0,0,0,0.2);
   color: white;
 }
 
-/* HERO BUTTON STYLE (same as landing page) */
-.btn-hero-primary {
-  background: rgba(210, 215, 195, 0.1);
-  border: 1px solid rgba(210, 215, 195, 0.3);
-  color: #d2d7c3;
-  padding: 12px 25px;
-  border-radius: 30px;
-  backdrop-filter: blur(10px);
-  transition: 0.3s;
-}
-
-.btn-hero-primary:hover {
-  background: rgba(210, 215, 195, 0.2);
-  transform: translateY(-2px);
-}
-
-.btn-hero-secondary {
-  border: 1px solid rgba(210, 215, 195, 0.3);
-  padding: 12px 25px;
-  border-radius: 30px;
-  color: #d2d7c3;
-  backdrop-filter: blur(10px);
-}
-
-.btn-hero-secondary:hover {
-  background: rgba(255,255,255,0.05);
-}
-
-/* BUTTON LAYOUT */
 .form-buttons {
   display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .contact-layout {
+    grid-template-columns: 1fr;
+  }
 }
