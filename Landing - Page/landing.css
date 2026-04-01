@@ -12,6 +12,12 @@ html {
   scroll-margin-top: 50px;
 }
 
+#markets {
+  scroll-margin-top: 50px;
+}
+
+/* home/home page style section */
+
 body {
   font-family: Arial, Helvetica, sans-serif;
   color: #fef3e2;
@@ -51,6 +57,7 @@ body {
   font-weight: bold;
   color: #d2d7c3;
   text-decoration: none;
+  scroll-margin-top: 50px;
 }
 
 .nav-links a {
@@ -80,7 +87,21 @@ body {
 .btn-primary:hover {
   background: rgba(210, 215, 195, 0.2);
 }
+.btn-secondary {
+  background: rgba(210, 215, 195, 0.1);
+  border: 1px solid rgba(210, 215, 195, 0.3);
+  padding: 10px 18px;
+  border-radius: 20px;
+  color: #d2d7c3;
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  transition: 0.3s;
+  text-align: center;
+}
 
+.btn-secondary:hover {
+  background: rgba(210, 215, 195, 0.2);
+}
 .btn-ghost {
   border: 1px solid rgba(210, 215, 195, 0.3);
   padding: 10px 18px;
@@ -263,11 +284,6 @@ body {
   }
 }
 
-@keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-  100% { transform: translateY(0px); }
-}
 
 .feature-card {
   animation: float 6s ease-in-out infinite;
@@ -312,10 +328,7 @@ body {
   animation: moveGlow 10s infinite alternate;
 }
 
-@keyframes moveGlow {
-  0% { transform: translate(0,0); }
-  100% { transform: translate(200px, 150px); }
-}
+
 
 .feature-card {
   box-shadow: 
@@ -349,10 +362,6 @@ body {
   animation: moveGlow 10s infinite alternate;
 }
 
-@keyframes moveGlow {
-  0% { transform: translate(0,0); }
-  100% { transform: translate(200px, 150px); }
-}
 
 .container {
   max-width: 1100px;
@@ -697,3 +706,6 @@ section {
     height: 150vh;
     /* gives room for movement */
 }
+
+
+
