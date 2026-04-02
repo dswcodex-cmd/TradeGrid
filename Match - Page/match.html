@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discover Companies</title>
+  <link rel="stylesheet" href="newmatch.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="landing.html" class="logo">Trade Grid</a>
+    
+    <div class="nav-links">
+      <a href="landing.html">HOME</a>
+      <a href="about.html">ABOUT US</a>
+      <a href="markets.html">MARKETS</a>
+      <a href="contact.html">CONTACT US</a>
+    </div>
+
+    <div class="auth-buttons">
+      <a href="login.html" class="btn-ghost">Sign In</a>
+      <a href="onboarding.html" class="btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<!-- BACKGROUND -->
+<div class="gradient-bg">
+
+  <div class="discover-page">
+
+    <div class="header">
+      <h1>Discover</h1>
+      <p id="remaining">10 companies remaining</p>
+    </div>
+
+    <div class="card" id="currentCard">
+      <img id="companyImg" src="" class="company-img">
+      <h2 id="companyName">Company Name</h2>
+      <p id="companyType">Exporter / Importer</p>
+      <div id="companyIndustries" class="industries"></div>
+    </div>
+
+    <div class="buttons">
+      <button id="swipeLeft">❌</button>
+      <button id="swipeRight">❤️</button>
+    </div>
+
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="match.js"></script>
+
+</body>
+</html>
