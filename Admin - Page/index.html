@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trade Grid Admin</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      🌐 <div>
+        <h2>Trade Grid Admin</h2>
+        <p>Platform Administration</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <i class="ri-logout-box-line"></i>
+      <button class="logout">Logout</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <main class="container">
+
+    <!-- STATS -->
+    <section class="stats">
+      <div class="card">
+        <p class="growth">+12.5%</p>
+        <h1>2,847</h1>
+        <span>Total Users</span>
+      </div>
+
+      <div class="card">
+        <p class="growth">+8.3%</p>
+        <h1>1,423</h1>
+        <span>Active Businesses</span>
+      </div>
+
+      <div class="card">
+        <p class="growth">+15.7%</p>
+        <h1>4,892</h1>
+        <span>Total Matches</span>
+      </div>
+
+      <div class="card">
+        <p class="growth">+23.1%</p>
+        <h1>892</h1>
+        <span>Messages Today</span>
+      </div>
+    </section>
+
+    <!-- MAIN GRID -->
+    <section class="grid">
+
+      <!-- LEFT -->
+      <div class="left-panel">
+
+        <div class="tabs">
+          <button class="active">User Management</button>
+          <button>Employee Requests <span class="badge">2</span></button>
+        </div>
+
+        <input type="text" placeholder="Search users..." class="search">
+
+        <!-- TABLE -->
+        <table>
+          <thead>
+            <tr>
+              <th>Company</th>
+              <th>Country</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>
+                Global Exports Ltd <br>
+                <small>contact@globalexports.com</small>
+              </td>
+              <td>USA</td>
+              <td><span class="status active">Active</span></td>
+              <td>2026-03-28</td>
+              <td>⋮</td>
+            </tr>
+
+            <tr>
+              <td>
+                Asian Trade Co <br>
+                <small>info@asiantrade.jp</small>
+              </td>
+              <td>Japan</td>
+              <td><span class="status pending">Pending</span></td>
+              <td>2026-03-29</td>
+              <td>⋮</td>
+            </tr>
+
+            <tr>
+              <td>
+                Euro Import Solutions <br>
+                <small>hello@euroimport.de</small>
+              </td>
+              <td>Germany</td>
+              <td><span class="status active">Active</span></td>
+              <td>2026-03-30</td>
+              <td>⋮</td>
+            </tr>
+
+            <tr>
+              <td>
+                Middle East Trading <br>
+                <small>contact@metrade.ae</small>
+              </td>
+              <td>UAE</td>
+              <td><span class="status active">Active</span></td>
+              <td>2026-03-31</td>
+              <td>⋮</td>
+            </tr>
+
+            <tr>
+              <td>
+                Latin America Exports <br>
+                <small>info@laexports.br</small>
+              </td>
+              <td>Brazil</td>
+              <td><span class="status suspended">Suspended</span></td>
+              <td>2026-04-01</td>
+              <td>⋮</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="right-panel">
+
+        <!-- PENDING -->
+        <div class="card-box">
+          <h3>Pending Verifications</h3>
+
+          <div class="pending-item">
+            <p>Tech Import Corp</p>
+            <span>Document Verification</span>
+          </div>
+
+          <div class="pending-item">
+            <p>Global Trade Partners</p>
+            <span>Business License</span>
+          </div>
+
+          <div class="pending-item">
+            <p>International Exports Inc</p>
+            <span>Identity Verification</span>
+          </div>
+
+          <button class="view-all">View All Pending</button>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="card-box">
+          <h3>Quick Actions</h3>
+
+          <ul>
+            <li>View Analytics</li>
+            <li>Manage Users</li>
+            <li>Review Reports</li>
+            <li>Platform Settings</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
