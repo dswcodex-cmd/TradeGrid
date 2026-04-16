@@ -70,7 +70,7 @@
 
       <div class="auth-buttons">
         <a href="../Login - Page/login.html" class="btn-ghost">Sign In</a>
-        <a href="../Onboarding - Page/onboarding.html" class="btn-primary">Get Started</a>
+        <a href="..//onboarding.html" class="btn-primary">Get Started</a>
       </div>
     </div>
   </nav>
@@ -194,21 +194,6 @@
           </svg>
           <h3>Market Insights</h3>
           <p>Access real-time market data and trends to make informed trading decisions.</p>
-        </div>
-      </div>
-
-      <div class="stats-section">
-        <div class="stat">
-          <div class="stat-number">10,000+</div>
-          <div class="stat-label">Verified Companies</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">150+</div>
-          <div class="stat-label">Countries</div>
-        </div>
-        <div class="stat">
-          <div class="stat-number">$2B+</div>
-          <div class="stat-label">Trade Volume</div>
         </div>
       </div>
 
@@ -531,7 +516,7 @@
       </div>
       <div class="footer-column">
         <h4>Support</h4>
-        <a href="#">Merchant AI</a>
+        <a href="#">Masha AI</a>
         <a href="#">Documentation</a>
       </div>
     </div>
@@ -541,43 +526,6 @@
   </footer>
 
   <script src="landing.js"></script>
-
-  <script>
-    /*
-     * SCROLL-SPY: Watches which section is in view and highlights
-     * the correct nav link automatically.
-     *
-     * How it works:
-     * - IntersectionObserver fires whenever a section enters/leaves
-     *   the viewport (at the 20% threshold).
-     * - We track all observed sections; when one becomes visible we
-     *   remove .active from all nav links and add it only to the one
-     *   whose data-section matches the visible section's id.
-     */
-    (function () {
-      const sections = document.querySelectorAll('#landing, #aboutus, #markets, #contact');
-      const navLinks = document.querySelectorAll('.nav-links a[data-section]');
-
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const id = entry.target.id;
-            navLinks.forEach(link => {
-              link.classList.remove('active');
-              if (link.dataset.section === id) {
-                link.classList.add('active');
-              }
-            });
-          }
-        });
-      }, {
-        threshold: 0.2,       // section must be 20% visible to trigger
-        rootMargin: '-60px 0px 0px 0px'  // offset for the fixed nav height
-      });
-
-      sections.forEach(section => observer.observe(section));
-    })();
-  </script>
 
 </body>
 </html>
