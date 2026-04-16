@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trade Grid Employee Dashboard</title>
+
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-icon"> <i data-lucide="globe"></i> </div>
+        <div>
+          <h1 class="brand-title">Trade Grid Employee</h1>
+          <p class="brand-sub">Verification &amp; Support Team</p>
+        </div>
+      </div>
+      <div class="header-actions"> <button class="icon-btn notif-btn" aria-label="Notifications"> <i
+            data-lucide="bell"></i> <span class="badge-dot"></span> </button>
+        <div class="user-info">
+          <div class="avatar"> <i data-lucide="user"></i> </div>
+          <div class="user-text">
+            <div class="user-name">John Smith</div>
+            <div class="user-role">Support Specialist</div>
+          </div>
+        </div> <button class="logout-btn" id="logoutBtn"> <i data-lucide="log-out"></i> <span>Logout</span> </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ✅ ONLY CHANGE: WRAPPER ADDED -->
+  <div class="gradient-bg">
+    <main class="container main-content"> <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="--icon-color: rgb(234,179,8)"> <i data-lucide="clock"></i> </div>
+          <div>
+            <div class="stat-value">12</div>
+            <div class="stat-label">Tasks Assigned</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="--icon-color: rgb(34,197,94)"> <i data-lucide="check-circle"></i> </div>
+          <div>
+            <div class="stat-value">8</div>
+            <div class="stat-label">Completed Today</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="--icon-color: rgb(239,68,68)"> <i data-lucide="alert-circle"></i> </div>
+          <div>
+            <div class="stat-value">4</div>
+            <div class="stat-label">Pending Review</div>
+          </div>
+        </div>
+      </div> <!-- BODY GRID -->
+      <div class="body-grid"> <!-- MAIN PANEL -->
+        <div class="main-panel panel"> <!-- VIEW TOGGLE + SEARCH -->
+          <div class="panel-header">
+            <div class="view-toggle"> <button class="view-btn active" data-view="tasks"> <i data-lucide="file-text"></i> My
+                Tasks </button> <button class="view-btn" data-view="messages"> <i data-lucide="message-square"></i> User
+                Messages <span class="unread-badge">2</span> </button> </div> <!-- Task Tabs (only shown in tasks view) -->
+            <div class="task-tabs" id="taskTabs">
+              <h2 class="panel-title">My Tasks</h2>
+              <div class="tabs"> <button class="tab active" data-tab="assigned">Assigned</button> <button class="tab"
+                  data-tab="pending">Pending</button> <button class="tab" data-tab="completed">Completed</button> </div>
+            </div> <!-- Messages title (only shown in messages view) -->
+            <div class="messages-header hidden" id="messagesHeader">
+              <h2 class="panel-title">User Messages</h2>
+            </div> <!-- Search & Filter -->
+            <div class="search-row">
+              <div class="search-wrap"> <i data-lucide="search" class="search-icon"></i> <input type="text" id="searchInput"
+                  class="search-input" placeholder="Search tasks..." /> </div>
+              <div class="filter-wrap"> <button class="filter-btn" id="filterBtn" aria-label="Filter"> <i
+                    data-lucide="filter"></i> </button> <!-- Filter Dropdown -->
+                <div class="filter-dropdown hidden" id="filterDropdown">
+                  <div class="filter-header"> <span>Filter Messages</span> <button class="close-filter" id="closeFilter"><i
+                        data-lucide="x"></i></button> </div>
+                  <div class="filter-section">
+                    <div class="filter-section-title">Priority</div> <label class="filter-check"><input type="checkbox"
+                        value="High" class="priority-filter"> High</label> <label class="filter-check"><input
+                        type="checkbox" value="Medium" class="priority-filter"> Medium</label> <label
+                      class="filter-check"><input type="checkbox" value="Low" class="priority-filter"> Low</label>
+                  </div>
+                  <div class="filter-section">
+                    <div class="filter-section-title">Status</div> <label class="filter-check"><input type="checkbox"
+                        value="Unread" class="status-filter"> Unread</label> <label class="filter-check"><input
+                        type="checkbox" value="Read" class="status-filter"> Read</label>
+                  </div> <button class="clear-filters hidden" id="clearFilters">Clear All Filters</button>
+                </div>
+              </div>
+            </div>
+          </div> <!-- TASKS VIEW -->
+          <div class="panel-body" id="tasksView">
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-top">
+                <div class="task-info">
+                  <h3 class="task-title">Verify Business License - Global Exports Ltd</h3>
+                  <div class="task-meta"> <span><i data-lucide="building-2"></i> Global Exports Ltd</span> <span><i
+                        data-lucide="file-text"></i> Document Verification</span> </div>
+                </div> <i data-lucide="arrow-right" class="task-arrow"></i>
+              </div>
+              <div class="task-bottom">
+                <div class="task-badges"> <span class="badge badge-high">High Priority</span> <span
+                    class="badge badge-inprogress">In Progress</span> </div>
+                <div class="task-due"><i data-lucide="clock"></i> Due 2026-04-02</div>
+              </div>
+            </div>
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-top">
+                <div class="task-info">
+                  <h3 class="task-title">Review Trade Compliance - Asian Trade Co</h3>
+                  <div class="task-meta"> <span><i data-lucide="building-2"></i> Asian Trade Co</span> <span><i
+                        data-lucide="file-text"></i> Compliance Check</span> </div>
+                </div> <i data-lucide="arrow-right" class="task-arrow"></i>
+              </div>
+              <div class="task-bottom">
+                <div class="task-badges"> <span class="badge badge-medium">Medium Priority</span> <span
+                    class="badge badge-assigned">Assigned</span> </div>
+                <div class="task-due"><i data-lucide="clock"></i> Due 2026-04-03</div>
+              </div>
+            </div>
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-top">
+                <div class="task-info">
+                  <h3 class="task-title">Identity Verification - Euro Import Solutions</h3>
+                  <div class="task-meta"> <span><i data-lucide="building-2"></i> Euro Import Solutions</span> <span><i
+                        data-lucide="file-text"></i> Identity Check</span> </div>
+                </div> <i data-lucide="arrow-right" class="task-arrow"></i>
+              </div>
+              <div class="task-bottom">
+                <div class="task-badges"> <span class="badge badge-high">High Priority</span> <span
+                    class="badge badge-inprogress">In Progress</span> </div>
+                <div class="task-due"><i data-lucide="clock"></i> Due 2026-04-02</div>
+              </div>
+            </div>
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-top">
+                <div class="task-info">
+                  <h3 class="task-title">Market Analysis Report - Middle East Trading</h3>
+                  <div class="task-meta"> <span><i data-lucide="building-2"></i> Middle East Trading</span> <span><i
+                        data-lucide="file-text"></i> Research</span> </div>
+                </div> <i data-lucide="arrow-right" class="task-arrow"></i>
+              </div>
+              <div class="task-bottom">
+                <div class="task-badges"> <span class="badge badge-low">Low Priority</span> <span
+                    class="badge badge-assigned">Assigned</span> </div>
+                <div class="task-due"><i data-lucide="clock"></i> Due 2026-04-05</div>
+              </div>
+            </div> <!-- Pending / Completed placeholders -->
+            <div class="empty-tab hidden" data-tab-content="pending">
+              <p style="color: rgb(170,175,155); text-align:center; padding: 2rem 0;">No pending tasks.</p>
+            </div>
+            <div class="empty-tab hidden" data-tab-content="completed">
+              <p style="color: rgb(170,175,155); text-align:center; padding: 2rem 0;">No completed tasks.</p>
+            </div>
+          </div> <!-- MESSAGES VIEW -->
+          <div class="panel-body hidden" id="messagesView">
+            <div class="msg-card unread" data-priority="High" data-status="Unread" data-user="Global Exports Ltd"
+              data-subject="Verification document rejected - Need clarification"
+              data-text="My business license was rejected but I don't understand why. The document is valid and up to date. Can you please review it again or let me know what's missing?">
+              <div class="msg-top">
+                <div class="msg-info">
+                  <div class="msg-subject-row">
+                    <h3 class="msg-subject">Verification document rejected - Need clarification</h3> <span
+                      class="unread-dot"></span>
+                  </div>
+                  <div class="msg-meta"> <i data-lucide="mail"></i> <span class="msg-user">Global Exports Ltd</span> <span
+                      class="dot">•</span> <span>contact@globalexports.com</span> <span class="dot">•</span>
+                    <span>2026-04-01 15:45</span> </div>
+                </div> <span class="badge badge-high">High Priority</span>
+              </div>
+              <p class="msg-body">My business license was rejected but I don't understand why. The document is valid and up
+                to date. Can you please review it again or let me know what's missing?</p>
+              <div class="msg-actions"> <button class="btn-primary"><i data-lucide="send"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button> <button class="btn-push" data-id="1"><i
+                    data-lucide="arrow-up-circle"></i> Push to Admin</button> <button
+                  class="btn-secondary btn-mark-read">Mark as Read</button> </div>
+            </div>
+            <div class="msg-card unread" data-priority="Medium" data-status="Unread" data-user="Asian Trade Co"
+              data-subject="How long does verification take?"
+              data-text="I submitted all my documents 3 days ago and haven't heard back. I have an urgent trade deal that requires my account to be verified. What's the typical timeline?">
+              <div class="msg-top">
+                <div class="msg-info">
+                  <div class="msg-subject-row">
+                    <h3 class="msg-subject">How long does verification take?</h3> <span class="unread-dot"></span>
+                  </div>
+                  <div class="msg-meta"> <i data-lucide="mail"></i> <span class="msg-user">Asian Trade Co</span> <span
+                      class="dot">•</span> <span>info@asiantrade.jp</span> <span class="dot">•</span> <span>2026-04-01
+                      14:20</span> </div>
+                </div> <span class="badge badge-medium">Medium Priority</span>
+              </div>
+              <p class="msg-body">I submitted all my documents 3 days ago and haven't heard back. I have an urgent trade
+                deal that requires my account to be verified. What's the typical timeline?</p>
+              <div class="msg-actions"> <button class="btn-primary"><i data-lucide="send"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button> <button class="btn-push" data-id="2"><i
+                    data-lucide="arrow-up-circle"></i> Push to Admin</button> <button
+                  class="btn-secondary btn-mark-read">Mark as Read</button> </div>
+            </div>
+            <div class="msg-card" data-priority="Medium" data-status="Read" data-user="Euro Import Solutions"
+              data-subject="Unable to upload tax certificate"
+              data-text="I'm trying to upload my tax certificate for verification but keep getting an error message. The file is a PDF and under 5MB. Can you help?">
+              <div class="msg-top">
+                <div class="msg-info">
+                  <div class="msg-subject-row">
+                    <h3 class="msg-subject">Unable to upload tax certificate</h3>
+                  </div>
+                  <div class="msg-meta"> <i data-lucide="mail"></i> <span class="msg-user">Euro Import Solutions</span>
+                    <span class="dot">•</span> <span>hello@euroimport.de</span> <span class="dot">•</span> <span>2026-04-01
+                      13:10</span> </div>
+                </div> <span class="badge badge-medium">Medium Priority</span>
+              </div>
+              <p class="msg-body">I'm trying to upload my tax certificate for verification but keep getting an error
+                message. The file is a PDF and under 5MB. Can you help?</p>
+              <div class="msg-actions"> <button class="btn-primary"><i data-lucide="send"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button> <button class="btn-push" data-id="3"><i
+                    data-lucide="arrow-up-circle"></i> Push to Admin</button> </div>
+            </div>
+            <div class="msg-card" data-priority="Low" data-status="Read" data-user="Middle East Trading"
+              data-subject="Request to update company information"
+              data-text="We recently changed our company address and business registration number. How do I update this information on my verified profile?">
+              <div class="msg-top">
+                <div class="msg-info">
+                  <div class="msg-subject-row">
+                    <h3 class="msg-subject">Request to update company information</h3>
+                  </div>
+                  <div class="msg-meta"> <i data-lucide="mail"></i> <span class="msg-user">Middle East Trading</span> <span
+                      class="dot">•</span> <span>contact@metrade.ae</span> <span class="dot">•</span> <span>2026-04-01
+                      11:30</span> </div>
+                </div> <span class="badge badge-low">Low Priority</span>
+              </div>
+              <p class="msg-body">We recently changed our company address and business registration number. How do I update
+                this information on my verified profile?</p>
+              <div class="msg-actions"> <button class="btn-primary"><i data-lucide="send"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button> <button class="btn-push" data-id="4"><i
+                    data-lucide="arrow-up-circle"></i> Push to Admin</button> </div>
+            </div>
+            <div class="msg-card" data-priority="High" data-status="Read" data-user="Latin America Exports"
+              data-subject="Account suspended - Appeal request"
+              data-text="My account was suspended for suspicious activity but this must be a mistake. I only use one account and all my documents are legitimate. Please review my case.">
+              <div class="msg-top">
+                <div class="msg-info">
+                  <div class="msg-subject-row">
+                    <h3 class="msg-subject">Account suspended - Appeal request</h3>
+                  </div>
+                  <div class="msg-meta"> <i data-lucide="mail"></i> <span class="msg-user">Latin America Exports</span>
+                    <span class="dot">•</span> <span>info@laexports.br</span> <span class="dot">•</span> <span>2026-04-01
+                      09:15</span> </div>
+                </div> <span class="badge badge-high">High Priority</span>
+              </div>
+              <p class="msg-body">My account was suspended for suspicious activity but this must be a mistake. I only use
+                one account and all my documents are legitimate. Please review my case.</p>
+              <div class="msg-actions"> <button class="btn-primary"><i data-lucide="send"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button> <button class="btn-push" data-id="5"><i
+                    data-lucide="arrow-up-circle"></i> Push to Admin</button> </div>
+            </div>
+          </div>
+        </div> <!-- SIDEBAR -->
+        <aside class="sidebar"> <!-- Recent Activity -->
+          <div class="panel sidebar-panel">
+            <h2 class="panel-title">Recent Activity</h2>
+            <div class="activity-list">
+              <div class="activity-item">
+                <div class="activity-icon"><i data-lucide="check-circle"></i></div>
+                <div>
+                  <p class="activity-action">Completed verification</p>
+                  <p class="activity-company">Tech Import Corp</p>
+                  <p class="activity-time">2 hours ago</p>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon"><i data-lucide="check-circle"></i></div>
+                <div>
+                  <p class="activity-action">Updated document status</p>
+                  <p class="activity-company">Global Trade Partners</p>
+                  <p class="activity-time">4 hours ago</p>
+                </div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon"><i data-lucide="check-circle"></i></div>
+                <div>
+                  <p class="activity-action">Approved business license</p>
+                  <p class="activity-company">International Exports Inc</p>
+                  <p class="activity-time">5 hours ago</p>
+                </div>
+              </div>
+            </div>
+          </div> <!-- Quick Links -->
+          <div class="panel sidebar-panel">
+            <h2 class="panel-title">Quick Links</h2>
+            <div class="quick-links"> <button class="quick-link"><i data-lucide="file-text"></i> Documentation</button>
+              <button class="quick-link"><i data-lucide="message-square"></i> Team Chat</button> <button
+                class="quick-link"><i data-lucide="alert-circle"></i> Report Issue</button> </div>
+          </div>
+        </aside>
+      </div>
+    </main>
+  </div> <!-- ✅ CLOSE gradient-bg -->
+
+  <script src="app.js"></script>
+</body>
+
+</html>
