@@ -1,0 +1,167 @@
+/* RESET */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+/* ✅ HEXAGON BACKGROUND */
+.hexagon-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    /* stays behind content */
+    opacity: 0.7;
+    animation: drift 60s linear infinite;
+    /* increase visibility */
+}
+@keyframes drift {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(-80px, -80px);
+    }
+}
+
+.hexagon-background svg {
+    filter: drop-shadow(0 0 2px rgba(255, 107, 53, 0.3));
+}
+.hexagon-background svg path {
+    stroke: #1A1F3A;
+    /* darker stroke */
+}
+
+/* ✅ MAIN PAGE */
+.discover-page {
+    min-height: 100vh;
+    background-color: #f5f1e9;
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem;
+}
+
+/* HEADER */
+.header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.header h1 {
+    font-size: 2rem;
+    color: #111;
+}
+
+.header p {
+    color: #555;
+}
+
+/* CARD */
+.card {
+    width: 320px;
+    min-height: 450px;
+    background: #fff;
+
+    border-radius: 16px;
+    padding: 1.5rem;
+    text-align: center;
+
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    transition: transform 0.5s ease, opacity 0.5s ease;
+}
+
+/* IMAGE */
+.company-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+/* TEXT */
+#companyName {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #111;
+}
+
+#companyType {
+    font-size: 1rem;
+    color: #777;
+    margin-bottom: 0.75rem;
+}
+
+/* INDUSTRIES */
+.industries {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.industries span {
+    background-color: #e4dfca;
+    color: #555;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+/* BUTTONS */
+.buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: space-around;
+    width: 220px;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    font-size: 1.5rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#swipeLeft {
+    background-color: #f87171;
+    color: white;
+}
+
+#swipeRight {
+    background-color: #34d399;
+    color: white;
+}
+.toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1A1F3A;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease, bottom 0.4s ease;
+    z-index: 1000;
+}
+
+.toast.show {
+    opacity: 1;
+    bottom: 40px;
+}
