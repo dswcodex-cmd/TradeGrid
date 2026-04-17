@@ -35,11 +35,13 @@ a { text-decoration: none; color: inherit; }
 
 /* ============================================================
    PAGE LAYOUT — two columns
+   FIX: overflow hidden removes the scrollbar between panels
    ============================================================ */
 .login-page {
   display: grid;
   grid-template-columns: 480px 1fr;
   height: 100vh;
+  overflow: hidden;
 }
 
 /* ============================================================
@@ -104,14 +106,22 @@ a { text-decoration: none; color: inherit; }
   gap: 16px;
 }
 
+/* FIX: back-link now uses Remix Icon — align icon and text properly */
 .back-link {
   font-size: 0.85rem;
   color: var(--text-muted);
   font-weight: 500;
   transition: color 0.2s;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 .back-link:hover { color: var(--primary); }
+
+.back-link i {
+  font-size: 1rem;
+}
 
 .login-type-badge {
   display: flex;
@@ -240,6 +250,7 @@ a { text-decoration: none; color: inherit; }
 
 /* ============================================================
    RIGHT: VISUAL PANEL
+   FIX: overflow hidden ensures no scrollbar bleeds through
    ============================================================ */
 .visual-panel {
   background: linear-gradient(145deg, #082828 0%, #0D3B3B 45%, #0f4848 100%);
@@ -352,6 +363,7 @@ a { text-decoration: none; color: inherit; }
     grid-template-columns: 1fr;
     height: auto;
     min-height: 100vh;
+    overflow: visible;
   }
   .visual-panel {
     display: none;
