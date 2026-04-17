@@ -386,24 +386,6 @@ button { cursor: pointer; font-family: var(--font-body); }
   line-height: 1.6;
 }
 
-/* Floating card sits BELOW the banner, not on top of it */
-.floating-card {
-  position: relative;
-  width: min(680px, 90%);
-  margin: 50px auto 0;
-  padding: 0;
-  /* 🔥 REMOVE SPACE */
-  background: transparent;
-  /* 🔥 REMOVE WHITE BLOCK */
-}
-
-.floating-card img {
-  width: 100%;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(13,59,59,0.18);
-  border: 1px solid var(--border-card);
-  display: block;
-}
 
 /* ============================================================
    ABOUT US
@@ -1117,13 +1099,20 @@ button { cursor: pointer; font-family: var(--font-body); }
   top: 50%;
   /* ðŸ”¥ push it down more */
   left: 50%;
+  margin: 36px auto 0;
   transform: translate(-50%, 0);
   z-index: 10;
 }
 
 .floating-card img {
-  width: 1000px;
-  border-radius: 10px;
+  width: 100%;
+  max-width: 500px;   /* 👈 controls how small it gets */
+  height: auto;
+  display: block;
+  margin: 0 auto;     /* 👈 keeps it centered */
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(13,59,59,0.18);
+  border: 1px solid var(--border-card);
 }
 
 .transition-section {
