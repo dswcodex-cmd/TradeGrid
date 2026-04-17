@@ -4,17 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Create Account - Trade Grid</title>
-  <link rel="stylesheet" href="onboarding.css">
+  <!-- Link to external CSS -->
+  <link rel="stylesheet" href="onboarding.css" />
 </head>
 <body>
-
-  <!--hexagon background code -->
-  <svg id="hex-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
-
-
   <div class="gradient-bg full-height">
     <div class="auth-container">
-      <div class="auth-card">
+      <div class="auth-card wide">
         <div class="auth-header">
           <svg width="48" height="48" fill="none" stroke="rgb(190, 195, 175)" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
@@ -32,7 +28,6 @@
         </div>
 
         <form id="onboardingForm" class="auth-form">
-
           <!-- Step 1: Basic Information -->
           <div class="form-step active" data-step="1">
             <h3 class="step-title">Basic Information</h3>
@@ -56,18 +51,18 @@
               <select id="industry" name="industry" required>
                 <option value="">Select industry</option>
                 <option value="Electronics">Electronics</option>
-                <option value="Food & Beverages">Food &amp; Beverages</option>
-                <option value="Textiles & Apparel">Textiles &amp; Apparel</option>
-                <option value="Manufacturing & Industrial">Manufacturing &amp; Industrial</option>
-                <option value="Healthcare & Pharma">Healthcare &amp; Pharma</option>
+                <option value="Food &amp; Beverages">Food &amp; Beverages</option>
+                <option value="Textiles &amp; Apparel">Textiles &amp; Apparel</option>
+                <option value="Manufacturing &amp; Industrial">Manufacturing &amp; Industrial</option>
+                <option value="Healthcare &amp; Pharma">Healthcare &amp; Pharma</option>
                 <option value="Renewable Energy">Renewable Energy equipment</option>
+            
               </select>
             </div>
 
-            <div class="form-buttons">
-              <button type="button" class="btn-next" onclick="nextStep(2)">Next →</button>
-            </div>
+           <!-- <button type="button" class="btn-next" onclick="nextStep(2)">Next</button>
           </div>
+        -->
 
           <!-- Step 2: Company Details -->
           <div class="form-step" data-step="2">
@@ -79,9 +74,9 @@
               <small>Separate multiple products with commas</small>
             </div>
 
-            <div class="form-group">
+           <!--change to date picker --> <div class="form-group">
               <label for="yearEstablished">Year Established *</label>
-              <input type="date" id="yearEstablished" name="yearEstablished" required />
+       <input type="date" id="yearEstablished" name="yearEstablished" required />
             </div>
 
             <div class="form-group">
@@ -98,65 +93,104 @@
               </select>
             </div>
 
-            <div class="form-group">
-              <label for="description">Company Description *</label>
-              <textarea id="description" name="description" rows="3" placeholder="Brief description of your business..." required></textarea>
-            </div>
+           <div class="form-group">
+  <label for="description">Company Description *</label>
+  <textarea 
+    id="description" 
+    name="description" 
+    rows="4" 
+    placeholder="Brief description of your business and what you're looking for..." 
+    required
+  ></textarea>
+</div>
 
-            <div class="form-group">
-              <label for="lookingFor">What are you looking for? *</label>
-              <textarea id="lookingFor" name="lookingFor" rows="3" placeholder="Brief description of what you're looking for..." required></textarea>
-            </div>
+ <div class="form-group">
+  <label for="lookingFor">What are you looking for? *</label>
+  <textarea 
+    id="lookingFor" 
+    name="lookingFor" 
+    rows="4" 
+    placeholder="Brief description of what you're looking for..." 
+    required
+  ></textarea>
+</div>
 
-            <div class="form-buttons">
-              <button type="button" class="btn-back" onclick="prevStep(1)">← Back</button>
-              <button type="button" class="btn-next" onclick="nextStep(3)">Next →</button>
+
+           <!-- <div class="form-buttons">
+              <button type="button" class="btn-back" onclick="prevStep(1)">Back</button>
+              <button type="button" class="btn-next" onclick="nextStep(3)">Next</button>
             </div>
           </div>
+          -->
 
           <!-- Step 3: Trading Preferences -->
           <div class="form-step" data-step="3">
             <h3 class="step-title">Trading Preferences</h3>
 
             <div class="form-group">
-              <label>Target Provinces *</label>
-              <div class="checkbox-group">
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Gauteng" /><span>Gauteng</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="KwaZulu-Natal" /><span>KwaZulu-Natal</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Western Cape" /><span>Western Cape</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Eastern Cape" /><span>Eastern Cape</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Northern Cape" /><span>Northern Cape</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Free State" /><span>Free State</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Limpopo" /><span>Limpopo</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Mpumalanga" /><span>Mpumalanga</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="North West" /><span>North West</span></label>
-              </div>
+  <label>Target Provinces *</label>
+  <div class="checkbox-group">
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="Gauteng" />
+      <span>Gauteng</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="KwaZulu-Natal" />
+      <span>KwaZulu-Natal</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="Western Cape" />
+      <span>Western Cape</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="Eastern Cape" />
+      <span>Eastern Cape</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="Northern Cape" />
+      <span>Northern Cape</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="Free State" />
+      <span>Free State</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="Limpopo" />
+      <span>Limpopo</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="Mpumalanga" />
+      <span>Mpumalanga</span>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" name="regions" value="North West" />
+      <span>North West</span>
+    </label>
+
+  </div>
+</div>
             </div>
 
             <div class="form-group">
-              <label for="cipc">CIPC Number</label>
-              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
-               <label for="password">Password</label>
-<div style="position: relative; display: inline-block;">
-  <input type="password" id="password" name="password" placeholder="Please enter your password" />
-  <button type="button" onclick="togglePassword('password', this)">Show</button>
-</div>
-
-<label for="password-confirm">Confirm Password</label>
-<div style="position: relative; display: inline-block;">
-  <input type="password" id="password-confirm" name="password-confirm" placeholder="Please confirm your password" />
-  <button type="button" onclick="togglePassword('password-confirm', this)">Show</button>
-</div>
-              
-              
+              <label for="cipc">CIPC number </label>
+              <input type="text" id="cipc" name="cipc number" placeholder="please enter your CIPC number" />
+              <small>Separate multiple certifications with commas (optional)</small>
             </div>
 
             <div class="form-buttons">
-              <button type="button" class="btn-back" onclick="prevStep(2)">← Back</button>
+              <button type="button" class="btn-back" onclick="prevStep(2)">Back</button>
               <button type="submit" class="btn-submit">Complete Registration</button>
             </div>
           </div>
-
         </form>
 
         <div class="back-link">
@@ -166,7 +200,6 @@
     </div>
   </div>
 
-  
+
 </body>
-<script src="onbaording.js"></script>
 </html>
