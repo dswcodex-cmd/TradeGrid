@@ -1,55 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Discover Companies</title>
-    <link rel="stylesheet" href="match.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discover Companies</title>
+  <link rel="stylesheet" href="match.css">
 </head>
 
 <body>
 
-    <!-- ✅ HEXAGON BACKGROUND -->
-    <!-- Hexagon Background -->
-    <div class="hexagon-background">
-        <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <pattern id="hexagons" x="0" y="0" width="100" height="86.6" patternUnits="userSpaceOnUse">
-                    <path d="M50 0L93.3 25V75L50 100L6.7 75V25L50 0Z" stroke="#FF6B35" stroke-width="1" fill="none" />
-                </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#hexagons)" />
-        </svg>
+<!-- NAVBAR -->
+<nav class="top-nav">
+  <div class="nav-container">
+    <a href="landing.html" class="logo">Trade Grid</a>
+    
+    <div class="nav-links">
+      <a href="../New Landing - Page/landing.html - Page/landing.html">HOME</a>
+      <a href="../About - Page/about.html">ABOUT US</a>
+      <a href="../Markets - Page/markets.html">MARKETS</a>
+      <a href="../Contact - Page/contact.html">CONTACT US</a>
     </div>
 
+    <div class="auth-buttons">
+      <a href="../Login - Page/login.html" class="btn-ghost">Sign In</a>
+      <a href="../Onboarding - Page/onboarding.html" class="btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
 
-    <!-- ✅ MAIN CONTENT -->
-    <div class="discover-page">
+<!-- BACKGROUND -->
+<div class="gradient-bg">
 
-        <div class="header">
-            <h1>Discover</h1>
-            <p id="remaining">10 companies remaining</p>
-        </div>
+  <div class="discover-page">
 
-        <div class="card" id="currentCard">
-            <img id="companyImg" src="" alt="Industry" class="company-img">
-            <h2 id="companyName">Company Name</h2>
-            <p id="companyType">Exporter / Importer</p>
-            <div id="companyIndustries" class="industries"></div>
-        </div>
-
-        <div class="buttons">
-            <button id="swipeLeft">❌</button>
-            <button id="swipeRight">❤️</button>
-        </div>
+    <div class="header">
+      <h1>Discover</h1>
+      <p id="remaining">10 companies remaining</p>
     </div>
 
-    <div id="toast" class="toast"></div>
+    <div class="card" id="currentCard">
+      <img id="companyImg" src="" class="company-img">
+      <h2 id="companyName">Company Name</h2>
+      <p id="companyType">Exporter / Importer</p>
+      <div id="companyIndustries" class="industries"></div>
+    </div>
 
+    <div class="buttons">
+      <button id="swipeLeft">❌</button>
+      <button id="swipeRight">❤️</button>
+    </div>
 
+  </div>
 
-    <script src="match.js"></script>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="match.js"></script>
+
 </body>
-
 </html>
