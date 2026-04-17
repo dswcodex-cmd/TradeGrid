@@ -9,7 +9,7 @@
 body {
   font-family: Arial, Helvetica, sans-serif;
   color: #fef3e2;
-  background: #0f1b3d;
+  
 }
 
 /* BACKGROUND */
@@ -20,6 +20,7 @@ body {
   justify-content: center;
   align-items: center;
   padding: 20px;
+  background: linear-gradient(160deg, #0a2e2e 0%, #0D3B3B 45%, #0f4545 100%);
 }
 
 /* HEXAGON BACKGROUND LAYER */
@@ -55,12 +56,21 @@ body {
   background: rgba(24, 38, 84, 0.6);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255,255,255,0.1);
+  z-index: 1000;
+  background: #0f3b3b;
 }
 
 .nav-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
+}
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  /* keeps it above everything */
 }
 
 .logo {
@@ -118,6 +128,7 @@ body {
 /* CARD (GLASS STYLE) */
 .card {
   width: 320px;
+  height: 450px;
   background: rgba(255,255,255,0.05);
   backdrop-filter: blur(15px);
   border-radius: 20px;
@@ -147,11 +158,13 @@ body {
 #companyName {
   font-size: 22px;
   margin-bottom: 5px;
+  
 }
 
 #companyType {
   opacity: 0.7;
   margin-bottom: 10px;
+  font-weight: bold;
 }
 
 /* INDUSTRIES */
@@ -208,4 +221,27 @@ button:hover {
 .toast.show {
   opacity: 1;
   bottom: 40px;
+}
+.description {
+  font-size: 18px;
+  font-family: Arial,Helvetica,sans-serif;
+  color: #d2d7c3;
+  margin: 10px 0;
+  text-align: center;
+  background: rgba(210, 215, 195, 0.1);
+  border: 1px solid rgba(210, 215, 195, 0.3);
+  padding: 5px 10px;
+  border-radius: 10px;
+}
+.meta-info {
+  font-size: 16px;
+  opacity: 0.7;
+  margin-bottom: 8px;
+  padding: 5px 10px;
+}
+.icon {
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  vertical-align: middle;
 }

@@ -574,7 +574,7 @@ button { cursor: pointer; font-family: var(--font-body); }
 
 .market-header h3 {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.25rem;
   font-weight: 700;
   color: var(--white);
   line-height: 1.3;
