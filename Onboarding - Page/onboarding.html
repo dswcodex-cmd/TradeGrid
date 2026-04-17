@@ -7,6 +7,11 @@
   <link rel="stylesheet" href="onboarding.css">
 </head>
 <body>
+
+  <!--hexagon background code -->
+  <svg id="hex-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+
+
   <div class="gradient-bg full-height">
     <div class="auth-container">
       <div class="auth-card">
@@ -131,7 +136,19 @@
             <div class="form-group">
               <label for="cipc">CIPC Number</label>
               <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
-              <small>Optional</small>
+               <label for="password">Password</label>
+<div style="position: relative; display: inline-block;">
+  <input type="password" id="password" name="password" placeholder="Please enter your password" />
+  <button type="button" onclick="togglePassword('password', this)">Show</button>
+</div>
+
+<label for="password-confirm">Confirm Password</label>
+<div style="position: relative; display: inline-block;">
+  <input type="password" id="password-confirm" name="password-confirm" placeholder="Please confirm your password" />
+  <button type="button" onclick="togglePassword('password-confirm', this)">Show</button>
+</div>
+              
+              
             </div>
 
             <div class="form-buttons">
@@ -143,7 +160,7 @@
         </form>
 
         <div class="back-link">
-          <a href="../New Landing - Page/landing.html" class="link">← Back to home</a>
+          <a href="../Landing - Page/landing.html" class="link">← Back to home</a>
         </div>
       </div>
     </div>
