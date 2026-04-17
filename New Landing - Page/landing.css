@@ -146,24 +146,24 @@ button { cursor: pointer; font-family: var(--font-body); }
    ============================================================ */
 .landing-gradient-bg {
   background: linear-gradient(160deg, #0a2e2e 0%, #0D3B3B 45%, #0f4545 100%);
-  min-height: 99vh;
+  min-height: 98vh;
   padding-top: var(--nav-height);
 }
 
 .about-gradient-bg {
   background: var(--bg);
-  min-height: 99vh;
+  min-height: 98vh;
 }
 
 /* ✅ FIX 2: Markets now matches the home dark teal palette */
 .market-gradient-bg {
   background: linear-gradient(160deg, #0a2e2e 0%, #0D3B3B 45%, #0f4545 100%);
-  min-height: 99vh;
+  min-height: 98vh;
 }
 
 .contact-gradient-bg {
   background: var(--white);
-  min-height: 99vh;
+  min-height: 98vh;
   border-top: 1px solid var(--border);
 }
 
