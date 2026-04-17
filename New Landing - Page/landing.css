@@ -1,21 +1,17 @@
 /* ============================================================
    TRADE GRID — landing.css
-   New teal color palette
+   Teal palette | Inter font
    ============================================================ */
 
-/* ---------- Google Fonts ---------- */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-/* ---------- CSS Variables ---------- */
 :root {
-  --primary:        #0D3B3B;          /* dark teal — nav, headers, buttons */
-  --accent:         #0FA3B1;          /* bright teal — highlights, CTAs, links */
-  --light:          #B5EAF0;          /* pale teal — hover states, badges, backgrounds */
-  --bg:             #F0FAFB;          /* near-white — page background */
-  --text:           #1A1A1A;          /* near-black — body text */
-  --white:          #FFFFFF;          /* card surfaces, inputs */
-
-  /* Derived tones */
+  --primary:        #0D3B3B;
+  --accent:         #0FA3B1;
+  --light:          #B5EAF0;
+  --bg:             #F0FAFB;
+  --text:           #1A1A1A;
+  --white:          #FFFFFF;
   --primary-dark:   #082828;
   --accent-light:   rgba(15,163,177,0.12);
   --border:         rgba(13,59,59,0.12);
@@ -34,7 +30,6 @@
   --section-pad:    80px 40px;
 }
 
-/* ---------- Reset ---------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html {
@@ -102,7 +97,6 @@ button { cursor: pointer; font-family: var(--font-body); }
   transition: color 0.25s;
 }
 .nav-links a:hover { color: var(--white); }
-
 .nav-links a.active { color: var(--light); }
 .nav-links a.active::after {
   content: '';
@@ -147,6 +141,8 @@ button { cursor: pointer; font-family: var(--font-body); }
 
 /* ============================================================
    SECTION BACKGROUNDS
+   HOME + MARKETS: both dark teal gradient for consistency
+   ABOUT + CONTACT: light backgrounds for variety
    ============================================================ */
 .landing-gradient-bg {
   background: linear-gradient(160deg, #0a2e2e 0%, #0D3B3B 45%, #0f4545 100%);
@@ -159,8 +155,9 @@ button { cursor: pointer; font-family: var(--font-body); }
   min-height: 100vh;
 }
 
+/* ✅ FIX 2: Markets now matches the home dark teal palette */
 .market-gradient-bg {
-  background: linear-gradient(160deg, #f0fafb 0%, #e2f6f9 50%, #f0fafb 100%);
+  background: linear-gradient(160deg, #0a2e2e 0%, #0D3B3B 45%, #0f4545 100%);
   min-height: 100vh;
 }
 
@@ -328,6 +325,85 @@ button { cursor: pointer; font-family: var(--font-body); }
 }
 
 /* ============================================================
+   TRANSITION SECTION (between About and Markets)
+   Structure: banner image on top, floating card below it
+   ============================================================ */
+.transition-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Full-width banner image with dark teal overlay */
+.hero-banner {
+  position: relative;
+  width: 100%;
+  height: 65vh;
+  min-height: 400px;
+  background: url("https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1600") no-repeat center/cover;
+  overflow: hidden;
+}
+
+.hero-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, rgba(13,59,59,0.85) 0%, rgba(8,40,40,0.70) 100%);
+  z-index: 1;
+}
+
+.hero-banner img {
+  display: none; /* CSS background used instead */
+}
+
+/* Quote text centred on the banner */
+.hero-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  z-index: 2;
+  width: 90%;
+  max-width: 700px;
+}
+
+.hero-text h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.02em;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+
+.hero-text p {
+  font-size: 1rem;
+  color: var(--light);
+  opacity: 0.85;
+  line-height: 1.6;
+}
+
+/* Floating card sits BELOW the banner, not on top of it */
+.floating-card {
+  position: relative;          /* normal flow — appears after banner */
+  width: min(680px, 90%);
+  margin: 0 auto;
+  padding: 48px 0 60px;        /* space above & below the card */
+  background: var(--bg);       /* matches about section bg */
+}
+
+.floating-card img {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(13,59,59,0.18);
+  border: 1px solid var(--border-card);
+  display: block;
+}
+
+/* ============================================================
    ABOUT US
    ============================================================ */
 .page-container {
@@ -450,7 +526,8 @@ button { cursor: pointer; font-family: var(--font-body); }
 }
 
 /* ============================================================
-   MARKETS
+   MARKETS — NOW DARK TEAL (matches home)
+   All text/card colors inverted to work on dark bg
    ============================================================ */
 .container { width: 100%; }
 
@@ -463,22 +540,23 @@ button { cursor: pointer; font-family: var(--font-body); }
   font-family: var(--font-display);
   font-size: clamp(2.2rem, 4vw, 3rem);
   font-weight: 800;
-  color: var(--primary);
+  color: var(--white);
   margin-bottom: 16px;
 }
 
 .page-description {
   font-size: 1rem;
-  color: var(--text-secondary);
+  color: var(--light);
   max-width: 600px;
   margin: 0 auto;
+  opacity: 0.85;
 }
 
 .section-title {
   font-family: var(--font-display);
   font-size: 1.4rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--white);
   margin-bottom: 24px;
 }
 
@@ -490,16 +568,16 @@ button { cursor: pointer; font-family: var(--font-body); }
 }
 
 .market-card {
-  background: var(--white);
-  border: 1px solid var(--border-card);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(181,234,240,0.15);
   border-radius: var(--radius-card);
   padding: 28px 24px;
-  box-shadow: 0 2px 12px rgba(13,59,59,0.06);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, border-color 0.2s, background 0.2s;
 }
 .market-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(13,59,59,0.1);
+  border-color: rgba(181,234,240,0.35);
+  background: rgba(255,255,255,0.09);
 }
 
 .market-header {
@@ -514,7 +592,7 @@ button { cursor: pointer; font-family: var(--font-body); }
   font-family: var(--font-display);
   font-size: 1rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--white);
   line-height: 1.3;
 }
 
@@ -523,8 +601,8 @@ button { cursor: pointer; font-family: var(--font-body); }
   align-items: center;
   gap: 4px;
   white-space: nowrap;
-  background: var(--accent-light);
-  border: 1px solid rgba(15,163,177,0.2);
+  background: rgba(15,163,177,0.2);
+  border: 1px solid rgba(15,163,177,0.35);
   padding: 4px 10px;
   border-radius: 20px;
 }
@@ -533,20 +611,20 @@ button { cursor: pointer; font-family: var(--font-body); }
   font-family: var(--font-display);
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--light);
 }
 
 .growth-indicator.positive::after {
   content: '↗';
   font-size: 0.72rem;
-  color: var(--accent);
+  color: var(--light);
 }
 
 .market-volume { margin-bottom: 18px; }
 
 .volume-label {
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: rgba(181,234,240,0.6);
   margin-bottom: 4px;
   letter-spacing: 0.02em;
 }
@@ -555,7 +633,7 @@ button { cursor: pointer; font-family: var(--font-body); }
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--light);
 }
 
 .industry-tags {
@@ -566,28 +644,29 @@ button { cursor: pointer; font-family: var(--font-body); }
 
 .tag {
   font-size: 0.75rem;
-  color: var(--accent);
-  background: var(--accent-light);
-  border: 1px solid rgba(15,163,177,0.2);
+  color: var(--light);
+  background: rgba(181,234,240,0.1);
+  border: 1px solid rgba(181,234,240,0.2);
   border-radius: var(--radius-tag);
   padding: 5px 12px;
   font-weight: 500;
 }
 
+/* Trending products card */
 .content-card {
-  background: var(--white);
-  border: 1px solid var(--border-card);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(181,234,240,0.15);
   border-radius: var(--radius-card);
   padding: 8px 0;
   margin-bottom: 60px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(13,59,59,0.06);
 }
 
 .hint {
-  font-size: 0.82rem;
-  color: var(--text-muted);
-  padding: 12px 24px 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--light);
+  padding: 16px 24px 0;
   margin-bottom: 8px;
 }
 
@@ -596,27 +675,83 @@ button { cursor: pointer; font-family: var(--font-body); }
   flex-direction: column;
 }
 
+/* Trending items from JS */
+.trend-item {
+  border-top: 1px solid rgba(181,234,240,0.1);
+  cursor: pointer;
+  font-family: var(--font-body);
+  color: var(--light);
+  transition: background 0.15s;
+}
+.trend-item:hover {
+  background: rgba(255,255,255,0.04);
+}
+
+.trend-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+}
+
+.trend-name {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 3px;
+}
+
+.trend-category {
+  font-size: 0.82rem;
+  color: rgba(181,234,240,0.6);
+}
+
+.trend-growth {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trend-dropdown {
+  padding: 0 24px 16px 28px;
+  transition: max-height 0.3s ease;
+  overflow: hidden;
+}
+
+.trend-dropdown ul {
+  list-style-type: disc;
+  color: rgba(181,234,240,0.75);
+  font-size: 0.85rem;
+  line-height: 1.8;
+}
+
+/* Old trending item classes (kept for compatibility) */
 .trending-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(181,234,240,0.1);
   transition: background 0.15s;
 }
-.trending-item:hover { background: rgba(15,163,177,0.04); }
+.trending-item:hover { background: rgba(255,255,255,0.04); }
 
 .trending-item-name {
   font-family: var(--font-display);
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--primary);
+  color: var(--white);
   margin-bottom: 4px;
 }
 
 .trending-item-category {
   font-size: 0.82rem;
-  color: var(--text-muted);
+  color: rgba(181,234,240,0.6);
 }
 
 .trending-item-growth {
@@ -777,9 +912,7 @@ button { cursor: pointer; font-family: var(--font-body); }
 }
 
 .form-group input::placeholder,
-.form-group textarea::placeholder {
-  color: var(--text-muted);
-}
+.form-group textarea::placeholder { color: var(--text-muted); }
 
 .form-group input:focus,
 .form-group textarea:focus {
@@ -810,7 +943,7 @@ button { cursor: pointer; font-family: var(--font-body); }
 }
 
 /* ============================================================
-   FOOTER
+   FOOTER — ✅ FIX 3: Remix Icons social links
    ============================================================ */
 .footer {
   background: var(--primary);
@@ -847,18 +980,31 @@ button { cursor: pointer; font-family: var(--font-body); }
   margin-bottom: 24px;
 }
 
+/* ✅ Social icons — Remix Icons styled properly */
 .socials {
   display: flex;
-  gap: 16px;
+  gap: 12px;
 }
 
 .socials i {
-  font-size: 1.2rem;
-  color: rgba(255,255,255,0.5);
-  transition: color 0.2s;
+  font-size: 1.1rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(181,234,240,0.1);
+  border: 1px solid rgba(181,234,240,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(181,234,240,0.7);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
   cursor: pointer;
 }
-.socials i:hover { color: var(--light); }
+.socials i:hover {
+  background: rgba(181,234,240,0.2);
+  color: var(--white);
+  border-color: rgba(181,234,240,0.4);
+}
 
 .footer-column h4 {
   font-family: var(--font-display);
@@ -913,180 +1059,10 @@ button { cursor: pointer; font-family: var(--font-body); }
   .stats-section { gap: 40px; flex-wrap: wrap; }
   .contact-layout { grid-template-columns: 1fr; }
   .footer-container { grid-template-columns: 1fr; }
+  .transition-section { height: 50vh; }
 }
 
 @media (max-width: 480px) {
   .team { grid-template-columns: 1fr; }
   .hero-buttons { flex-direction: column; }
-}
-
-
-.transition-section {
-  position: relative;
-  margin-top: 80px;
-}
-
-.hero-banner {
-  position: relative;
-  height: 80vh;
-  background: url("https://images.unsplash.com/photo-1460925895917-afdab827c52f") no-repeat center/cover;
-  background-attachment: fixed;
-}
-
-.hero-banner::before {
-  content: "";
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.hero-banner img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  filter: brightness(70%);
-}
-
-/* TEXT ON IMAGE */
-.hero-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  text-align: center;
-}
-
-.hero-text h1 {
-  font-size: 40px;
-  margin-bottom: 10px;
-}
-
-/* FLOATING CARD */
-.floating-card {
-  position: absolute;
-  top: 50%;
-  /* 🔥 push it down more */
-  left: 50%;
-  transform: translate(-50%, 0%);
-  z-index: 10;
-}
-
-.floating-card img {
-  width: 100%;
-    /* reduce from 1000px (too big) */
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    /* makes it “float” */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.transition-section {
-  position: relative;
-  height: 150vh;
-  /* gives room for movement */
-}
-.content-card {
-  background: rgba(30, 41, 59, 0.5);
-  backdrop-filter: blur(6px);
-  border-radius: 12px;
-  padding: 24px;
-  border: 1px solid rgba(190, 195, 175, 0.2);
-}
-
-.trending-products>* {
-  margin-bottom: 16px;
-}
-
-.trending-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px;
-  border-radius: 10px;
-  background: rgba(190, 195, 175, 0.05);
-}
-
-.product-name {
-  font-weight: 600;
-  margin-bottom: 4px;
-  color: rgb(190, 195, 175);
-}
-
-.product-category {
-  font-size: 14px;
-  color: rgb(170, 175, 155);
-}
-
-.gradient-bg {
-  min-height: 100vh;
-  background: linear-gradient(135deg,
-      #0f172a 0%,
-      #1e293b 40%,
-      #312e81 100%);
-}
-
-.market-card,
-.content-card {
-  background: rgba(255, 255, 255, 0.06);
-  /* lighter glass */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-
-  border-radius: 12px;
-  padding: 24px;
-
-  border: 1px solid rgba(255, 255, 255, 0.15);
-
-  /* subtle glow */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-}
-
-.market-card:hover,
-.trending-item:hover {
-  transform: translateY(-4px);
-  transition: all 0.3s ease;
-
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
-}
-
-.hint {
-  color: rgb(170, 175, 155);
-  font-weight: bold;
-}
-
-.trending-products .trend-item {
-  border: 1px solid #ccc;
-  margin-bottom: 0.5rem;
-  padding: 0.5rem;
-  cursor: pointer;
-  border-radius: 5px;
-  font-family: 'Inter', sans-serif;
-  color: rgb(170, 175, 155);
-}
-
-.trend-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.trend-dropdown {
-  margin-top: 0.5rem;
-  padding-left: 1rem;
-}
-
-.trend-dropdown ul {
-  list-style-type: disc;
-}
-
-.trend-dropdown {
-  transition: max-height 0.3s ease;
-  overflow: hidden;
-}
-.hint{
-  font-weight: bold;
-  font-size: larger;
-  text-align: left;
 }
