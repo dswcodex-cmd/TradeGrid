@@ -120,6 +120,7 @@ body {
     font-size: 0.8rem;
 }
 
+
 /* BUTTONS */
 .buttons {
     margin-top: 1.5rem;
@@ -164,4 +165,38 @@ button {
 .toast.show {
     opacity: 1;
     bottom: 40px;
+}
+.gradient-bg {
+    min-height: 100vh;
+    background: radial-gradient(circle at top left, #142768, #0b1839 60%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+/* HEXAGON BACKGROUND LAYER */
+.gradient-bg {
+    position: relative;
+    overflow: hidden;
+}
+
+/* hex pattern overlay */
+.gradient-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.08;
+    /* keep it subtle */
+    pointer-events: none;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath d='M40 0 L80 23 L80 69 L40 92 L0 69 L0 23 Z' fill='none' stroke='%23d2d7c3' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: 80px 92px;
+    background-repeat: repeat;
+}
+
+/* make sure content stays above hex layer */
+.discover-page {
+    position: relative;
+    z-index: 1;
 }
