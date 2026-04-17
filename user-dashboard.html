@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Trade Grid User Dashboard</title>
+  <link rel="stylesheet" href="user-styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body>
+
+  <div class="gradient-bg">
+    <div class="page-wrapper">
+      <div class="container">
+    
+        <!-- ── COMPANY PROFILE CARD ── -->
+        <div class="card profile-card">
+    
+          <!-- Profile Header -->
+          <div class="profile-header">
+            <div class="profile-identity">
+              <div class="company-avatar">
+                <i data-lucide="building-2"></i>
+              </div>
+              <div>
+                <h1 class="company-name" id="companyName">Acme Trading Co.</h1>
+                <div class="profile-badges">
+                  <span class="type-badge" id="typeBadge">Importer</span>
+                  <span class="verified-badge">
+                    <i data-lucide="check-circle"></i>
+                    Verified
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+    
+          <!-- Profile Details Grid -->
+          <div class="details-grid">
+            <div class="detail-item">
+              <div class="detail-label">
+                <i data-lucide="map-pin"></i>
+                <span>Location</span>
+              </div>
+              <p class="detail-value" id="profileCountry">United States</p>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">
+                <i data-lucide="building-2"></i>
+                <span>Industry</span>
+              </div>
+              <p class="detail-value" id="profileIndustry">Electronics</p>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">
+                <i data-lucide="calendar"></i>
+                <span>Established</span>
+              </div>
+              <p class="detail-value" id="profileYear">2005</p>
+            </div>
+            <div class="detail-item">
+              <div class="detail-label">
+                <i data-lucide="users"></i>
+                <span>Employees</span>
+              </div>
+              <p class="detail-value" id="profileEmployees">50-200</p>
+            </div>
+          </div>
+    
+          <!-- Trading Regions -->
+          <div class="section-block">
+            <div class="section-label">
+              <i data-lucide="globe"></i>
+              <span>Trading Regions</span>
+            </div>
+            <div class="tag-group" id="tradingRegions">
+              <span class="tag">North America</span>
+              <span class="tag">Europe</span>
+              <span class="tag">Asia Pacific</span>
+            </div>
+          </div>
+    
+          <!-- Products -->
+          <div class="section-block">
+            <div class="section-label-plain">Products / Services</div>
+            <div class="tag-group" id="profileProducts">
+              <span class="tag">Consumer Electronics</span>
+              <span class="tag">Components</span>
+              <span class="tag">Semiconductors</span>
+            </div>
+          </div>
+    
+          <!-- About -->
+          <div class="section-block">
+            <div class="section-label-plain">About</div>
+            <p class="about-text" id="profileAbout">
+              A leading importer of electronics and technology components, serving major retailers and manufacturers across
+              North America and Europe.
+            </p>
+          </div>
+    
+          <!-- Certifications -->
+          <div class="section-block" id="certSection">
+            <div class="section-label">
+              <i data-lucide="award"></i>
+              <span>Certifications</span>
+            </div>
+            <div class="tag-group" id="profileCerts">
+              <span class="tag">ISO 9001</span>
+              <span class="tag">CE Certified</span>
+            </div>
+          </div>
+    
+        </div>
+    
+        <!-- ── MATCHES SECTION ── -->
+        <div class="card matches-card">
+          <h2 class="section-title">Your Matches</h2>
+    
+          <div class="matches-grid" id="matchesGrid">
+    
+            <!-- Match 1 -->
+            <div class="match-card" data-id="1">
+              <div class="match-header">
+                <div class="match-identity">
+                  <div class="match-avatar">
+                    <i data-lucide="building-2"></i>
+                  </div>
+                  <div>
+                    <h3 class="match-name">Global Textiles Co.</h3>
+                    <div class="match-location">
+                      <i data-lucide="map-pin"></i>
+                      India
+                    </div>
+                  </div>
+                </div>
+                <div class="match-score">
+                  <div class="score-value">95%</div>
+                  <div class="score-label">Match</div>
+                </div>
+              </div>
+              <div class="match-type-row">
+                <span class="type-badge type-exporter">Exporter</span>
+              </div>
+              <p class="match-desc">Leading textile manufacturer with over 30 years of experience in premium fabric
+                production.</p>
+              <div class="tag-group match-tags">
+                <span class="tag-sm">Cotton Fabrics</span>
+                <span class="tag-sm">Silk</span>
+                <span class="tag-sm">Linen</span>
+              </div>
+              <button class="msg-btn" data-match-id="1">
+                <i data-lucide="message-circle"></i>
+                Message
+              </button>
+            </div>
+    
+            <!-- Match 2 -->
+            <div class="match-card" data-id="2">
+              <div class="match-header">
+                <div class="match-identity">
+                  <div class="match-avatar">
+                    <i data-lucide="building-2"></i>
+                  </div>
+                  <div>
+                    <h3 class="match-name">TechElectronics Ltd</h3>
+                    <div class="match-location">
+                      <i data-lucide="map-pin"></i>
+                      Germany
+                    </div>
+                  </div>
+                </div>
+                <div class="match-score">
+                  <div class="score-value">88%</div>
+                  <div class="score-label">Match</div>
+                </div>
+              </div>
+              <div class="match-type-row">
+                <span class="type-badge type-importer">Importer</span>
+              </div>
+              <p class="match-desc">European distributor specializing in cutting-edge electronics and tech components.</p>
+              <div class="tag-group match-tags">
+                <span class="tag-sm">Consumer Electronics</span>
+                <span class="tag-sm">Components</span>
+                <span class="tag-sm">Semiconductors</span>
+              </div>
+              <button class="msg-btn" data-match-id="2">
+                <i data-lucide="message-circle"></i>
+                Message
+              </button>
+            </div>
+    
+            <!-- Match 3 -->
+            <div class="match-card" data-id="3">
+              <div class="match-header">
+                <div class="match-identity">
+                  <div class="match-avatar">
+                    <i data-lucide="building-2"></i>
+                  </div>
+                  <div>
+                    <h3 class="match-name">Pacific Foods Export</h3>
+                    <div class="match-location">
+                      <i data-lucide="map-pin"></i>
+                      Vietnam
+                    </div>
+                  </div>
+                </div>
+                <div class="match-score">
+                  <div class="score-value">82%</div>
+                  <div class="score-label">Match</div>
+                </div>
+              </div>
+              <div class="match-type-row">
+                <span class="type-badge type-exporter">Exporter</span>
+              </div>
+              <p class="match-desc">Premium food exporter with certifications for organic and sustainable products.</p>
+              <div class="tag-group match-tags">
+                <span class="tag-sm">Spices</span>
+                <span class="tag-sm">Rice</span>
+                <span class="tag-sm">Coffee</span>
+              </div>
+              <button class="msg-btn" data-match-id="3">
+                <i data-lucide="message-circle"></i>
+                Message
+              </button>
+            </div>
+    
+            <!-- Match 4 -->
+            <div class="match-card" data-id="4">
+              <div class="match-header">
+                <div class="match-identity">
+                  <div class="match-avatar">
+                    <i data-lucide="building-2"></i>
+                  </div>
+                  <div>
+                    <h3 class="match-name">Nordic Manufacturing AB</h3>
+                    <div class="match-location">
+                      <i data-lucide="map-pin"></i>
+                      Sweden
+                    </div>
+                  </div>
+                </div>
+                <div class="match-score">
+                  <div class="score-value">79%</div>
+                  <div class="score-label">Match</div>
+                </div>
+              </div>
+              <div class="match-type-row">
+                <span class="type-badge type-importer">Importer</span>
+              </div>
+              <p class="match-desc">Scandinavian manufacturing company seeking reliable suppliers for industrial components.
+              </p>
+              <div class="tag-group match-tags">
+                <span class="tag-sm">Industrial Equipment</span>
+                <span class="tag-sm">Machinery Parts</span>
+                <span class="tag-sm">Tools</span>
+              </div>
+              <button class="msg-btn" data-match-id="4">
+                <i data-lucide="message-circle"></i>
+                Message
+              </button>
+            </div>
+    
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- ── MESSAGING MODAL ── -->
+    <div class="modal-overlay hidden" id="modalOverlay">
+      <div class="modal">
+    
+        <!-- Modal Header -->
+        <div class="modal-header">
+          <div class="modal-identity">
+            <div class="match-avatar">
+              <i data-lucide="building-2"></i>
+            </div>
+            <div>
+              <h3 class="modal-company" id="modalCompanyName">Company Name</h3>
+              <p class="modal-country" id="modalCountry">Country</p>
+            </div>
+          </div>
+          <button class="close-modal" id="closeModal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+    
+        <!-- Messages Area -->
+        <div class="messages-area" id="messagesArea">
+          <!-- Messages injected by JS -->
+        </div>
+    
+        <!-- Message Input -->
+        <div class="msg-input-row">
+          <input type="text" id="msgInput" class="msg-input" placeholder="Type your message..." />
+          <button class="send-btn" id="sendBtn">
+            <i data-lucide="send"></i>
+            Send
+          </button>
+        </div>
+    
+      </div>
+    </div>
+
+  </div>
+
+  <script src="user-app.js"></script>
+</body>
+</html>
