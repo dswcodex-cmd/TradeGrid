@@ -12,6 +12,17 @@ app.use(express.json());
 
 app.use("/auth", authRoutes);
 
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
+    return res.status(400).json({
+      error: "Invalid JSON body",
+      message: "Send a valid JSON request body with double-quoted property names and string values."
+    });
+  }
+
+  return next(err);
+});
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

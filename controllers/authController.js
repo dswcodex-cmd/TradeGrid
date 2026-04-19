@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../prismaClient.js";
+import dotenv from "dotenv"
 
 export const signup = async (req, res) => {
     console.log("Signup");
@@ -56,12 +57,19 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, registration_number: user.registration_number },
+      { company_id: user.company_id, registration_number: user.registration_number },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 
-    res.json({ token, user });
+    res.json({
+      token,
+      user: {
+        company_id: user.company_id,
+        company_name: user.company_name,
+        registration_number: user.registration_number
+      }
+    });
 
   } catch (error) {
     res.status(500).json({ error: error.message });
