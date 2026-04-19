@@ -8,241 +8,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    html {
-      scroll-behavior: smooth;
-      scroll-padding-top: 70px;
-    }
-
-    .nav-links a {
-      position: relative;
-      transition: color 0.3s ease;
-    }
-    .nav-links a.active {
-      color: #d2d7c3;
-    }
-    .nav-links a.active::after {
-      content: '';
-      position: absolute;
-      bottom: -4px;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: #d2d7c3;
-      border-radius: 2px;
-    }
-
-    #DiscoverBtn {
-      margin-left: 10px;
-    }
-
-    /* ══════════════════════════════════════════════
-       MASHA AI WIDGET — Landing page styles
-       Uses the teal gradient FAB to match the brand
-       ══════════════════════════════════════════════ */
-
-    .masha-fab {
-      position: fixed;
-      bottom: 28px;
-      right: 28px;
-      z-index: 2000;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #0D3B3B 0%, #0FA3B1 100%);
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 6px 24px rgba(13,59,59,0.35);
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .masha-fab:hover {
-      transform: translateY(-3px) scale(1.05);
-      box-shadow: 0 10px 32px rgba(13,59,59,0.4);
-    }
-    .masha-fab i { font-size: 24px; color: #fff; }
-    .masha-fab .icon-open  { display: flex; }
-    .masha-fab .icon-close { display: none; }
-    .masha-fab.open .icon-open  { display: none; }
-    .masha-fab.open .icon-close { display: flex; }
-    .masha-fab .fab-dot {
-      position: absolute;
-      top: 6px; right: 6px;
-      width: 10px; height: 10px;
-      border-radius: 50%;
-      background: #B5EAF0;
-      border: 2px solid #0D3B3B;
-      animation: masha-pulse-dot 2s infinite;
-    }
-    @keyframes masha-pulse-dot {
-      0%, 100% { transform: scale(1); opacity: 1; }
-      50%       { transform: scale(1.3); opacity: 0.7; }
-    }
-
-    .masha-window {
-      position: fixed;
-      bottom: 100px; right: 28px;
-      z-index: 1999;
-      width: 380px; height: 560px;
-      background: #FFFFFF;
-      border-radius: 20px;
-      border: 1px solid rgba(13,59,59,0.12);
-      box-shadow: 0 20px 60px rgba(13,59,59,0.18);
-      display: flex; flex-direction: column; overflow: hidden;
-      transform: scale(0.92) translateY(20px);
-      opacity: 0; pointer-events: none;
-      transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.2s;
-    }
-    .masha-window.open {
-      transform: scale(1) translateY(0);
-      opacity: 1;
-      pointer-events: all;
-    }
-
-    .masha-header {
-      background: linear-gradient(135deg, #0D3B3B 0%, #0f4848 100%);
-      padding: 16px 20px;
-      display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-    }
-    .masha-avatar {
-      width: 40px; height: 40px; border-radius: 50%;
-      background: rgba(181,234,240,0.2);
-      border: 2px solid rgba(181,234,240,0.4);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 20px; flex-shrink: 0;
-    }
-    .masha-header-info { flex: 1; }
-    .masha-name { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.2px; }
-    .masha-status {
-      display: flex; align-items: center; gap: 5px;
-      font-size: 11px; color: rgba(181,234,240,0.8); margin-top: 1px;
-    }
-    .masha-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #22c55e; }
-    .masha-header-actions { display: flex; gap: 4px; }
-    .masha-header-btn {
-      width: 30px; height: 30px; border-radius: 8px;
-      background: rgba(181,234,240,0.1); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: rgba(181,234,240,0.8); font-size: 16px;
-      transition: background 0.2s, color 0.2s;
-    }
-    .masha-header-btn:hover { background: rgba(181,234,240,0.2); color: #fff; }
-
-    .masha-chips {
-      padding: 12px 16px 8px;
-      display: flex; gap: 6px; flex-wrap: wrap;
-      background: #F0FAFB;
-      border-bottom: 1px solid rgba(13,59,59,0.08);
-      flex-shrink: 0;
-    }
-    .masha-chip {
-      padding: 5px 12px; border-radius: 20px;
-      border: 1px solid rgba(15,163,177,0.25);
-      background: rgba(15,163,177,0.07);
-      color: #0D3B3B; font-size: 11px; font-weight: 500; cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      font-family: 'Inter', sans-serif;
-    }
-    .masha-chip:hover {
-      background: rgba(15,163,177,0.15);
-      border-color: rgba(15,163,177,0.4);
-    }
-
-    .masha-messages {
-      flex: 1; overflow-y: auto; padding: 16px;
-      display: flex; flex-direction: column; gap: 12px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(13,59,59,0.1) transparent;
-    }
-    .masha-messages::-webkit-scrollbar { width: 4px; }
-    .masha-messages::-webkit-scrollbar-thumb {
-      background: rgba(13,59,59,0.12); border-radius: 2px;
-    }
-
-    .msg-row { display: flex; gap: 8px; align-items: flex-end; }
-    .msg-row.user { flex-direction: row-reverse; }
-    .msg-bubble-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      background: rgba(13,59,59,0.08);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-    }
-    .msg-bubble {
-      max-width: 80%; padding: 10px 14px;
-      border-radius: 16px; font-size: 13px; line-height: 1.55;
-    }
-    .msg-row.bot .msg-bubble {
-      background: #F0FAFB; color: #1A1A1A;
-      border: 1px solid rgba(13,59,59,0.1);
-      border-bottom-left-radius: 4px;
-    }
-    .msg-row.user .msg-bubble {
-      background: linear-gradient(135deg, #0D3B3B, #0f4848);
-      color: #fff; border-bottom-right-radius: 4px;
-    }
-    .msg-time {
-      font-size: 10px; color: #7a9a9a; margin-top: 3px; padding: 0 4px;
-    }
-    .msg-row.user .msg-time { text-align: right; }
-
-    .masha-typing {
-      display: flex; align-items: center; gap: 4px; padding: 12px 14px;
-      background: #F0FAFB; border: 1px solid rgba(13,59,59,0.1);
-      border-radius: 16px; border-bottom-left-radius: 4px; width: fit-content;
-    }
-    .masha-typing-dot {
-      width: 6px; height: 6px; border-radius: 50%; background: #7a9a9a;
-      animation: masha-typing-bounce 1.2s infinite;
-    }
-    .masha-typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .masha-typing-dot:nth-child(3) { animation-delay: 0.4s; }
-    @keyframes masha-typing-bounce {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-      30%            { transform: translateY(-6px); opacity: 1; }
-    }
-
-    .masha-input-area {
-      padding: 12px 16px;
-      border-top: 1px solid rgba(13,59,59,0.08);
-      background: #FFFFFF;
-      display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0;
-    }
-    .masha-textarea {
-      flex: 1; resize: none;
-      border: 1px solid rgba(13,59,59,0.15); border-radius: 12px;
-      padding: 10px 14px;
-      font-family: 'Inter', sans-serif; font-size: 13px; color: #1A1A1A;
-      background: #F0FAFB; outline: none;
-      max-height: 100px; min-height: 40px; line-height: 1.5;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .masha-textarea::placeholder { color: #7a9a9a; }
-    .masha-textarea:focus {
-      border-color: #0FA3B1;
-      box-shadow: 0 0 0 3px rgba(15,163,177,0.1);
-      background: #fff;
-    }
-    .masha-send {
-      width: 40px; height: 40px; border-radius: 12px;
-      background: #0D3B3B; border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: #fff; font-size: 18px; flex-shrink: 0;
-      transition: background 0.2s, transform 0.15s;
-    }
-    .masha-send:hover { background: #082828; transform: translateY(-1px); }
-    .masha-send:disabled {
-      background: rgba(13,59,59,0.2); cursor: default; transform: none;
-    }
-
-    .masha-powered {
-      text-align: center; padding: 6px 0 8px;
-      font-size: 10px; color: #7a9a9a;
-      background: #fff; flex-shrink: 0;
-    }
-    .masha-powered span { color: #0FA3B1; font-weight: 600; }
-  </style>
 </head>
 
 <body>
@@ -264,7 +29,7 @@
     </div>
   </nav>
 
-  <!-- SECTION 1: LANDING / HOME -->
+  <!-- SECTION 1: HOME -->
   <div id="landing" class="landing-gradient-bg">
     <div class="landing-container">
       <div class="hero-section">
@@ -440,7 +205,7 @@
     <div class="container page-container">
 
       <div class="market-page-hero">
-        <svg width="64" height="64" fill="none" stroke="rgb(190, 195, 175)" stroke-width="2" viewBox="0 0 24 24" style="margin: 0 auto 1.5rem; display:block;">
+        <svg width="64" height="64" fill="none" stroke="rgb(190, 195, 175)" stroke-width="2" viewBox="0 0 24 24" class="market-hero-icon">
           <circle cx="12" cy="12" r="10"></circle>
           <line x1="2" y1="12" x2="22" y2="12"></line>
           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
@@ -679,10 +444,7 @@
     </div>
   </footer>
 
-  <!-- ═══════════════════════════════════════════════════════════
-       MASHA AI WIDGET
-       ═══════════════════════════════════════════════════════════ -->
-
+  <!-- MASHA AI WIDGET -->
   <button class="masha-fab" id="mashaFab" aria-label="Open Masha AI">
     <span class="fab-dot"></span>
     <i class="ri-robot-line icon-open"></i>
@@ -700,231 +462,27 @@
         </div>
       </div>
       <div class="masha-header-actions">
-        <button class="masha-header-btn" id="mashaClear" title="Clear chat">
-          <i class="ri-delete-bin-line"></i>
-        </button>
-        <button class="masha-header-btn" id="mashaMinimize" title="Close">
-          <i class="ri-subtract-line"></i>
-        </button>
+        <button class="masha-header-btn" id="mashaClear" title="Clear chat"><i class="ri-delete-bin-line"></i></button>
+        <button class="masha-header-btn" id="mashaMinimize" title="Close"><i class="ri-subtract-line"></i></button>
       </div>
     </div>
-
     <div class="masha-chips" id="mashaChips">
       <button class="masha-chip" data-msg="How does Trade Grid work?">How does it work?</button>
       <button class="masha-chip" data-msg="How do I verify my business?">Verify business</button>
       <button class="masha-chip" data-msg="What markets are available?">Markets</button>
       <button class="masha-chip" data-msg="How do I find trading partners?">Find partners</button>
     </div>
-
     <div class="masha-messages" id="mashaMessages"></div>
-
     <div class="masha-input-area">
-      <textarea
-        class="masha-textarea"
-        id="mashaInput"
-        placeholder="Ask Masha anything about trade..."
-        rows="1"
-      ></textarea>
-      <button class="masha-send" id="mashaSend">
-        <i class="ri-send-plane-fill"></i>
-      </button>
+      <textarea class="masha-textarea" id="mashaInput" placeholder="Ask Masha anything about trade..." rows="1"></textarea>
+      <button class="masha-send" id="mashaSend"><i class="ri-send-plane-fill"></i></button>
     </div>
-
     <div class="masha-powered">Powered by <span>Masha AI</span> · Trade Grid</div>
   </div>
 
-  <!-- ═══════════════════════════════════════════════════════════ -->
-
   <!-- Lucide icons for trending products -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
-
-  <!-- Landing page JS (scroll-spy + trending products) -->
   <script src="landing.js"></script>
-
-  <!-- Masha AI script -->
-  <script>
-    /* ── Knowledge base ── */
-    const mashaKB = [
-      {
-        patterns: ['how does', 'what is trade grid', 'tell me about', 'what do you do', 'work'],
-        response: `Trade Grid is a smart B2B trade matching platform. 🌐\n\nWe help importers and exporters worldwide find verified trading partners using AI-powered matching. Just create a profile, set your trade preferences, and start discovering matches!`
-      },
-      {
-        patterns: ['verify', 'verification', 'document', 'license', 'certificate'],
-        response: `Business verification on Trade Grid involves three steps:\n\n1. 📄 Upload your business registration documents\n2. 🔐 Submit identity verification\n3. ✅ Our team reviews within 48 hours\n\nOnce verified, you'll get a verified badge that builds trust with trading partners.`
-      },
-      {
-        patterns: ['market', 'region', 'country', 'south africa', 'johannesburg'],
-        response: `We currently cover markets including:\n\n📍 South Africa — Finance, Mining, Tech\n📍 Netherlands — Tourism, Fintech\n📍 India — Trade & Logistics\n📍 Germany — Automotive, Exports\n\nWith 150+ countries in our global network!`
-      },
-      {
-        patterns: ['partner', 'find', 'match', 'connect', 'trading'],
-        response: `Finding trading partners is easy on Trade Grid! 🤝\n\n• Use our **Discover** page to browse matches\n• Our AI suggests partners based on your industry and region\n• Swipe, match, and start trading conversations\n\nWant to get started? Click "Get Started" in the top menu.`
-      },
-      {
-        patterns: ['price', 'cost', 'fee', 'subscription', 'plan', 'free'],
-        response: `Trade Grid offers flexible plans:\n\n🆓 **Starter** — Free, basic matching\n⭐ **Professional** — R499/mo, unlimited matches + analytics\n🏢 **Enterprise** — Custom pricing for large businesses\n\nContact our sales team at sales@tradegrid.com for more details.`
-      },
-      {
-        patterns: ['contact', 'support', 'help', 'email', 'phone', 'reach'],
-        response: `You can reach our support team at:\n\n📧 support@tradegrid.com\n📞 +27 (83) 720-4520\n🕐 Mon-Fri 9am–6pm SAST\n\nOr scroll down to our **Contact Us** section!`
-      },
-      {
-        patterns: ['sign up', 'register', 'account', 'create', 'join', 'get started'],
-        response: `Getting started is simple! 🚀\n\n1. Click **"Get Started"** in the navigation\n2. Complete your business profile\n3. Upload verification documents\n4. Start discovering trading partners!\n\nThe whole process takes less than 10 minutes.`
-      },
-      {
-        patterns: ['import', 'export', 'trade', 'goods', 'products'],
-        response: `Trade Grid supports both importers and exporters across all major product categories:\n\n📦 Agricultural products\n⚡ Energy & renewables\n🏭 Manufacturing goods\n💊 Healthcare & medical\n📱 Electronics & tech\n\nWhat industry are you in? I can give more specific info!`
-      },
-      {
-        patterns: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'howzit'],
-        response: `Hello! 👋 I'm Masha, your Trade Grid AI assistant.\n\nI can help you with:\n• Understanding how Trade Grid works\n• Business verification process\n• Finding trading partners\n• Market information\n\nWhat would you like to know?`
-      },
-      {
-        patterns: ['about', 'founders', 'team', 'who made', 'who built'],
-        response: `Trade Grid was founded by a passionate team of six:\n\n👩‍💼 Tashlyn Mitchell — Project Leader\n💻 TJP Mabotja — Back-end Developer\n🎨 Valery Mutetwa — Front-end Developer\n🗄️ Siyanda Xaba — Database Manager\n🎨 Khethukhanyo Mbekeni — Front-end Developer\n💻 Sifiso Sibanyoni — Back-end Developer\n\nScroll to the About Us section to meet the team!`
-      },
-    ];
-
-    const fallback = `I'm not sure about that yet, but I'm learning! 🤖\n\nFor specific queries, please contact our support team at support@tradegrid.com or call +27 (83) 720-4520.\n\nIs there anything else I can help you with?`;
-
-    function mashaGetResponse(input) {
-      const lower = input.toLowerCase();
-      for (const entry of mashaKB) {
-        if (entry.patterns.some(p => lower.includes(p))) return entry.response;
-      }
-      return fallback;
-    }
-
-    /* ── DOM refs ── */
-    const mashaFab        = document.getElementById('mashaFab');
-    const mashaWin        = document.getElementById('mashaWindow');
-    const mashaMessages   = document.getElementById('mashaMessages');
-    const mashaInput      = document.getElementById('mashaInput');
-    const mashaSend       = document.getElementById('mashaSend');
-    const mashaClear      = document.getElementById('mashaClear');
-    const mashaMinimize   = document.getElementById('mashaMinimize');
-    const mashaChipBtns   = document.querySelectorAll('.masha-chip');
-    const mashaChipsBar   = document.getElementById('mashaChips');
-    const mashaFooterLink = document.getElementById('mashaFooterLink');
-    let mashaOpen = false;
-
-    /* ── Toggle ── */
-    function mashaToggle(forceOpen) {
-      mashaOpen = forceOpen !== undefined ? forceOpen : !mashaOpen;
-      mashaWin.classList.toggle('open', mashaOpen);
-      mashaFab.classList.toggle('open', mashaOpen);
-      if (mashaOpen) {
-        const dot = mashaFab.querySelector('.fab-dot');
-        if (dot) dot.style.display = 'none';
-        setTimeout(() => mashaInput.focus(), 300);
-      }
-    }
-
-    mashaFab.addEventListener('click', () => mashaToggle());
-    mashaMinimize.addEventListener('click', () => mashaToggle(false));
-
-    /* Footer "Masha AI" link opens the widget */
-    if (mashaFooterLink) {
-      mashaFooterLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        mashaToggle(true);
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      });
-    }
-
-    /* ── Add message ── */
-    function mashaAddMessage(text, sender) {
-      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      const row = document.createElement('div');
-      row.className = `msg-row ${sender}`;
-      const avatar = document.createElement('div');
-      avatar.className = 'msg-bubble-avatar';
-      avatar.textContent = sender === 'bot' ? '🤖' : '👤';
-      const wrap = document.createElement('div');
-      const bubble = document.createElement('div');
-      bubble.className = 'msg-bubble';
-      bubble.innerHTML = text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n/g, '<br>');
-      const time = document.createElement('div');
-      time.className = 'msg-time';
-      time.textContent = now;
-      wrap.appendChild(bubble);
-      wrap.appendChild(time);
-      if (sender === 'bot') { row.appendChild(avatar); row.appendChild(wrap); }
-      else { row.appendChild(wrap); row.appendChild(avatar); }
-      mashaMessages.appendChild(row);
-      mashaMessages.scrollTop = mashaMessages.scrollHeight;
-    }
-
-    /* ── Typing indicator ── */
-    function mashaShowTyping() {
-      const row = document.createElement('div');
-      row.className = 'msg-row bot'; row.id = 'mashaTypingRow';
-      const avatar = document.createElement('div');
-      avatar.className = 'msg-bubble-avatar'; avatar.textContent = '🤖';
-      const indicator = document.createElement('div');
-      indicator.className = 'masha-typing';
-      indicator.innerHTML = '<div class="masha-typing-dot"></div><div class="masha-typing-dot"></div><div class="masha-typing-dot"></div>';
-      row.appendChild(avatar); row.appendChild(indicator);
-      mashaMessages.appendChild(row);
-      mashaMessages.scrollTop = mashaMessages.scrollHeight;
-    }
-    function mashaHideTyping() {
-      const row = document.getElementById('mashaTypingRow');
-      if (row) row.remove();
-    }
-
-    /* ── Send ── */
-    function mashaSendMessage(text) {
-      const msg = (text || mashaInput.value).trim();
-      if (!msg) return;
-      mashaAddMessage(msg, 'user');
-      mashaInput.value = '';
-      mashaInput.style.height = 'auto';
-      mashaSend.disabled = true;
-      mashaChipsBar.style.display = 'none';
-      mashaShowTyping();
-      setTimeout(() => {
-        mashaHideTyping();
-        mashaAddMessage(mashaGetResponse(msg), 'bot');
-        mashaSend.disabled = false;
-        mashaInput.focus();
-      }, 900 + Math.random() * 600);
-    }
-
-    mashaSend.addEventListener('click', () => mashaSendMessage());
-    mashaInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mashaSendMessage(); }
-    });
-    mashaInput.addEventListener('input', () => {
-      mashaInput.style.height = 'auto';
-      mashaInput.style.height = Math.min(mashaInput.scrollHeight, 100) + 'px';
-      mashaSend.disabled = mashaInput.value.trim() === '';
-    });
-
-    mashaChipBtns.forEach(chip => {
-      chip.addEventListener('click', () => mashaSendMessage(chip.dataset.msg));
-    });
-
-    mashaClear.addEventListener('click', () => {
-      mashaMessages.innerHTML = '';
-      mashaChipsBar.style.display = 'flex';
-      mashaGreeting();
-    });
-
-    /* ── Greeting ── */
-    function mashaGreeting() {
-      setTimeout(() => {
-        mashaAddMessage(`Hi there! 👋 I'm **Masha**, your Trade Grid AI assistant.\n\nI can help you with verification, finding trading partners, markets, and more. What would you like to know?`, 'bot');
-      }, 400);
-    }
-
-    mashaSend.disabled = true;
-    mashaGreeting();
-  </script>
 
 </body>
 </html>

@@ -16,7 +16,7 @@
     document.getElementById("onboardingForm").addEventListener("submit", function(e) {
       e.preventDefault();
       // Handle form submission here
-      alert("Registration complete!");
+      window.location.href = "../Login - Page/login.html";
     });
 
     /**hide and show password */

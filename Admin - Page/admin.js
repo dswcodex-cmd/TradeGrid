@@ -1,6 +1,6 @@
 /* ============================================================
    TRADE GRID ADMIN — admin.js
-   All interactivity: tabs, filter, actions, modals, logout
+   Tabs, filter, modals, user actions, logout
    ============================================================ */
 
 // ── Tab switching ──
@@ -14,11 +14,9 @@ function switchTab(btn, tabId) {
   el.style.gap = '16px';
 }
 
-// Init first tab
 document.addEventListener('DOMContentLoaded', () => {
   const um = document.getElementById('user-management');
   if (um) { um.style.display = 'flex'; um.style.flexDirection = 'column'; um.style.gap = '16px'; }
-
   initFilter();
   initUserActions();
   initRequestButtons();
@@ -27,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initToast();
 });
 
-// ── Toast notification system ──
+// ── Toast ──
 let toastTimer;
 function initToast() {
   if (!document.getElementById('adminToast')) {
@@ -58,7 +56,7 @@ function showToast(msg, icon = 'ri-checkbox-circle-line') {
   }, 3000);
 }
 
-// ── Modal system ──
+// ── Modal ──
 function createModal(title, bodyHTML, actions = []) {
   const existing = document.getElementById('adminModal');
   if (existing) existing.remove();
@@ -107,7 +105,6 @@ function createModal(title, bodyHTML, actions = []) {
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
 
-  // Add keyframe styles once
   if (!document.getElementById('modalStyles')) {
     const s = document.createElement('style');
     s.id = 'modalStyles';
@@ -124,13 +121,13 @@ function closeModal() {
   if (m) m.remove();
 }
 
-// ── User table action menus ──
+// ── User table actions ──
 function initUserActions() {
   document.querySelectorAll('tbody td:last-child').forEach(cell => {
     cell.addEventListener('click', (e) => {
       e.stopPropagation();
       closeAllMenus();
-      const row = cell.closest('tr');
+      const row     = cell.closest('tr');
       const company = row.querySelector('td:first-child').childNodes[0].textContent.trim();
       const email   = row.querySelector('td small')?.textContent || '';
       const status  = row.querySelector('.status')?.textContent.trim() || '';
@@ -146,16 +143,14 @@ function initUserActions() {
       `;
 
       const isSuspended = status.toLowerCase() === 'suspended';
-
       const items = [
-        { icon: 'ri-eye-line',         label: 'View Details',       fn: () => viewUserDetails(company, email, status, country) },
-        { icon: 'ri-edit-line',        label: 'Edit Profile',        fn: () => editUser(company) },
+        { icon: 'ri-eye-line',         label: 'View Details',   fn: () => viewUserDetails(company, email, status, country) },
+        { icon: 'ri-edit-line',        label: 'Edit Profile',    fn: () => editUser(company) },
         { icon: isSuspended ? 'ri-checkbox-circle-line' : 'ri-forbid-line',
           label: isSuspended ? 'Reinstate Account' : 'Suspend Account',
           fn: () => isSuspended ? reinstateUser(company, row) : suspendUser(company, row),
-          danger: !isSuspended
-        },
-        { icon: 'ri-delete-bin-line',  label: 'Delete Account',     fn: () => deleteUser(company, row), danger: true },
+          danger: !isSuspended },
+        { icon: 'ri-delete-bin-line',  label: 'Delete Account', fn: () => deleteUser(company, row), danger: true },
       ];
 
       items.forEach(item => {
@@ -164,8 +159,7 @@ function initUserActions() {
           display:flex; align-items:center; gap:9px; width:100%; padding:9px 12px;
           border:none; background:transparent; border-radius:8px; cursor:pointer;
           font-family:'Inter',sans-serif; font-size:13px; font-weight:500;
-          color:${item.danger ? '#dc2626' : '#4a6464'}; text-align:left;
-          transition:background 0.15s;
+          color:${item.danger ? '#dc2626' : '#4a6464'}; text-align:left; transition:background 0.15s;
         `;
         btn.innerHTML = `<i class="${item.icon}" style="font-size:15px"></i>${item.label}`;
         btn.addEventListener('mouseenter', () => btn.style.background = item.danger ? 'rgba(220,38,38,0.07)' : 'rgba(15,163,177,0.07)');
@@ -243,15 +237,12 @@ function editUser(company) {
   ]);
 }
 
-function saveUserEdit(company) {
-  closeModal();
-  showToast(`Changes saved for ${company}`);
-}
+function saveUserEdit(company) { closeModal(); showToast(`Changes saved for ${company}`); }
 
 function suspendUser(company, row) {
   createModal('Suspend Account', `
     <p style="font-size:13px;color:#4a6464;line-height:1.6;margin-bottom:16px;">
-      You are about to suspend <strong style="color:#0D3B3B;">${company}</strong>. They will immediately lose access to their account and be notified by email.
+      You are about to suspend <strong style="color:#0D3B3B;">${company}</strong>. They will immediately lose access and be notified by email.
     </p>
     <div>
       <label style="display:block;font-size:12px;font-weight:600;color:#0D3B3B;margin-bottom:6px;">Reason for suspension *</label>
@@ -261,7 +252,6 @@ function suspendUser(company, row) {
     { label: 'Cancel', fn: 'closeModal()' },
     { label: 'Suspend Account', fn: `confirmSuspend('${company}')`, primary: true }
   ]);
-  // store row ref
   window._pendingRow = row;
 }
 
@@ -269,22 +259,14 @@ function confirmSuspend(company) {
   const reason = document.getElementById('suspendReason')?.value;
   if (!reason?.trim()) { alert('Please provide a reason.'); return; }
   const row = window._pendingRow;
-  if (row) {
-    const badge = row.querySelector('.status');
-    if (badge) {
-      badge.className = 'status suspended';
-      badge.textContent = 'Suspended';
-    }
-  }
+  if (row) { const badge = row.querySelector('.status'); if (badge) { badge.className = 'status suspended'; badge.textContent = 'Suspended'; } }
   closeModal();
   showToast(`${company} has been suspended`, 'ri-forbid-line');
 }
 
 function reinstateUser(company, row) {
   createModal('Reinstate Account', `
-    <p style="font-size:13px;color:#4a6464;line-height:1.6;">
-      Reinstate <strong style="color:#0D3B3B;">${company}</strong>? They will regain full access immediately.
-    </p>
+    <p style="font-size:13px;color:#4a6464;line-height:1.6;">Reinstate <strong style="color:#0D3B3B;">${company}</strong>? They will regain full access immediately.</p>
   `, [
     { label: 'Cancel', fn: 'closeModal()' },
     { label: 'Reinstate', fn: `confirmReinstate('${company}')`, primary: true }
@@ -294,10 +276,7 @@ function reinstateUser(company, row) {
 
 function confirmReinstate(company) {
   const row = window._pendingRow;
-  if (row) {
-    const badge = row.querySelector('.status');
-    if (badge) { badge.className = 'status active'; badge.textContent = 'Active'; }
-  }
+  if (row) { const badge = row.querySelector('.status'); if (badge) { badge.className = 'status active'; badge.textContent = 'Active'; } }
   closeModal();
   showToast(`${company} reinstated successfully`, 'ri-checkbox-circle-line');
 }
@@ -322,12 +301,7 @@ function deleteUser(company, row) {
     { label: 'Delete Account', fn: `confirmDelete('${company}')`, primary: true }
   ]);
   window._pendingRow = row;
-  // Make delete button red
-  setTimeout(() => {
-    const btns = document.querySelectorAll('#adminModal button');
-    const del = btns[btns.length - 1];
-    if (del) del.style.background = '#dc2626';
-  }, 50);
+  setTimeout(() => { const btns = document.querySelectorAll('#adminModal button'); const del = btns[btns.length - 1]; if (del) del.style.background = '#dc2626'; }, 50);
 }
 
 function confirmDelete(company) {
@@ -339,12 +313,11 @@ function confirmDelete(company) {
   showToast(`${company} has been permanently deleted`, 'ri-delete-bin-line');
 }
 
-// ── Employee Requests: Reply / Mark as Read / View Details ──
+// ── Employee request buttons ──
 function initRequestButtons() {
-  // Reply buttons
   document.querySelectorAll('.btn-reply').forEach(btn => {
     btn.addEventListener('click', () => {
-      const card = btn.closest('.request-card');
+      const card  = btn.closest('.request-card');
       const title = card?.querySelector('h4')?.textContent?.replace(/●/, '').trim() || 'Request';
       const meta  = card?.querySelector('.request-meta')?.textContent?.trim() || '';
       createModal(`Reply to: ${title.substring(0, 50)}...`, `
@@ -367,13 +340,12 @@ function initRequestButtons() {
     });
   });
 
-  // Mark as Read buttons
   document.querySelectorAll('.btn-secondary').forEach(btn => {
     if (btn.textContent.trim() === 'Mark as Read') {
       btn.addEventListener('click', () => {
         const card = btn.closest('.request-card');
-        const dot = card?.querySelector('.unread-dot');
-        if (dot) { dot.remove(); }
+        const dot  = card?.querySelector('.unread-dot');
+        if (dot) dot.remove();
         card.style.opacity = '0.7';
         btn.textContent = 'Read';
         btn.disabled = true;
@@ -382,13 +354,12 @@ function initRequestButtons() {
     }
     if (btn.textContent.trim() === 'View Details') {
       btn.addEventListener('click', () => {
-        const card = btn.closest('.request-card');
-        const title = card?.querySelector('h4')?.childNodes[0]?.textContent?.trim() || 'Request';
-        const meta  = card?.querySelector('.request-meta')?.textContent?.trim() || '';
-        const body  = card?.querySelector('.request-body')?.textContent?.trim() || '';
+        const card     = btn.closest('.request-card');
+        const title    = card?.querySelector('h4')?.childNodes[0]?.textContent?.trim() || 'Request';
+        const meta     = card?.querySelector('.request-meta')?.textContent?.trim() || '';
+        const body     = card?.querySelector('.request-body')?.textContent?.trim() || '';
         const priority = card?.querySelector('.priority')?.textContent?.trim() || '';
-        const pColor = priority.includes('High') ? '#dc2626' : '#b45309';
-
+        const pColor   = priority.includes('High') ? '#dc2626' : '#b45309';
         createModal(`Request Details`, `
           <div style="display:flex;flex-direction:column;gap:12px;">
             <div style="background:#F0FAFB;border-radius:10px;padding:16px;">
@@ -416,16 +387,12 @@ function sendReply() {
   const text = document.getElementById('replyText')?.value?.trim();
   if (!text) { showToast('Please type a reply first', 'ri-error-warning-line'); return; }
   const card = window._pendingCard;
-  if (card) {
-    const dot = card?.querySelector('.unread-dot');
-    if (dot) dot.remove();
-    card.style.opacity = '0.7';
-  }
+  if (card) { const dot = card?.querySelector('.unread-dot'); if (dot) dot.remove(); card.style.opacity = '0.7'; }
   closeModal();
   showToast('Reply sent successfully', 'ri-send-plane-line');
 }
 
-// ── Filter for Employee Requests ──
+// ── Filter ──
 function initFilter() {
   const filterBtn = document.getElementById('empFilterBtn');
   const dropdown  = document.getElementById('empFilterDropdown');
@@ -433,95 +400,52 @@ function initFilter() {
   const clearBtn  = document.getElementById('empClearFilters');
   const prioBoxes = document.querySelectorAll('.emp-priority-filter');
   const statBoxes = document.querySelectorAll('.emp-status-filter');
-
   if (!filterBtn) return;
 
   let selectedPriorities = new Set();
   let selectedStatuses   = new Set();
 
-  filterBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdown.classList.toggle('hidden');
-  });
-
+  filterBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
   closeBtn?.addEventListener('click', () => dropdown.classList.add('hidden'));
-
-  document.addEventListener('click', (e) => {
-    if (!dropdown?.contains(e.target) && e.target !== filterBtn) {
-      dropdown?.classList.add('hidden');
-    }
-  });
+  document.addEventListener('click', (e) => { if (!dropdown?.contains(e.target) && e.target !== filterBtn) dropdown?.classList.add('hidden'); });
 
   function applyFilter() {
     const hasFilters = selectedPriorities.size > 0 || selectedStatuses.size > 0;
     const total = selectedPriorities.size + selectedStatuses.size;
-
     filterBtn.classList.toggle('active', hasFilters);
     clearBtn?.classList.toggle('hidden', !hasFilters);
-
     const existingCount = filterBtn.querySelector('.filter-count');
     if (existingCount) existingCount.remove();
-    if (hasFilters) {
-      const ct = document.createElement('span');
-      ct.className = 'filter-count';
-      ct.textContent = total;
-      filterBtn.appendChild(ct);
-    }
-
+    if (hasFilters) { const ct = document.createElement('span'); ct.className = 'filter-count'; ct.textContent = total; filterBtn.appendChild(ct); }
     document.querySelectorAll('#employee-requests .request-card').forEach(card => {
-      const priority = card.dataset.priority || '';
-      const status   = card.dataset.status   || '';
-
-      const matchP = selectedPriorities.size === 0 || selectedPriorities.has(priority);
-      const matchS = selectedStatuses.size   === 0 || selectedStatuses.has(status);
-
+      const matchP = selectedPriorities.size === 0 || selectedPriorities.has(card.dataset.priority);
+      const matchS = selectedStatuses.size   === 0 || selectedStatuses.has(card.dataset.status);
       card.style.display = (matchP && matchS) ? '' : 'none';
     });
   }
 
-  prioBoxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.checked ? selectedPriorities.add(cb.value) : selectedPriorities.delete(cb.value);
-      applyFilter();
-    });
-  });
-
-  statBoxes.forEach(cb => {
-    cb.addEventListener('change', () => {
-      cb.checked ? selectedStatuses.add(cb.value) : selectedStatuses.delete(cb.value);
-      applyFilter();
-    });
-  });
-
-  clearBtn?.addEventListener('click', () => {
-    selectedPriorities.clear();
-    selectedStatuses.clear();
-    prioBoxes.forEach(cb => cb.checked = false);
-    statBoxes.forEach(cb => cb.checked = false);
-    applyFilter();
-  });
+  prioBoxes.forEach(cb => cb.addEventListener('change', () => { cb.checked ? selectedPriorities.add(cb.value) : selectedPriorities.delete(cb.value); applyFilter(); }));
+  statBoxes.forEach(cb => cb.addEventListener('change', () => { cb.checked ? selectedStatuses.add(cb.value) : selectedStatuses.delete(cb.value); applyFilter(); }));
+  clearBtn?.addEventListener('click', () => { selectedPriorities.clear(); selectedStatuses.clear(); prioBoxes.forEach(cb => cb.checked = false); statBoxes.forEach(cb => cb.checked = false); applyFilter(); });
 }
 
-// ── User Management Search ──
+// ── Search ──
 function initSearch() {
   const umSearch = document.querySelector('#user-management .search');
   if (umSearch) {
     umSearch.addEventListener('input', () => {
       const q = umSearch.value.toLowerCase().trim();
       document.querySelectorAll('#user-management tbody tr').forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = (!q || text.includes(q)) ? '' : 'none';
+        row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
       });
     });
   }
-
   const empSearch = document.querySelector('#employee-requests .search');
   if (empSearch) {
     empSearch.addEventListener('input', () => {
       const q = empSearch.value.toLowerCase().trim();
       document.querySelectorAll('#employee-requests .request-card').forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = (!q || text.includes(q)) ? '' : 'none';
+        card.style.display = (!q || card.textContent.toLowerCase().includes(q)) ? '' : 'none';
       });
     });
   }
@@ -532,9 +456,7 @@ function initLogout() {
   const logoutBtn = document.querySelector('.logout');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
-      createModal('Log Out', `
-        <p style="font-size:13px;color:#4a6464;line-height:1.6;">Are you sure you want to log out of the Admin Panel?</p>
-      `, [
+      createModal('Log Out', `<p style="font-size:13px;color:#4a6464;line-height:1.6;">Are you sure you want to log out of the Admin Panel?</p>`, [
         { label: 'Cancel', fn: 'closeModal()' },
         { label: 'Log Out', fn: 'confirmLogout()', primary: true }
       ]);
