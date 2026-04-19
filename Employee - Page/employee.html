@@ -8,6 +8,169 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="employee.css">
+
+  <style>
+    /* ══════════════════════════════════════════════
+       MASHA AI WIDGET — Employee Dashboard styles
+       Matches the employee page's teal/dark palette
+       ══════════════════════════════════════════════ */
+
+    .masha-fab {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 1000;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: #0D3B3B;
+      border: 1.5px solid rgba(181,234,240,0.25);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(13,59,59,0.5);
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .masha-fab:hover {
+      transform: translateY(-2px) scale(1.04);
+      box-shadow: 0 8px 28px rgba(13,59,59,0.6);
+      background: #0f4848;
+    }
+    .masha-fab i { font-size: 22px; color: #B5EAF0; }
+    .masha-fab .icon-open  { display: flex; }
+    .masha-fab .icon-close { display: none; }
+    .masha-fab.open .icon-open  { display: none; }
+    .masha-fab.open .icon-close { display: flex; }
+    .masha-fab .fab-dot {
+      position: absolute; top: 5px; right: 5px;
+      width: 9px; height: 9px; border-radius: 50%;
+      background: #0FA3B1; border: 2px solid #0D3B3B;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%       { transform: scale(1.4); opacity: 0.6; }
+    }
+
+    .masha-window {
+      position: fixed;
+      bottom: 92px; right: 28px;
+      z-index: 999;
+      width: 360px; height: 520px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      border: 1px solid rgba(13,59,59,0.15);
+      box-shadow: 0 16px 48px rgba(13,59,59,0.22);
+      display: flex; flex-direction: column; overflow: hidden;
+      transform: scale(0.92) translateY(16px);
+      opacity: 0; pointer-events: none;
+      transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.2s;
+    }
+    .masha-window.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+
+    .masha-header {
+      background: #0D3B3B;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+      border-bottom: 1px solid rgba(181,234,240,0.1);
+    }
+    .masha-avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(181,234,240,0.12); border: 1.5px solid rgba(181,234,240,0.25);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .masha-header-info { flex: 1; }
+    .masha-name { font-size: 14px; font-weight: 600; color: #E8F5F6; letter-spacing: -0.1px; }
+    .masha-status { display: flex; align-items: center; gap: 4px; font-size: 10px; color: rgba(181,234,240,0.65); }
+    .masha-status-dot { width: 5px; height: 5px; border-radius: 50%; background: #22c55e; }
+    .masha-header-actions { display: flex; gap: 4px; }
+    .masha-header-btn {
+      width: 28px; height: 28px; border-radius: 7px;
+      background: rgba(181,234,240,0.08); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(181,234,240,0.6); font-size: 15px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .masha-header-btn:hover { background: rgba(181,234,240,0.16); color: #B5EAF0; }
+
+    .masha-chips {
+      padding: 10px 12px 8px; display: flex; gap: 6px; flex-wrap: wrap;
+      background: #f8fafa; border-bottom: 1px solid rgba(13,59,59,0.07); flex-shrink: 0;
+    }
+    .masha-chip {
+      padding: 4px 10px; border-radius: 6px;
+      border: 1px solid rgba(13,59,59,0.12); background: rgba(13,59,59,0.04);
+      color: #0D3B3B; font-size: 11px; font-weight: 500; cursor: pointer;
+      transition: background 0.2s, border-color 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .masha-chip:hover { background: rgba(13,59,59,0.08); border-color: rgba(13,59,59,0.2); }
+
+    .masha-messages {
+      flex: 1; overflow-y: auto; padding: 14px;
+      display: flex; flex-direction: column; gap: 10px;
+      scrollbar-width: thin; scrollbar-color: rgba(13,59,59,0.1) transparent;
+    }
+    .masha-messages::-webkit-scrollbar { width: 3px; }
+    .masha-messages::-webkit-scrollbar-thumb { background: rgba(13,59,59,0.12); border-radius: 2px; }
+
+    .msg-row { display: flex; gap: 7px; align-items: flex-end; }
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-bubble-avatar {
+      width: 26px; height: 26px; border-radius: 8px;
+      background: rgba(13,59,59,0.06); display: flex;
+      align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0;
+    }
+    .msg-bubble { max-width: 80%; padding: 9px 12px; border-radius: 12px; font-size: 12.5px; line-height: 1.55; }
+    .msg-row.bot .msg-bubble {
+      background: #f4f9f9; color: #1a1a1a;
+      border: 1px solid rgba(13,59,59,0.09); border-bottom-left-radius: 3px;
+    }
+    .msg-row.user .msg-bubble {
+      background: #0D3B3B; color: #E8F5F6; border-bottom-right-radius: 3px;
+    }
+    .msg-time { font-size: 10px; color: #9ab0b0; margin-top: 2px; padding: 0 3px; }
+    .msg-row.user .msg-time { text-align: right; }
+
+    .typing-indicator {
+      display: flex; align-items: center; gap: 4px; padding: 10px 12px;
+      background: #f4f9f9; border: 1px solid rgba(13,59,59,0.09);
+      border-radius: 12px; border-bottom-left-radius: 3px; width: fit-content;
+    }
+    .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: #9ab0b0; animation: typing-bounce 1.2s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30%            { transform: translateY(-5px); opacity: 1; }
+    }
+
+    .masha-input-area {
+      padding: 10px 12px; border-top: 1px solid rgba(13,59,59,0.08);
+      background: #FFFFFF; display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0;
+    }
+    .masha-textarea {
+      flex: 1; resize: none; border: 1px solid rgba(13,59,59,0.12);
+      border-radius: 10px; padding: 8px 12px;
+      font-family: 'Inter', sans-serif; font-size: 12.5px; color: #1A1A1A;
+      background: #f8fafa; outline: none; max-height: 90px; min-height: 36px;
+      line-height: 1.5; transition: border-color 0.2s;
+    }
+    .masha-textarea::placeholder { color: #9ab0b0; }
+    .masha-textarea:focus { border-color: #0D3B3B; background: #fff; }
+    .masha-send {
+      width: 36px; height: 36px; border-radius: 10px; background: #0D3B3B;
+      border: none; cursor: pointer; display: flex; align-items: center;
+      justify-content: center; color: #B5EAF0; font-size: 16px; flex-shrink: 0;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .masha-send:hover { background: #0f4848; transform: translateY(-1px); }
+    .masha-send:disabled { background: rgba(13,59,59,0.15); color: rgba(181,234,240,0.4); cursor: default; transform: none; }
+
+    .masha-powered { text-align: center; padding: 5px 0 7px; font-size: 10px; color: #9ab0b0; background: #fff; flex-shrink: 0; }
+    .masha-powered span { color: #0FA3B1; font-weight: 600; }
+  </style>
 </head>
 <body>
 
@@ -58,8 +221,6 @@
 
       <!-- LEFT PANEL -->
       <div class="left-panel">
-
-        <!-- ── View toggle: My Tasks / User Messages ── -->
         <div class="tabs">
           <button class="view-btn active" data-view="tasks">
             <i class="ri-file-text-line"></i> My Tasks
@@ -70,12 +231,8 @@
           </button>
         </div>
 
-        <!-- ══════════════════════════════
-             TASKS VIEW
-             ══════════════════════════════ -->
+        <!-- TASKS VIEW -->
         <div id="tasksView" class="view-content">
-
-          <!-- Task sub-tabs -->
           <div id="taskTabs">
             <div class="sub-tabs">
               <button class="tab active" data-tab="assigned">Assigned</button>
@@ -84,7 +241,6 @@
             </div>
           </div>
 
-          <!-- Task search (no filter needed for tasks) -->
           <div class="search-row">
             <div class="search-wrap">
               <i class="ri-search-line search-icon"></i>
@@ -92,9 +248,7 @@
             </div>
           </div>
 
-          <!-- ── Assigned tasks ── -->
           <div class="panel-body" id="tasksBody">
-
             <div class="task-card" data-tab-content="assigned">
               <div class="task-header">
                 <div class="task-info">
@@ -163,28 +317,21 @@
               </div>
             </div>
 
-            <!-- Pending / Completed placeholders -->
             <div class="empty-tab" data-tab-content="pending" style="display:none;">
               <p class="empty-state">No pending tasks.</p>
             </div>
             <div class="empty-tab" data-tab-content="completed" style="display:none;">
               <p class="empty-state">No completed tasks.</p>
             </div>
+          </div>
+        </div>
 
-          </div><!-- /tasksBody -->
-        </div><!-- /tasksView -->
-
-        <!-- ══════════════════════════════
-             MESSAGES VIEW
-             ══════════════════════════════ -->
+        <!-- MESSAGES VIEW -->
         <div id="messagesView" class="view-content" style="display:none;">
-
-          <!-- Messages header -->
           <div id="messagesHeader">
             <h2 class="panel-title">User Messages</h2>
           </div>
 
-          <!-- Search + Filter row -->
           <div class="search-row">
             <div class="search-wrap">
               <i class="ri-search-line search-icon"></i>
@@ -194,7 +341,6 @@
               <button class="filter-btn" id="filterBtn" aria-label="Filter">
                 <i class="ri-filter-3-line"></i>
               </button>
-              <!-- Filter Dropdown -->
               <div class="filter-dropdown hidden" id="filterDropdown">
                 <div class="filter-header">
                   <span>Filter Messages</span>
@@ -216,14 +362,12 @@
             </div>
           </div>
 
-          <!-- Message cards -->
           <div class="panel-body" id="messagesBody">
-
             <div class="msg-card unread"
               data-priority="High" data-status="Unread"
               data-user="Global Exports Ltd"
               data-subject="Verification document rejected - Need clarification"
-              data-text="My business license was rejected but I don't understand why. The document is valid and up to date. Can you please review it again or let me know what's missing?">
+              data-text="My business license was rejected but I don't understand why.">
               <div class="request-header">
                 <div class="request-title-row">
                   <h4>Verification document rejected — Need clarification <span class="unread-dot"></span></h4>
@@ -247,7 +391,7 @@
               data-priority="Medium" data-status="Unread"
               data-user="Asian Trade Co"
               data-subject="How long does verification take?"
-              data-text="I submitted all my documents 3 days ago and haven't heard back. I have an urgent trade deal that requires my account to be verified. What's the typical timeline?">
+              data-text="I submitted all my documents 3 days ago and haven't heard back.">
               <div class="request-header">
                 <div class="request-title-row">
                   <h4>How long does verification take? <span class="unread-dot"></span></h4>
@@ -271,7 +415,7 @@
               data-priority="Medium" data-status="Read"
               data-user="Euro Import Solutions"
               data-subject="Unable to upload tax certificate"
-              data-text="I'm trying to upload my tax certificate for verification but keep getting an error message. The file is a PDF and under 5MB. Can you help?">
+              data-text="I'm trying to upload my tax certificate for verification but keep getting an error message.">
               <div class="request-header">
                 <div class="request-title-row">
                   <h4>Unable to upload tax certificate</h4>
@@ -294,7 +438,7 @@
               data-priority="Low" data-status="Read"
               data-user="Middle East Trading"
               data-subject="Request to update company information"
-              data-text="We recently changed our company address and business registration number. How do I update this information on my verified profile?">
+              data-text="We recently changed our company address and business registration number.">
               <div class="request-header">
                 <div class="request-title-row">
                   <h4>Request to update company information</h4>
@@ -317,7 +461,7 @@
               data-priority="High" data-status="Read"
               data-user="Latin America Exports"
               data-subject="Account suspended - Appeal request"
-              data-text="My account was suspended for suspicious activity but this must be a mistake. I only use one account and all my documents are legitimate. Please review my case.">
+              data-text="My account was suspended for suspicious activity but this must be a mistake.">
               <div class="request-header">
                 <div class="request-title-row">
                   <h4>Account suspended — Appeal request</h4>
@@ -335,19 +479,14 @@
                 <button class="btn-push" data-id="5"><i class="ri-arrow-up-circle-line"></i> Push to Admin</button>
               </div>
             </div>
-
-          </div><!-- /messagesBody -->
-        </div><!-- /messagesView -->
-
-      </div><!-- /left-panel -->
+          </div>
+        </div>
+      </div>
 
       <!-- RIGHT PANEL -->
       <div class="right-panel">
-
-        <!-- Recent Activity -->
         <div class="card-box">
           <h3>Recent Activity</h3>
-
           <div class="pending-item">
             <div class="pending-icon" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.2);color:#16a34a">
               <i class="ri-checkbox-circle-line"></i>
@@ -358,7 +497,6 @@
               <span class="pending-date">2 hours ago</span>
             </div>
           </div>
-
           <div class="pending-item">
             <div class="pending-icon" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.2);color:#16a34a">
               <i class="ri-checkbox-circle-line"></i>
@@ -369,7 +507,6 @@
               <span class="pending-date">4 hours ago</span>
             </div>
           </div>
-
           <div class="pending-item">
             <div class="pending-icon" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.2);color:#16a34a">
               <i class="ri-checkbox-circle-line"></i>
@@ -380,11 +517,9 @@
               <span class="pending-date">5 hours ago</span>
             </div>
           </div>
-
           <button class="view-all">View All Activity</button>
         </div>
 
-        <!-- Quick Links -->
         <div class="card-box">
           <h3>Quick Links</h3>
           <ul>
@@ -393,11 +528,214 @@
             <li><i class="ri-error-warning-line"></i> Report Issue</li>
           </ul>
         </div>
-
-      </div><!-- /right-panel -->
+      </div>
     </section>
   </main>
 
+  <!-- ═══════════════════════════════════════════════════════════
+       MASHA AI WIDGET
+       ═══════════════════════════════════════════════════════════ -->
+
+  <button class="masha-fab" id="mashaFab" aria-label="Open Masha AI">
+    <span class="fab-dot"></span>
+    <i class="ri-robot-line icon-open"></i>
+    <i class="ri-close-line icon-close"></i>
+  </button>
+
+  <div class="masha-window" id="mashaWindow">
+    <div class="masha-header">
+      <div class="masha-avatar">🤖</div>
+      <div class="masha-header-info">
+        <div class="masha-name">Masha AI</div>
+        <div class="masha-status"><div class="masha-status-dot"></div>Online · Employee Assistant</div>
+      </div>
+      <div class="masha-header-actions">
+        <button class="masha-header-btn" id="mashaClear" title="Clear chat"><i class="ri-delete-bin-line"></i></button>
+        <button class="masha-header-btn" id="mashaMinimize" title="Close"><i class="ri-subtract-line"></i></button>
+      </div>
+    </div>
+
+    <div class="masha-chips" id="mashaChips">
+      <button class="masha-chip" data-msg="How do I complete a verification task?">Complete verification</button>
+      <button class="masha-chip" data-msg="How do I push a message to admin?">Push to admin</button>
+      <button class="masha-chip" data-msg="How do I reply to a user message?">Reply to user</button>
+      <button class="masha-chip" data-msg="How do I assign a message to a task?">Assign to task</button>
+    </div>
+
+    <div class="masha-messages" id="mashaMessages"></div>
+
+    <div class="masha-input-area">
+      <textarea class="masha-textarea" id="mashaInput" placeholder="Ask Masha anything..." rows="1"></textarea>
+      <button class="masha-send" id="mashaSend"><i class="ri-send-plane-fill"></i></button>
+    </div>
+
+    <div class="masha-powered">Powered by <span>Masha AI</span> · Employee Panel</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+
   <script src="employee.js"></script>
+
+  <script>
+    /* ── Masha AI — Employee knowledge base ── */
+    const mashaKB = [
+      {
+        patterns: ['complete', 'finish', 'verification task', 'how do i verify', 'verify business'],
+        response: `To complete a verification task:\n\n1. 📋 Open the task from **My Tasks** → Assigned tab\n2. Click the task card to view attached documents\n3. Review: business registration, license, and ID docs\n4. If all clear → mark as **Approved** ✅\n5. If something is missing → click **Request More Info**\n\nCompleted tasks move automatically to the Completed tab.`
+      },
+      {
+        patterns: ['push', 'escalate', 'admin', 'push to admin'],
+        response: `To push a message to admin:\n\n1. Go to **User Messages** using the top tabs\n2. Find the relevant message card\n3. Click **Push to Admin** (the teal button with the arrow)\n4. Add a note explaining why you're escalating\n5. The admin is notified immediately\n\n💡 Use this for suspended account appeals, compliance flags, or anything that needs admin authority.`
+      },
+      {
+        patterns: ['reply', 'respond', 'reply to user', 'message user'],
+        response: `To reply to a user message:\n\n1. Switch to **User Messages** tab\n2. Find the message card\n3. Click **Reply to User**\n4. Write your response in the reply panel\n5. Hit **Send** — the user gets an email notification\n\n✉️ Keep replies professional and reference the specific issue.`
+      },
+      {
+        patterns: ['assign', 'task', 'create task', 'assign to task'],
+        response: `To assign a user message to a task:\n\n1. In **User Messages**, find the message\n2. Click **Assign to Task**\n3. Link to an existing task or create a new one\n4. The message is attached to the task for tracking\n\nThis keeps your task list and messages in sync.`
+      },
+      {
+        patterns: ['mark as read', 'read', 'unread'],
+        response: `To mark a message as read:\n\n• Click **Mark as Read** on any unread message card\n• The blue unread dot disappears\n• You can filter by Read/Unread using the filter button 🔽\n\nUnread messages are shown with a blue dot next to the title.`
+      },
+      {
+        patterns: ['filter', 'search', 'find message', 'priority'],
+        response: `To filter messages:\n\n• Use the **search bar** to find by company name or subject\n• Click the **filter icon** 🔽 to filter by:\n  - Priority: High / Medium / Low\n  - Status: Read / Unread\n\nYou can combine multiple filters at once. Click **Clear All Filters** to reset.`
+      },
+      {
+        patterns: ['tab', 'switch', 'pending tab', 'completed tab', 'assigned tab'],
+        response: `Task tabs explained:\n\n📌 **Assigned** — tasks currently given to you\n⏳ **Pending** — tasks waiting on more information\n✅ **Completed** — finished tasks\n\nSwitch between them using the sub-tabs above the task list. Use the search bar to find tasks by name.`
+      },
+      {
+        patterns: ['hello', 'hi', 'hey', 'howzit', 'good morning', 'good afternoon'],
+        response: `Hi there! 👋 I'm **Masha**, your Trade Grid assistant.\n\nI can help you with:\n• Completing verification tasks\n• Replying to user messages\n• Escalating to admin\n• Filtering and managing your queue\n\nWhat do you need?`
+      },
+      {
+        patterns: ['help', 'what can you do', 'how do you work'],
+        response: `Here's what I can help you with:\n\n✅ **Verifications** — how to review and approve docs\n💬 **User messages** — replying, filtering, pushing to admin\n📋 **Tasks** — managing assigned, pending, completed tabs\n🔼 **Escalation** — when and how to push to admin\n\nJust ask me anything!`
+      },
+    ];
+
+    const fallback = `I'm not sure about that one. 🤖\n\nFor platform issues, use **Report Issue** in Quick Links, or ask your team lead.\n\nIs there something else I can help you with?`;
+
+    function getResponse(input) {
+      const lower = input.toLowerCase();
+      for (const entry of mashaKB) {
+        if (entry.patterns.some(p => lower.includes(p))) return entry.response;
+      }
+      return fallback;
+    }
+
+    const fab         = document.getElementById('mashaFab');
+    const win         = document.getElementById('mashaWindow');
+    const messagesEl  = document.getElementById('mashaMessages');
+    const inputEl     = document.getElementById('mashaInput');
+    const sendBtn     = document.getElementById('mashaSend');
+    const clearBtn    = document.getElementById('mashaClear');
+    const minimizeBtn = document.getElementById('mashaMinimize');
+    const chips       = document.querySelectorAll('.masha-chip');
+    const chipsBar    = document.getElementById('mashaChips');
+    let isOpen = false;
+
+    function toggleChat() {
+      isOpen = !isOpen;
+      win.classList.toggle('open', isOpen);
+      fab.classList.toggle('open', isOpen);
+      if (isOpen) {
+        const dot = fab.querySelector('.fab-dot');
+        if (dot) dot.style.display = 'none';
+        setTimeout(() => inputEl.focus(), 300);
+      }
+    }
+
+    fab.addEventListener('click', toggleChat);
+    minimizeBtn.addEventListener('click', toggleChat);
+
+    function addMessage(text, sender) {
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const row = document.createElement('div');
+      row.className = `msg-row ${sender}`;
+      const avatar = document.createElement('div');
+      avatar.className = 'msg-bubble-avatar';
+      avatar.textContent = sender === 'bot' ? '🤖' : '🧑‍💻';
+      const wrap = document.createElement('div');
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      bubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+      const time = document.createElement('div');
+      time.className = 'msg-time';
+      time.textContent = now;
+      wrap.appendChild(bubble);
+      wrap.appendChild(time);
+      if (sender === 'bot') { row.appendChild(avatar); row.appendChild(wrap); }
+      else { row.appendChild(wrap); row.appendChild(avatar); }
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function showTyping() {
+      const row = document.createElement('div');
+      row.className = 'msg-row bot'; row.id = 'typingRow';
+      const avatar = document.createElement('div');
+      avatar.className = 'msg-bubble-avatar'; avatar.textContent = '🤖';
+      const indicator = document.createElement('div');
+      indicator.className = 'typing-indicator';
+      indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+      row.appendChild(avatar); row.appendChild(indicator);
+      messagesEl.appendChild(row);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function hideTyping() {
+      const row = document.getElementById('typingRow');
+      if (row) row.remove();
+    }
+
+    function sendMessage(text) {
+      const msg = (text || inputEl.value).trim();
+      if (!msg) return;
+      addMessage(msg, 'user');
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+      sendBtn.disabled = true;
+      chipsBar.style.display = 'none';
+      showTyping();
+      setTimeout(() => {
+        hideTyping();
+        addMessage(getResponse(msg), 'bot');
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }, 800 + Math.random() * 500);
+    }
+
+    sendBtn.addEventListener('click', () => sendMessage());
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 90) + 'px';
+      sendBtn.disabled = inputEl.value.trim() === '';
+    });
+
+    chips.forEach(chip => chip.addEventListener('click', () => sendMessage(chip.dataset.msg)));
+
+    clearBtn.addEventListener('click', () => {
+      messagesEl.innerHTML = '';
+      chipsBar.style.display = 'flex';
+      addGreeting();
+    });
+
+    function addGreeting() {
+      setTimeout(() => {
+        addMessage(`Hi! 👋 I'm **Masha**, your Trade Grid assistant.\n\nI can help with verifications, user messages, escalating to admin, and managing your task queue.\n\nWhat do you need?`, 'bot');
+      }, 400);
+    }
+
+    sendBtn.disabled = true;
+    addGreeting();
+  </script>
+
 </body>
 </html>

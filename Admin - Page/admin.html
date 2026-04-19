@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Grid Admin</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+
+  <style>
+    /* ── Filter button & dropdown ── */
+    .emp-search-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    .emp-search-row .search { flex: 1; }
+    .emp-filter-wrap { position: relative; flex-shrink: 0; }
+    .emp-filter-btn {
+      height: 42px;
+      padding: 0 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(13,59,59,0.18);
+      background: #F0FAFB;
+      color: #7a9a9a;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 16px;
+      font-family: 'Inter', sans-serif;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      position: relative;
+    }
+    .emp-filter-btn:hover,
+    .emp-filter-btn.active {
+      background: rgba(15,163,177,0.1);
+      border-color: rgba(15,163,177,0.25);
+      color: #0D3B3B;
+    }
+    .filter-count {
+      position: absolute;
+      top: -5px; right: -5px;
+      width: 17px; height: 17px;
+      border-radius: 50%;
+      background: #0FA3B1;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .emp-filter-dropdown {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      width: 248px;
+      border-radius: 14px;
+      border: 1px solid rgba(13,59,59,0.14);
+      background: #fff;
+      box-shadow: 0 10px 36px rgba(13,59,59,0.14);
+      z-index: 300;
+      padding: 14px;
+      font-family: 'Inter', sans-serif;
+    }
+    .emp-filter-dropdown.hidden { display: none; }
+    .emp-filter-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      font-weight: 700;
+      color: #0D3B3B;
+      font-size: 13px;
+    }
+    .emp-close-filter {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 17px;
+      color: #7a9a9a;
+      padding: 3px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+    .emp-close-filter:hover { color: #0D3B3B; }
+    .emp-filter-section { margin-bottom: 12px; }
+    .emp-filter-section-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #7a9a9a;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+    .emp-filter-check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #4a6464;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+    .emp-filter-check input { cursor: pointer; accent-color: #0FA3B1; }
+    .emp-clear-filters {
+      width: 100%;
+      padding: 8px;
+      border-radius: 9px;
+      border: none;
+      background: rgba(220,38,38,0.08);
+      color: #dc2626;
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .emp-clear-filters:hover { background: rgba(220,38,38,0.15); }
+    .emp-clear-filters.hidden { display: none; }
+
+    /* ── Masha widget (same as before) ── */
+    .masha-fab {
+      position: fixed; bottom: 28px; right: 28px; z-index: 1000;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #0D3B3B; border: 1.5px solid rgba(181,234,240,0.25);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 20px rgba(13,59,59,0.5);
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+    }
+    .masha-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 8px 28px rgba(13,59,59,0.6); background: #0f4848; }
+    .masha-fab i { font-size: 22px; color: #B5EAF0; }
+    .masha-fab .icon-open { display: flex; } .masha-fab .icon-close { display: none; }
+    .masha-fab.open .icon-open { display: none; } .masha-fab.open .icon-close { display: flex; }
+    .masha-fab .fab-dot { position: absolute; top: 5px; right: 5px; width: 9px; height: 9px; border-radius: 50%; background: #0FA3B1; border: 2px solid #0D3B3B; animation: pulse-dot 2s infinite; }
+    @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
+    .masha-window { position: fixed; bottom: 92px; right: 28px; z-index: 999; width: 360px; height: 520px; background: #FFFFFF; border-radius: 16px; border: 1px solid rgba(13,59,59,0.15); box-shadow: 0 16px 48px rgba(13,59,59,0.22); display: flex; flex-direction: column; overflow: hidden; transform: scale(0.92) translateY(16px); opacity: 0; pointer-events: none; transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), opacity 0.2s; }
+    .masha-window.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+    .masha-header { background: #0D3B3B; padding: 14px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .masha-avatar { width: 36px; height: 36px; border-radius: 10px; background: rgba(181,234,240,0.12); border: 1.5px solid rgba(181,234,240,0.25); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+    .masha-header-info { flex: 1; }
+    .masha-name { font-size: 14px; font-weight: 600; color: #E8F5F6; }
+    .masha-status { display: flex; align-items: center; gap: 4px; font-size: 10px; color: rgba(181,234,240,0.65); }
+    .masha-status-dot { width: 5px; height: 5px; border-radius: 50%; background: #22c55e; }
+    .masha-header-actions { display: flex; gap: 4px; }
+    .masha-header-btn { width: 28px; height: 28px; border-radius: 7px; background: rgba(181,234,240,0.08); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: rgba(181,234,240,0.6); font-size: 15px; transition: background 0.2s, color 0.2s; }
+    .masha-header-btn:hover { background: rgba(181,234,240,0.16); color: #B5EAF0; }
+    .masha-chips { padding: 10px 12px 8px; display: flex; gap: 6px; flex-wrap: wrap; background: #f8fafa; border-bottom: 1px solid rgba(13,59,59,0.07); flex-shrink: 0; }
+    .masha-chip { padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(13,59,59,0.12); background: rgba(13,59,59,0.04); color: #0D3B3B; font-size: 11px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; }
+    .masha-chip:hover { background: rgba(13,59,59,0.08); }
+    .masha-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; scrollbar-width: thin; }
+    .masha-messages::-webkit-scrollbar { width: 3px; }
+    .masha-messages::-webkit-scrollbar-thumb { background: rgba(13,59,59,0.12); border-radius: 2px; }
+    .msg-row { display: flex; gap: 7px; align-items: flex-end; }
+    .msg-row.user { flex-direction: row-reverse; }
+    .msg-bubble-avatar { width: 26px; height: 26px; border-radius: 8px; background: rgba(13,59,59,0.06); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+    .msg-bubble { max-width: 80%; padding: 9px 12px; border-radius: 12px; font-size: 12.5px; line-height: 1.55; }
+    .msg-row.bot .msg-bubble { background: #f4f9f9; color: #1a1a1a; border: 1px solid rgba(13,59,59,0.09); border-bottom-left-radius: 3px; }
+    .msg-row.user .msg-bubble { background: #0D3B3B; color: #E8F5F6; border-bottom-right-radius: 3px; }
+    .msg-time { font-size: 10px; color: #9ab0b0; margin-top: 2px; padding: 0 3px; }
+    .msg-row.user .msg-time { text-align: right; }
+    .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 10px 12px; background: #f4f9f9; border: 1px solid rgba(13,59,59,0.09); border-radius: 12px; border-bottom-left-radius: 3px; width: fit-content; }
+    .typing-dot { width: 5px; height: 5px; border-radius: 50%; background: #9ab0b0; animation: typing-bounce 1.2s infinite; }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; } .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typing-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-5px); opacity: 1; } }
+    .masha-input-area { padding: 10px 12px; border-top: 1px solid rgba(13,59,59,0.08); background: #FFFFFF; display: flex; gap: 8px; align-items: flex-end; flex-shrink: 0; }
+    .masha-textarea { flex: 1; resize: none; border: 1px solid rgba(13,59,59,0.12); border-radius: 10px; padding: 8px 12px; font-family: 'Inter', sans-serif; font-size: 12.5px; color: #1A1A1A; background: #f8fafa; outline: none; max-height: 90px; min-height: 36px; line-height: 1.5; transition: border-color 0.2s; }
+    .masha-textarea::placeholder { color: #9ab0b0; }
+    .masha-textarea:focus { border-color: #0D3B3B; background: #fff; }
+    .masha-send { width: 36px; height: 36px; border-radius: 10px; background: #0D3B3B; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #B5EAF0; font-size: 16px; flex-shrink: 0; transition: background 0.2s; }
+    .masha-send:hover { background: #0f4848; }
+    .masha-send:disabled { background: rgba(13,59,59,0.15); cursor: default; }
+    .masha-powered { text-align: center; padding: 5px 0 7px; font-size: 10px; color: #9ab0b0; background: #fff; flex-shrink: 0; }
+    .masha-powered span { color: #0FA3B1; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <span>🌐</span>
+      <div>
+        <h2>Trade Grid Admin</h2>
+        <p>Platform Administration</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <i class="ri-settings-3-line" style="font-size:20px; color: var(--text-secondary); cursor:pointer;"></i>
+      <i class="ri-logout-box-r-line" style="font-size:20px; color: var(--text-secondary); cursor:pointer;"></i>
+      <button class="logout">Logout</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <main class="container">
+
+    <!-- STATS -->
+    <section class="stats">
+      <div class="card">
+        <div class="icon"><i class="ri-group-line"></i></div>
+        <p class="growth">+12.5%</p>
+        <h1>2,847</h1>
+        <span>Total Users</span>
+      </div>
+      <div class="card">
+        <div class="icon"><i class="ri-building-2-line"></i></div>
+        <p class="growth">+8.3%</p>
+        <h1>1,423</h1>
+        <span>Active Businesses</span>
+      </div>
+      <div class="card">
+        <div class="icon"><i class="ri-arrow-up-circle-line"></i></div>
+        <p class="growth">+15.7%</p>
+        <h1>4,892</h1>
+        <span>Total Matches</span>
+      </div>
+      <div class="card">
+        <div class="icon"><i class="ri-message-2-line"></i></div>
+        <p class="growth">+23.1%</p>
+        <h1>892</h1>
+        <span>Messages Today</span>
+      </div>
+    </section>
+
+    <!-- MAIN GRID -->
+    <section class="grid">
+
+      <!-- LEFT PANEL -->
+      <div class="left-panel">
+        <div class="tabs">
+          <button class="active" onclick="switchTab(this, 'user-management')">
+            <i class="ri-user-line"></i> User Management
+          </button>
+          <button onclick="switchTab(this, 'employee-requests')">
+            <i class="ri-message-3-line"></i> Employee Requests <span class="badge">2</span>
+          </button>
+        </div>
+
+        <!-- USER MANAGEMENT TAB -->
+        <div id="user-management" class="tab-content">
+          <input type="text" placeholder="Search users..." class="search">
+          <table>
+            <thead>
+              <tr>
+                <th>Company</th><th>Country</th><th>Status</th><th>Joined</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Global Exports Ltd<small>contact@globalexports.com</small></td>
+                <td>USA</td><td><span class="status active">Active</span></td><td>2026-03-28</td><td>⋮</td>
+              </tr>
+              <tr>
+                <td>Asian Trade Co<small>info@asiantrade.jp</small></td>
+                <td>Japan</td><td><span class="status pending">Pending</span></td><td>2026-03-29</td><td>⋮</td>
+              </tr>
+              <tr>
+                <td>Euro Import Solutions<small>hello@euroimport.de</small></td>
+                <td>Germany</td><td><span class="status active">Active</span></td><td>2026-03-30</td><td>⋮</td>
+              </tr>
+              <tr>
+                <td>Middle East Trading<small>contact@metrade.ae</small></td>
+                <td>UAE</td><td><span class="status active">Active</span></td><td>2026-03-31</td><td>⋮</td>
+              </tr>
+              <tr>
+                <td>Latin America Exports<small>info@laexports.br</small></td>
+                <td>Brazil</td><td><span class="status suspended">Suspended</span></td><td>2026-04-01</td><td>⋮</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- EMPLOYEE REQUESTS TAB -->
+        <div id="employee-requests" class="tab-content" style="display:none;">
+
+          <!-- Search + Filter row -->
+          <div class="emp-search-row">
+            <input type="text" placeholder="Search messages..." class="search">
+            <div class="emp-filter-wrap">
+              <button class="emp-filter-btn" id="empFilterBtn" aria-label="Filter">
+                <i class="ri-filter-3-line"></i>
+              </button>
+              <!-- Filter Dropdown -->
+              <div class="emp-filter-dropdown hidden" id="empFilterDropdown">
+                <div class="emp-filter-header">
+                  <span>Filter Requests</span>
+                  <button class="emp-close-filter" id="empCloseFilter"><i class="ri-close-line"></i></button>
+                </div>
+                <div class="emp-filter-section">
+                  <div class="emp-filter-section-title">Priority</div>
+                  <label class="emp-filter-check"><input type="checkbox" value="High" class="emp-priority-filter"> High Priority</label>
+                  <label class="emp-filter-check"><input type="checkbox" value="Medium" class="emp-priority-filter"> Medium Priority</label>
+                  <label class="emp-filter-check"><input type="checkbox" value="Low" class="emp-priority-filter"> Low Priority</label>
+                </div>
+                <div class="emp-filter-section">
+                  <div class="emp-filter-section-title">Status</div>
+                  <label class="emp-filter-check"><input type="checkbox" value="Unread" class="emp-status-filter"> Unread</label>
+                  <label class="emp-filter-check"><input type="checkbox" value="Read" class="emp-status-filter"> Read</label>
+                </div>
+                <button class="emp-clear-filters hidden" id="empClearFilters">Clear All Filters</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Request cards — data attributes for filtering -->
+          <div class="request-card" data-priority="High" data-status="Unread">
+            <div class="request-header">
+              <div class="request-title-row">
+                <h4>Need approval for expedited verification <span class="unread-dot"></span></h4>
+                <span class="priority high">High Priority</span>
+              </div>
+              <p class="request-meta"><strong>John Smith</strong> &bull; Support Specialist &bull; 2026-04-01 14:30</p>
+            </div>
+            <p class="request-body">Client Global Exports Ltd is requesting expedited verification for time-sensitive trade deal. Documents are complete and require admin review.</p>
+            <div class="request-actions">
+              <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply</button>
+              <button class="btn-secondary">Mark as Read</button>
+              <button class="btn-secondary">View Details</button>
+            </div>
+          </div>
+
+          <div class="request-card" data-priority="Medium" data-status="Unread">
+            <div class="request-header">
+              <div class="request-title-row">
+                <h4>Suspended account appeal review <span class="unread-dot"></span></h4>
+                <span class="priority medium">Medium Priority</span>
+              </div>
+              <p class="request-meta"><strong>Sarah Johnson</strong> &bull; Verification Specialist &bull; 2026-04-01 12:15</p>
+            </div>
+            <p class="request-body">User Asian Trade Co has submitted an appeal for account suspension. All required documentation has been provided for review.</p>
+            <div class="request-actions">
+              <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply</button>
+              <button class="btn-secondary">Mark as Read</button>
+              <button class="btn-secondary">View Details</button>
+            </div>
+          </div>
+
+          <div class="request-card" data-priority="High" data-status="Read">
+            <div class="request-header">
+              <div class="request-title-row">
+                <h4>Technical issue with document upload</h4>
+                <span class="priority high">High Priority</span>
+              </div>
+              <p class="request-meta"><strong>Michael Chen</strong> &bull; Support Specialist &bull; 2026-04-01 10:45</p>
+            </div>
+            <p class="request-body">Multiple users reporting issues with PDF document uploads in verification section. Needs technical investigation.</p>
+            <div class="request-actions">
+              <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply</button>
+              <button class="btn-secondary">Mark as Read</button>
+              <button class="btn-secondary">View Details</button>
+            </div>
+          </div>
+
+          <div class="request-card" data-priority="High" data-status="Read">
+            <div class="request-header">
+              <div class="request-title-row">
+                <h4>Compliance flag on business profile</h4>
+                <span class="priority high">High Priority</span>
+              </div>
+              <p class="request-meta"><strong>Emma Wilson</strong> &bull; Compliance Officer &bull; 2026-03-31 16:20</p>
+            </div>
+            <p class="request-body">Euro Import Solutions profile has been flagged for potential compliance issues. Requires admin decision on account status.</p>
+            <div class="request-actions">
+              <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply</button>
+              <button class="btn-secondary">Mark as Read</button>
+              <button class="btn-secondary">View Details</button>
+            </div>
+          </div>
+
+          <div class="request-card" data-priority="Medium" data-status="Read">
+            <div class="request-header">
+              <div class="request-title-row">
+                <h4>Request for additional verification resources</h4>
+                <span class="priority medium">Medium Priority</span>
+              </div>
+              <p class="request-meta"><strong>David Lee</strong> &bull; Verification Specialist &bull; 2026-03-31 14:00</p>
+            </div>
+            <p class="request-body">Current verification queue is at 45+ pending requests. Requesting approval for overtime or additional team support.</p>
+            <div class="request-actions">
+              <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply</button>
+              <button class="btn-secondary">Mark as Read</button>
+              <button class="btn-secondary">View Details</button>
+            </div>
+          </div>
+
+        </div><!-- /employee-requests -->
+      </div><!-- /left-panel -->
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <div class="card-box">
+          <h3>Pending Verifications</h3>
+          <div class="pending-item">
+            <div class="pending-icon"><i class="ri-time-line"></i></div>
+            <div class="pending-info">
+              <p>Tech Import Corp</p>
+              <span>Document Verification</span>
+              <span class="pending-date">2026-04-01</span>
+            </div>
+          </div>
+          <div class="pending-item">
+            <div class="pending-icon"><i class="ri-time-line"></i></div>
+            <div class="pending-info">
+              <p>Global Trade Partners</p>
+              <span>Business License</span>
+              <span class="pending-date">2026-03-31</span>
+            </div>
+          </div>
+          <div class="pending-item">
+            <div class="pending-icon"><i class="ri-time-line"></i></div>
+            <div class="pending-info">
+              <p>International Exports Inc</p>
+              <span>Identity Verification</span>
+              <span class="pending-date">2026-03-30</span>
+            </div>
+          </div>
+          <button class="view-all">View All Pending</button>
+        </div>
+
+        <div class="card-box">
+          <h3>Quick Actions</h3>
+          <ul>
+            <li><i class="ri-bar-chart-line"></i> View Analytics</li>
+            <li><i class="ri-user-settings-line"></i> Manage Users</li>
+            <li><i class="ri-error-warning-line"></i> Review Reports</li>
+            <li><i class="ri-settings-4-line"></i> Platform Settings</li>
+          </ul>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- MASHA AI WIDGET -->
+  <button class="masha-fab" id="mashaFab" aria-label="Open Masha AI">
+    <span class="fab-dot"></span>
+    <i class="ri-robot-line icon-open"></i>
+    <i class="ri-close-line icon-close"></i>
+  </button>
+
+  <div class="masha-window" id="mashaWindow">
+    <div class="masha-header">
+      <div class="masha-avatar">🤖</div>
+      <div class="masha-header-info">
+        <div class="masha-name">Masha AI</div>
+        <div class="masha-status"><div class="masha-status-dot"></div>Online · Admin Assistant</div>
+      </div>
+      <div class="masha-header-actions">
+        <button class="masha-header-btn" id="mashaClear" title="Clear chat"><i class="ri-delete-bin-line"></i></button>
+        <button class="masha-header-btn" id="mashaMinimize" title="Close"><i class="ri-subtract-line"></i></button>
+      </div>
+    </div>
+    <div class="masha-chips" id="mashaChips">
+      <button class="masha-chip" data-msg="How do I approve a verification?">Approve verification</button>
+      <button class="masha-chip" data-msg="How do I suspend a user?">Suspend user</button>
+      <button class="masha-chip" data-msg="Show me platform stats">Platform stats</button>
+      <button class="masha-chip" data-msg="How do I reply to an employee request?">Reply to request</button>
+    </div>
+    <div class="masha-messages" id="mashaMessages"></div>
+    <div class="masha-input-area">
+      <textarea class="masha-textarea" id="mashaInput" placeholder="Ask Masha anything..." rows="1"></textarea>
+      <button class="masha-send" id="mashaSend"><i class="ri-send-plane-fill"></i></button>
+    </div>
+    <div class="masha-powered">Powered by <span>Masha AI</span> · Admin Panel</div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="admin.js"></script>
+  <script>
+    /* ── Masha AI ── */
+    const mashaKB = [
+      { patterns: ['approve','verification','verify','pending verif'], response: `To approve a verification:\n\n1. 📋 Go to **Pending Verifications** in the right panel\n2. Click on the business name to view documents\n3. Review all submitted files\n4. Click **Approve** to grant verified status\n\nApproval sends an automatic email to the business.` },
+      { patterns: ['suspend','ban','deactivate','block user'], response: `To suspend a user account:\n\n1. Find the user in **User Management**\n2. Click the ⋮ actions menu on their row\n3. Select **Suspend Account**\n4. Add a reason (sent to the user)\n\n⚠️ Suspended users lose access immediately.` },
+      { patterns: ['stat','analytics','numbers','growth','metric'], response: `Current platform stats:\n\n👥 **2,847** total users (+12.5%)\n🏢 **1,423** active businesses (+8.3%)\n🔗 **4,892** total matches (+15.7%)\n💬 **892** messages today (+23.1%)` },
+      { patterns: ['reply','respond','employee request'], response: `To reply to an employee request:\n\n1. Switch to **Employee Requests** tab\n2. Click **Reply** on the relevant card\n3. Type your response\n4. Hit **Send** — the employee is notified` },
+      { patterns: ['filter','priority','unread','read'], response: `To filter employee requests:\n\n1. Switch to the **Employee Requests** tab\n2. Click the **filter icon** (⚙️) next to the search bar\n3. Select Priority (High/Medium/Low) and/or Status (Read/Unread)\n4. Cards are filtered instantly` },
+      { patterns: ['hello','hi','hey'], response: `Hello, Admin! 👋 I'm **Masha**, your Trade Grid AI assistant.\n\nI can help with verifications, user management, employee requests, filtering, and platform stats.\n\nWhat do you need?` },
+      { patterns: ['delete','remove user'], response: `To permanently delete a user:\n\n⚠️ **This cannot be undone.**\n\n1. Open **User Management**\n2. Click ⋮ next to the user\n3. Select **Delete Account**\n4. Type DELETE to confirm` },
+    ];
+    const fallback = `I'm not sure about that specific task. For platform issues, check Documentation or contact the dev team.\n\nAnything else I can help with?`;
+    function getResponse(input) {
+      const lower = input.toLowerCase();
+      for (const entry of mashaKB) { if (entry.patterns.some(p => lower.includes(p))) return entry.response; }
+      return fallback;
+    }
+    const fab = document.getElementById('mashaFab'), win = document.getElementById('mashaWindow');
+    const messagesEl = document.getElementById('mashaMessages'), inputEl = document.getElementById('mashaInput');
+    const sendBtn = document.getElementById('mashaSend'), clearBtn = document.getElementById('mashaClear');
+    const minimizeBtn = document.getElementById('mashaMinimize'), chips = document.querySelectorAll('.masha-chip');
+    const chipsBar = document.getElementById('mashaChips');
+    let isOpen = false;
+    function toggleChat() { isOpen = !isOpen; win.classList.toggle('open', isOpen); fab.classList.toggle('open', isOpen); if (isOpen) { const d = fab.querySelector('.fab-dot'); if(d) d.style.display='none'; setTimeout(()=>inputEl.focus(),300); } }
+    fab.addEventListener('click', toggleChat); minimizeBtn.addEventListener('click', toggleChat);
+    function addMessage(text, sender) { const now = new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); const row=document.createElement('div'); row.className=`msg-row ${sender}`; const av=document.createElement('div'); av.className='msg-bubble-avatar'; av.textContent=sender==='bot'?'🤖':'🧑‍💼'; const wrap=document.createElement('div'); const bub=document.createElement('div'); bub.className='msg-bubble'; bub.innerHTML=text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'); const t=document.createElement('div'); t.className='msg-time'; t.textContent=now; wrap.appendChild(bub); wrap.appendChild(t); if(sender==='bot'){row.appendChild(av);row.appendChild(wrap);}else{row.appendChild(wrap);row.appendChild(av);} messagesEl.appendChild(row); messagesEl.scrollTop=messagesEl.scrollHeight; }
+    function showTyping() { const row=document.createElement('div'); row.className='msg-row bot'; row.id='typingRow'; const av=document.createElement('div'); av.className='msg-bubble-avatar'; av.textContent='🤖'; const ind=document.createElement('div'); ind.className='typing-indicator'; ind.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>'; row.appendChild(av); row.appendChild(ind); messagesEl.appendChild(row); messagesEl.scrollTop=messagesEl.scrollHeight; }
+    function hideTyping() { const r=document.getElementById('typingRow'); if(r)r.remove(); }
+    function sendMessage(text) { const msg=(text||inputEl.value).trim(); if(!msg)return; addMessage(msg,'user'); inputEl.value=''; inputEl.style.height='auto'; sendBtn.disabled=true; chipsBar.style.display='none'; showTyping(); setTimeout(()=>{ hideTyping(); addMessage(getResponse(msg),'bot'); sendBtn.disabled=false; inputEl.focus(); },800+Math.random()*500); }
+    sendBtn.addEventListener('click',()=>sendMessage()); inputEl.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}); inputEl.addEventListener('input',()=>{inputEl.style.height='auto';inputEl.style.height=Math.min(inputEl.scrollHeight,90)+'px';sendBtn.disabled=inputEl.value.trim()==='';});
+    chips.forEach(c=>c.addEventListener('click',()=>sendMessage(c.dataset.msg)));
+    clearBtn.addEventListener('click',()=>{messagesEl.innerHTML='';chipsBar.style.display='flex';addGreeting();});
+    function addGreeting(){setTimeout(()=>{addMessage(`Hi, Admin! 👋 I'm **Masha**, your Trade Grid AI assistant.\n\nI can help with verifications, user management, employee request filtering, and stats.\n\nWhat do you need?`,'bot');},400);}
+    sendBtn.disabled=true; addGreeting();
+  </script>
+</body>
+</html>
