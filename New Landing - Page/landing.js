@@ -1,18 +1,60 @@
 /* ============================================================
    TRADE GRID — landing.js
-   Scroll-spy | Trending products | Masha AI widget
+   Scroll-spy | Trending products | Masha AI widget | Hamburger menu
    ============================================================ */
+
+/* ── Mobile hamburger menu ── */
+(function () {
+  const hamburger  = document.getElementById('navHamburger');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (!hamburger || !mobileMenu) return;
+
+  function closeMobileMenu() {
+    hamburger.classList.remove('open');
+    mobileMenu.classList.remove('open');
+  }
+
+  hamburger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = mobileMenu.classList.contains('open');
+    if (isOpen) {
+      closeMobileMenu();
+    } else {
+      hamburger.classList.add('open');
+      mobileMenu.classList.add('open');
+    }
+  });
+
+  /* Close when a mobile nav link is clicked */
+  document.querySelectorAll('[data-mobile-link]').forEach(link => {
+    link.addEventListener('click', () => {
+      closeMobileMenu();
+    });
+  });
+
+  /* Close when clicking outside */
+  document.addEventListener('click', (e) => {
+    if (!mobileMenu.contains(e.target) && e.target !== hamburger) {
+      closeMobileMenu();
+    }
+  });
+})();
 
 /* ── Scroll-spy ── */
 (function () {
   const sections = document.querySelectorAll('#landing, #aboutus, #markets, #contact');
   const navLinks = document.querySelectorAll('.nav-links a[data-section]');
+  const mobileLinks = document.querySelectorAll('.mobile-menu a[data-section]');
 
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const id = entry.target.id;
         navLinks.forEach(link => {
+          link.classList.remove('active');
+          if (link.dataset.section === id) link.classList.add('active');
+        });
+        mobileLinks.forEach(link => {
           link.classList.remove('active');
           if (link.dataset.section === id) link.classList.add('active');
         });
