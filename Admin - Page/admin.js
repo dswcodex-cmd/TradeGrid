@@ -1,6 +1,6 @@
 /* ============================================================
    TRADE GRID ADMIN — admin.js
-   All interactivity: tabs, filter, actions, modals, logout
+   All interactivity: tabs, filter, actions, modals, logout, Masha AI
    ============================================================ */
 
 // ── Tab switching ──
@@ -14,7 +14,7 @@ function switchTab(btn, tabId) {
   el.style.gap = '16px';
 }
 
-// Init first tab
+// ── Init on DOM ready ──
 document.addEventListener('DOMContentLoaded', () => {
   const um = document.getElementById('user-management');
   if (um) { um.style.display = 'flex'; um.style.flexDirection = 'column'; um.style.gap = '16px'; }
@@ -25,10 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
   initSearch();
   initLogout();
   initToast();
+  initMasha();
 });
 
-// ── Toast notification system ──
+/* ============================================================
+   TOAST NOTIFICATION SYSTEM
+   ============================================================ */
 let toastTimer;
+
 function initToast() {
   if (!document.getElementById('adminToast')) {
     const t = document.createElement('div');
@@ -58,7 +62,9 @@ function showToast(msg, icon = 'ri-checkbox-circle-line') {
   }, 3000);
 }
 
-// ── Modal system ──
+/* ============================================================
+   MODAL SYSTEM
+   ============================================================ */
 function createModal(title, bodyHTML, actions = []) {
   const existing = document.getElementById('adminModal');
   if (existing) existing.remove();
@@ -106,17 +112,6 @@ function createModal(title, bodyHTML, actions = []) {
   overlay.appendChild(box);
   document.body.appendChild(overlay);
   overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
-
-  // Add keyframe styles once
-  if (!document.getElementById('modalStyles')) {
-    const s = document.createElement('style');
-    s.id = 'modalStyles';
-    s.textContent = `
-      @keyframes fadeIn { from{opacity:0} to{opacity:1} }
-      @keyframes slideUp { from{transform:translateY(16px);opacity:0} to{transform:translateY(0);opacity:1} }
-    `;
-    document.head.appendChild(s);
-  }
 }
 
 function closeModal() {
@@ -124,13 +119,15 @@ function closeModal() {
   if (m) m.remove();
 }
 
-// ── User table action menus ──
+/* ============================================================
+   USER TABLE ACTION MENUS
+   ============================================================ */
 function initUserActions() {
   document.querySelectorAll('tbody td:last-child').forEach(cell => {
     cell.addEventListener('click', (e) => {
       e.stopPropagation();
       closeAllMenus();
-      const row = cell.closest('tr');
+      const row     = cell.closest('tr');
       const company = row.querySelector('td:first-child').childNodes[0].textContent.trim();
       const email   = row.querySelector('td small')?.textContent || '';
       const status  = row.querySelector('.status')?.textContent.trim() || '';
@@ -148,14 +145,15 @@ function initUserActions() {
       const isSuspended = status.toLowerCase() === 'suspended';
 
       const items = [
-        { icon: 'ri-eye-line',         label: 'View Details',       fn: () => viewUserDetails(company, email, status, country) },
-        { icon: 'ri-edit-line',        label: 'Edit Profile',        fn: () => editUser(company) },
-        { icon: isSuspended ? 'ri-checkbox-circle-line' : 'ri-forbid-line',
+        { icon: 'ri-eye-line',    label: 'View Details',   fn: () => viewUserDetails(company, email, status, country) },
+        { icon: 'ri-edit-line',   label: 'Edit Profile',   fn: () => editUser(company) },
+        {
+          icon:  isSuspended ? 'ri-checkbox-circle-line' : 'ri-forbid-line',
           label: isSuspended ? 'Reinstate Account' : 'Suspend Account',
-          fn: () => isSuspended ? reinstateUser(company, row) : suspendUser(company, row),
+          fn:    () => isSuspended ? reinstateUser(company, row) : suspendUser(company, row),
           danger: !isSuspended
         },
-        { icon: 'ri-delete-bin-line',  label: 'Delete Account',     fn: () => deleteUser(company, row), danger: true },
+        { icon: 'ri-delete-bin-line', label: 'Delete Account', fn: () => deleteUser(company, row), danger: true },
       ];
 
       items.forEach(item => {
@@ -261,7 +259,6 @@ function suspendUser(company, row) {
     { label: 'Cancel', fn: 'closeModal()' },
     { label: 'Suspend Account', fn: `confirmSuspend('${company}')`, primary: true }
   ]);
-  // store row ref
   window._pendingRow = row;
 }
 
@@ -271,10 +268,7 @@ function confirmSuspend(company) {
   const row = window._pendingRow;
   if (row) {
     const badge = row.querySelector('.status');
-    if (badge) {
-      badge.className = 'status suspended';
-      badge.textContent = 'Suspended';
-    }
+    if (badge) { badge.className = 'status suspended'; badge.textContent = 'Suspended'; }
   }
   closeModal();
   showToast(`${company} has been suspended`, 'ri-forbid-line');
@@ -322,7 +316,6 @@ function deleteUser(company, row) {
     { label: 'Delete Account', fn: `confirmDelete('${company}')`, primary: true }
   ]);
   window._pendingRow = row;
-  // Make delete button red
   setTimeout(() => {
     const btns = document.querySelectorAll('#adminModal button');
     const del = btns[btns.length - 1];
@@ -339,12 +332,13 @@ function confirmDelete(company) {
   showToast(`${company} has been permanently deleted`, 'ri-delete-bin-line');
 }
 
-// ── Employee Requests: Reply / Mark as Read / View Details ──
+/* ============================================================
+   EMPLOYEE REQUESTS: REPLY / MARK AS READ / VIEW DETAILS
+   ============================================================ */
 function initRequestButtons() {
-  // Reply buttons
   document.querySelectorAll('.btn-reply').forEach(btn => {
     btn.addEventListener('click', () => {
-      const card = btn.closest('.request-card');
+      const card  = btn.closest('.request-card');
       const title = card?.querySelector('h4')?.textContent?.replace(/●/, '').trim() || 'Request';
       const meta  = card?.querySelector('.request-meta')?.textContent?.trim() || '';
       createModal(`Reply to: ${title.substring(0, 50)}...`, `
@@ -367,13 +361,12 @@ function initRequestButtons() {
     });
   });
 
-  // Mark as Read buttons
   document.querySelectorAll('.btn-secondary').forEach(btn => {
     if (btn.textContent.trim() === 'Mark as Read') {
       btn.addEventListener('click', () => {
         const card = btn.closest('.request-card');
-        const dot = card?.querySelector('.unread-dot');
-        if (dot) { dot.remove(); }
+        const dot  = card?.querySelector('.unread-dot');
+        if (dot) dot.remove();
         card.style.opacity = '0.7';
         btn.textContent = 'Read';
         btn.disabled = true;
@@ -382,14 +375,13 @@ function initRequestButtons() {
     }
     if (btn.textContent.trim() === 'View Details') {
       btn.addEventListener('click', () => {
-        const card = btn.closest('.request-card');
-        const title = card?.querySelector('h4')?.childNodes[0]?.textContent?.trim() || 'Request';
-        const meta  = card?.querySelector('.request-meta')?.textContent?.trim() || '';
-        const body  = card?.querySelector('.request-body')?.textContent?.trim() || '';
+        const card     = btn.closest('.request-card');
+        const title    = card?.querySelector('h4')?.childNodes[0]?.textContent?.trim() || 'Request';
+        const meta     = card?.querySelector('.request-meta')?.textContent?.trim() || '';
+        const body     = card?.querySelector('.request-body')?.textContent?.trim() || '';
         const priority = card?.querySelector('.priority')?.textContent?.trim() || '';
-        const pColor = priority.includes('High') ? '#dc2626' : '#b45309';
-
-        createModal(`Request Details`, `
+        const pColor   = priority.includes('High') ? '#dc2626' : '#b45309';
+        createModal('Request Details', `
           <div style="display:flex;flex-direction:column;gap:12px;">
             <div style="background:#F0FAFB;border-radius:10px;padding:16px;">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -405,7 +397,7 @@ function initRequestButtons() {
           </div>
         `, [
           { label: 'Close', fn: 'closeModal()' },
-          { label: 'Reply', fn: 'closeModal(); document.querySelector(\'.btn-reply\').click()', primary: true }
+          { label: 'Reply', fn: "closeModal(); document.querySelector('.btn-reply').click()", primary: true }
         ]);
       });
     }
@@ -425,7 +417,9 @@ function sendReply() {
   showToast('Reply sent successfully', 'ri-send-plane-line');
 }
 
-// ── Filter for Employee Requests ──
+/* ============================================================
+   FILTER — EMPLOYEE REQUESTS
+   ============================================================ */
 function initFilter() {
   const filterBtn = document.getElementById('empFilterBtn');
   const dropdown  = document.getElementById('empFilterDropdown');
@@ -439,17 +433,10 @@ function initFilter() {
   let selectedPriorities = new Set();
   let selectedStatuses   = new Set();
 
-  filterBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdown.classList.toggle('hidden');
-  });
-
+  filterBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('hidden'); });
   closeBtn?.addEventListener('click', () => dropdown.classList.add('hidden'));
-
   document.addEventListener('click', (e) => {
-    if (!dropdown?.contains(e.target) && e.target !== filterBtn) {
-      dropdown?.classList.add('hidden');
-    }
+    if (!dropdown?.contains(e.target) && e.target !== filterBtn) dropdown?.classList.add('hidden');
   });
 
   function applyFilter() {
@@ -471,10 +458,8 @@ function initFilter() {
     document.querySelectorAll('#employee-requests .request-card').forEach(card => {
       const priority = card.dataset.priority || '';
       const status   = card.dataset.status   || '';
-
-      const matchP = selectedPriorities.size === 0 || selectedPriorities.has(priority);
-      const matchS = selectedStatuses.size   === 0 || selectedStatuses.has(status);
-
+      const matchP   = selectedPriorities.size === 0 || selectedPriorities.has(priority);
+      const matchS   = selectedStatuses.size   === 0 || selectedStatuses.has(status);
       card.style.display = (matchP && matchS) ? '' : 'none';
     });
   }
@@ -494,23 +479,23 @@ function initFilter() {
   });
 
   clearBtn?.addEventListener('click', () => {
-    selectedPriorities.clear();
-    selectedStatuses.clear();
+    selectedPriorities.clear(); selectedStatuses.clear();
     prioBoxes.forEach(cb => cb.checked = false);
     statBoxes.forEach(cb => cb.checked = false);
     applyFilter();
   });
 }
 
-// ── User Management Search ──
+/* ============================================================
+   USER MANAGEMENT SEARCH
+   ============================================================ */
 function initSearch() {
   const umSearch = document.querySelector('#user-management .search');
   if (umSearch) {
     umSearch.addEventListener('input', () => {
       const q = umSearch.value.toLowerCase().trim();
       document.querySelectorAll('#user-management tbody tr').forEach(row => {
-        const text = row.textContent.toLowerCase();
-        row.style.display = (!q || text.includes(q)) ? '' : 'none';
+        row.style.display = (!q || row.textContent.toLowerCase().includes(q)) ? '' : 'none';
       });
     });
   }
@@ -520,14 +505,15 @@ function initSearch() {
     empSearch.addEventListener('input', () => {
       const q = empSearch.value.toLowerCase().trim();
       document.querySelectorAll('#employee-requests .request-card').forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = (!q || text.includes(q)) ? '' : 'none';
+        card.style.display = (!q || card.textContent.toLowerCase().includes(q)) ? '' : 'none';
       });
     });
   }
 }
 
-// ── Logout ──
+/* ============================================================
+   LOGOUT
+   ============================================================ */
 function initLogout() {
   const logoutBtn = document.querySelector('.logout');
   if (logoutBtn) {
@@ -546,4 +532,150 @@ function confirmLogout() {
   closeModal();
   showToast('Logging out...', 'ri-logout-box-r-line');
   setTimeout(() => { window.location.href = '../Login - Page/login.html'; }, 1000);
+}
+
+/* ============================================================
+   MASHA AI WIDGET
+   ============================================================ */
+const mashaKB = [
+  { patterns: ['approve','verification','verify','pending verif'],
+    response: `To approve a verification:\n\n1. 📋 Go to **Pending Verifications** in the right panel\n2. Click on the business name to view documents\n3. Review all submitted files\n4. Click **Approve** to grant verified status\n\nApproval sends an automatic email to the business.` },
+  { patterns: ['suspend','ban','deactivate','block user'],
+    response: `To suspend a user account:\n\n1. Find the user in **User Management**\n2. Click the ⋮ actions menu on their row\n3. Select **Suspend Account**\n4. Add a reason (sent to the user)\n\n⚠️ Suspended users lose access immediately.` },
+  { patterns: ['stat','analytics','numbers','growth','metric'],
+    response: `Current platform stats:\n\n👥 **2,847** total users (+12.5%)\n🏢 **1,423** active businesses (+8.3%)\n🔗 **4,892** total matches (+15.7%)\n💬 **892** messages today (+23.1%)` },
+  { patterns: ['reply','respond','employee request'],
+    response: `To reply to an employee request:\n\n1. Switch to **Employee Requests** tab\n2. Click **Reply** on the relevant card\n3. Type your response\n4. Hit **Send** — the employee is notified` },
+  { patterns: ['filter','priority','unread','read'],
+    response: `To filter employee requests:\n\n1. Switch to the **Employee Requests** tab\n2. Click the **filter icon** next to the search bar\n3. Select Priority (High/Medium/Low) and/or Status (Read/Unread)\n4. Cards are filtered instantly` },
+  { patterns: ['hello','hi','hey'],
+    response: `Hello, Admin! 👋 I'm **Masha**, your Trade Grid AI assistant.\n\nI can help with verifications, user management, employee requests, filtering, and platform stats.\n\nWhat do you need?` },
+  { patterns: ['delete','remove user'],
+    response: `To permanently delete a user:\n\n⚠️ **This cannot be undone.**\n\n1. Open **User Management**\n2. Click ⋮ next to the user\n3. Select **Delete Account**\n4. Type DELETE to confirm` },
+];
+
+const mashaFallback = `I'm not sure about that specific task. For platform issues, check Documentation or contact the dev team.\n\nAnything else I can help with?`;
+
+function getMashaResponse(input) {
+  const lower = input.toLowerCase();
+  for (const entry of mashaKB) {
+    if (entry.patterns.some(p => lower.includes(p))) return entry.response;
+  }
+  return mashaFallback;
+}
+
+function initMasha() {
+  const fab         = document.getElementById('mashaFab');
+  const win         = document.getElementById('mashaWindow');
+  const messagesEl  = document.getElementById('mashaMessages');
+  const inputEl     = document.getElementById('mashaInput');
+  const sendBtn     = document.getElementById('mashaSend');
+  const clearBtn    = document.getElementById('mashaClear');
+  const minimizeBtn = document.getElementById('mashaMinimize');
+  const chips       = document.querySelectorAll('.masha-chip');
+  const chipsBar    = document.getElementById('mashaChips');
+
+  if (!fab) return;
+
+  let isOpen = false;
+
+  function toggleChat() {
+    isOpen = !isOpen;
+    win.classList.toggle('open', isOpen);
+    fab.classList.toggle('open', isOpen);
+    if (isOpen) {
+      const dot = fab.querySelector('.fab-dot');
+      if (dot) dot.style.display = 'none';
+      setTimeout(() => inputEl.focus(), 300);
+    }
+  }
+
+  fab.addEventListener('click', toggleChat);
+  minimizeBtn.addEventListener('click', toggleChat);
+
+  function addMessage(text, sender) {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const row  = document.createElement('div');
+    row.className = `msg-row ${sender}`;
+    const av = document.createElement('div');
+    av.className = 'msg-bubble-avatar';
+    av.textContent = sender === 'bot' ? '🤖' : '🧑‍💼';
+    const wrap = document.createElement('div');
+    const bub  = document.createElement('div');
+    bub.className = 'msg-bubble';
+    bub.innerHTML = text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+    const t = document.createElement('div');
+    t.className = 'msg-time';
+    t.textContent = now;
+    wrap.appendChild(bub);
+    wrap.appendChild(t);
+    if (sender === 'bot') { row.appendChild(av); row.appendChild(wrap); }
+    else                  { row.appendChild(wrap); row.appendChild(av); }
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'msg-row bot'; row.id = 'typingRow';
+    const av = document.createElement('div');
+    av.className = 'msg-bubble-avatar'; av.textContent = '🤖';
+    const ind = document.createElement('div');
+    ind.className = 'typing-indicator';
+    ind.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    row.appendChild(av); row.appendChild(ind);
+    messagesEl.appendChild(row);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function hideTyping() {
+    const r = document.getElementById('typingRow');
+    if (r) r.remove();
+  }
+
+  function sendMessage(text) {
+    const msg = (text || inputEl.value).trim();
+    if (!msg) return;
+    addMessage(msg, 'user');
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    sendBtn.disabled = true;
+    chipsBar.style.display = 'none';
+    showTyping();
+    setTimeout(() => {
+      hideTyping();
+      addMessage(getMashaResponse(msg), 'bot');
+      sendBtn.disabled = false;
+      inputEl.focus();
+    }, 800 + Math.random() * 500);
+  }
+
+  sendBtn.addEventListener('click', () => sendMessage());
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 90) + 'px';
+    sendBtn.disabled = inputEl.value.trim() === '';
+  });
+
+  chips.forEach(c => c.addEventListener('click', () => sendMessage(c.dataset.msg)));
+
+  clearBtn.addEventListener('click', () => {
+    messagesEl.innerHTML = '';
+    chipsBar.style.display = 'flex';
+    addGreeting();
+  });
+
+  function addGreeting() {
+    setTimeout(() => {
+      addMessage(`Hi, Admin! 👋 I'm **Masha**, your Trade Grid AI assistant.\n\nI can help with verifications, user management, employee request filtering, and stats.\n\nWhat do you need?`, 'bot');
+    }, 400);
+  }
+
+  sendBtn.disabled = true;
+  addGreeting();
 }
