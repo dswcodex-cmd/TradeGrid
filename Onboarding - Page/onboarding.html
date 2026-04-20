@@ -8,9 +8,7 @@
 </head>
 <body>
 
-  <!--hexagon background code -->
   <svg id="hex-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
-
 
   <div class="gradient-bg full-height">
     <div class="auth-container">
@@ -36,15 +34,37 @@
           <!-- Step 1: Basic Information -->
           <div class="form-step active" data-step="1">
             <h3 class="step-title">Basic Information</h3>
-             <div class="form-group">
+
+            <div class="form-group">
               <label for="companyName">Company Name *</label>
               <input type="text" id="companyName" name="companyName" placeholder="Your company name" required />
-           
-  <label for="email">Email*</label>
-              <input type="text" id="email" name="email" placeholder="Please enter your Email" />
- <label for="cipc">CIPC Number*</label>
-              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
- </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email *</label>
+              <input type="email" id="email" name="email" placeholder="Please enter your email" required />
+            </div>
+
+            <div class="form-group">
+              <label for="cipc">CIPC Number *</label>
+              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" required />
+            </div>
+
+            <div class="form-group">
+              <label for="password">Password *</label>
+              <div style="position: relative;">
+                <input type="password" id="password" name="password" placeholder="Please enter your password" required />
+                <button type="button" onclick="togglePassword('password', this)">Show</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="password-confirm">Confirm Password *</label>
+              <div style="position: relative;">
+                <input type="password" id="password-confirm" name="password-confirm" placeholder="Please confirm your password" required />
+                <button type="button" onclick="togglePassword('password-confirm', this)">Show</button>
+              </div>
+            </div>
 
             <div class="form-group">
               <label for="type">Business Type *</label>
@@ -64,7 +84,7 @@
                 <option value="Textiles & Apparel">Textiles &amp; Apparel</option>
                 <option value="Manufacturing & Industrial">Manufacturing &amp; Industrial</option>
                 <option value="Healthcare & Pharma">Healthcare &amp; Pharma</option>
-                <option value="Renewable Energy">Renewable Energy equipment</option>
+                <option value="Renewable Energy">Renewable Energy Equipment</option>
               </select>
             </div>
 
@@ -123,39 +143,16 @@
             <h3 class="step-title">Trading Preferences</h3>
 
             <div class="form-group">
-              <label>Target COuntries</label>
+              <label>Target Countries</label>
               <div class="checkbox-group">
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Gauteng" /></span>South Africa</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="KwaZulu-Natal" /><span>Netherlands</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Western Cape" /></span>India</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Eastern Cape" /><span>Australia</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Northern Cape" /><span>Germany</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Free State" /><span>New Zealand</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Limpopo" /><span>Denmark</span></label>
-                <!---
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Mpumalanga" /><span>Mpumalanga</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="North West" /><span>North West</span></label>
-              -->
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="South Africa" /><span>South Africa</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Netherlands" /><span>Netherlands</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="India" /><span>India</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Australia" /><span>Australia</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Germany" /><span>Germany</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="New Zealand" /><span>New Zealand</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Denmark" /><span>Denmark</span></label>
               </div>
-            </div>
-
-            <div class="form-group">
-             <label for="cipc">CIPC Number</label>
-              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
-             
-               <label for="password">Password</label>
-<div style="position: relative; display: inline-block;">
-  <input type="password" id="password" name="password" placeholder="Please enter your password" />
-  <button type="button" onclick="togglePassword('password', this)">Show</button>
-</div>
-
-<label for="password-confirm">Confirm Password</label>
-<div style="position: relative; display: inline-block;">
-  <input type="password" id="password-confirm" name="password-confirm" placeholder="Please confirm your password" />
-  <button type="button" onclick="togglePassword('password-confirm', this)">Show</button>
-</div>
-              
-              
             </div>
 
             <div class="form-buttons">
@@ -173,7 +170,6 @@
     </div>
   </div>
 
-  
 </body>
 <script src="onbaording.js"></script>
 </html>
