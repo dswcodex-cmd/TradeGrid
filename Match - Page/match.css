@@ -128,7 +128,7 @@ body {
 /* CARD (GLASS STYLE) */
 .card {
   width: 320px;
-  height: 450px;
+  min-height: 450px;
   background: rgba(255,255,255,0.05);
   backdrop-filter: blur(15px);
   border-radius: 20px;

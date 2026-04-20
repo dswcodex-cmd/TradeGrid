@@ -36,11 +36,15 @@
           <!-- Step 1: Basic Information -->
           <div class="form-step active" data-step="1">
             <h3 class="step-title">Basic Information</h3>
-
-            <div class="form-group">
+             <div class="form-group">
               <label for="companyName">Company Name *</label>
               <input type="text" id="companyName" name="companyName" placeholder="Your company name" required />
-            </div>
+           
+  <label for="email">Email*</label>
+              <input type="text" id="email" name="email" placeholder="Please enter your Email" />
+ <label for="cipc">CIPC Number*</label>
+              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
+ </div>
 
             <div class="form-group">
               <label for="type">Business Type *</label>
@@ -119,23 +123,26 @@
             <h3 class="step-title">Trading Preferences</h3>
 
             <div class="form-group">
-              <label>Target Provinces *</label>
+              <label>Target COuntries</label>
               <div class="checkbox-group">
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Gauteng" /><span>Gauteng</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="KwaZulu-Natal" /><span>KwaZulu-Natal</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Western Cape" /><span>Western Cape</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Eastern Cape" /><span>Eastern Cape</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Northern Cape" /><span>Northern Cape</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Free State" /><span>Free State</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Limpopo" /><span>Limpopo</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Gauteng" /></span>South Africa</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="KwaZulu-Natal" /><span>Netherlands</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Western Cape" /></span>India</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Eastern Cape" /><span>Australia</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Northern Cape" /><span>Germany</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Free State" /><span>New Zealand</span></label>
+                <label class="checkbox-label"><input type="checkbox" name="regions" value="Limpopo" /><span>Denmark</span></label>
+                <!---
                 <label class="checkbox-label"><input type="checkbox" name="regions" value="Mpumalanga" /><span>Mpumalanga</span></label>
                 <label class="checkbox-label"><input type="checkbox" name="regions" value="North West" /><span>North West</span></label>
+              -->
               </div>
             </div>
 
             <div class="form-group">
-              <label for="cipc">CIPC Number</label>
+             <label for="cipc">CIPC Number</label>
               <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
+             
                <label for="password">Password</label>
 <div style="position: relative; display: inline-block;">
   <input type="password" id="password" name="password" placeholder="Please enter your password" />
