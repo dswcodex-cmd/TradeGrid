@@ -829,7 +829,8 @@ tbody td:last-child:hover { color: var(--primary); }
   background: rgba(181,234,240,0.12);
   border: 1.5px solid rgba(181,234,240,0.25);
   display: flex; align-items: center; justify-content: center;
-  font-size: 17px; flex-shrink: 0;
+  font-size: 20px; flex-shrink: 0;
+  color: var(--light);
 }
 .masha-header-info { flex: 1; }
 .masha-name { font-size: 14px; font-weight: 600; color: #E8F5F6; }
@@ -883,8 +884,11 @@ tbody td:last-child:hover { color: var(--primary); }
   width: 26px; height: 26px; border-radius: 8px;
   background: rgba(13,59,59,0.06);
   display: flex; align-items: center; justify-content: center;
-  font-size: 13px; flex-shrink: 0;
+  font-size: 14px; flex-shrink: 0;
+  color: #4a6464;
 }
+.msg-row.bot .msg-bubble-avatar { background: rgba(15,163,177,0.1); color: #0FA3B1; }
+.msg-row.user .msg-bubble-avatar { background: rgba(13,59,59,0.12); color: #0D3B3B; }
 
 .msg-bubble {
   max-width: 80%; padding: 9px 12px; border-radius: 12px;

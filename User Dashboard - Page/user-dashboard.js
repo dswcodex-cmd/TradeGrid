@@ -256,8 +256,10 @@ function mashaAddMsg(text, sender) {
   const row = document.createElement('div');
   row.style.cssText = 'display:flex;gap:8px;align-items:flex-end;flex-direction:' + (sender==='user'?'row-reverse':'row') + ';';
   const avatar = document.createElement('div');
-  avatar.style.cssText = 'width:26px;height:26px;border-radius:50%;background:' + (sender==='bot'?'rgba(13,59,59,0.1)':'#0D3B3B') + ';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;';
-  avatar.textContent = sender === 'bot' ? '🤖' : '👤';
+  avatar.style.cssText = 'width:26px;height:26px;border-radius:50%;background:' + (sender==='bot'?'rgba(15,163,177,0.12)':'rgba(13,59,59,0.12)') + ';display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;color:' + (sender==='bot'?'#0FA3B1':'#0D3B3B') + ';';
+  avatar.innerHTML = sender === 'bot'
+    ? '<i class="ri-robot-2-line"></i>'
+    : '<i class="ri-user-3-line"></i>';
   const bubble = document.createElement('div');
   bubble.style.cssText = 'max-width:80%;padding:9px 13px;border-radius:14px;font-size:12px;line-height:1.55;' + (sender==='bot'?'background:#F0FAFB;border:1px solid rgba(13,59,59,0.1);color:#1A1A1A;border-bottom-left-radius:4px;':'background:#0D3B3B;color:#fff;border-bottom-right-radius:4px;');
   bubble.textContent = text;

@@ -599,7 +599,9 @@ function initMasha() {
     row.className = `msg-row ${sender}`;
     const av = document.createElement('div');
     av.className = 'msg-bubble-avatar';
-    av.textContent = sender === 'bot' ? '🤖' : '🧑‍💼';
+    av.innerHTML = sender === 'bot'
+      ? '<i class="ri-robot-2-line"></i>'
+      : '<i class="ri-user-3-line"></i>';
     const wrap = document.createElement('div');
     const bub  = document.createElement('div');
     bub.className = 'msg-bubble';

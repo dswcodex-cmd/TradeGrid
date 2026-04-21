@@ -25,14 +25,10 @@
     }
   });
 
-  /* Close when a mobile nav link is clicked */
   document.querySelectorAll('[data-mobile-link]').forEach(link => {
-    link.addEventListener('click', () => {
-      closeMobileMenu();
-    });
+    link.addEventListener('click', () => { closeMobileMenu(); });
   });
 
-  /* Close when clicking outside */
   document.addEventListener('click', (e) => {
     if (!mobileMenu.contains(e.target) && e.target !== hamburger) {
       closeMobileMenu();
@@ -42,8 +38,8 @@
 
 /* ── Scroll-spy ── */
 (function () {
-  const sections = document.querySelectorAll('#landing, #aboutus, #markets, #contact');
-  const navLinks = document.querySelectorAll('.nav-links a[data-section]');
+  const sections    = document.querySelectorAll('#landing, #aboutus, #markets, #contact');
+  const navLinks    = document.querySelectorAll('.nav-links a[data-section]');
   const mobileLinks = document.querySelectorAll('.mobile-menu a[data-section]');
 
   const observer = new IntersectionObserver((entries) => {
@@ -60,46 +56,18 @@
         });
       }
     });
-  }, {
-    threshold: 0.2,
-    rootMargin: '-60px 0px 0px 0px'
-  });
+  }, { threshold: 0.2, rootMargin: '-60px 0px 0px 0px' });
 
   sections.forEach(section => observer.observe(section));
 })();
 
 /* ── Trending products ── */
 const trendingProducts = [
-  {
-    name: 'Renewable Energy Equipment',
-    change: '+23%',
-    category: 'Energy',
-    details: ['Solar Panels', 'Wind Turbines', 'Hydropower']
-  },
-  {
-    name: 'Medical Supplies',
-    change: '+18%',
-    category: 'Healthcare',
-    details: ['Masks', 'Gloves', 'Ventilators']
-  },
-  {
-    name: 'Electronic Components',
-    change: '+15%',
-    category: 'Electronics',
-    details: ['Microchips', 'Sensors', 'Circuit Boards']
-  },
-  {
-    name: 'Organic Foods',
-    change: '+12%',
-    category: 'Food & Beverages',
-    details: ['Organic Veg', 'Plant-Based Products', 'Health Snacks']
-  },
-  {
-    name: 'Smart Textiles',
-    change: '+10%',
-    category: 'Textiles',
-    details: ['Wearables', 'Smart Fabrics']
-  },
+  { name: 'Renewable Energy Equipment', change: '+23%', category: 'Energy',           details: ['Solar Panels', 'Wind Turbines', 'Hydropower'] },
+  { name: 'Medical Supplies',           change: '+18%', category: 'Healthcare',        details: ['Masks', 'Gloves', 'Ventilators'] },
+  { name: 'Electronic Components',      change: '+15%', category: 'Electronics',       details: ['Microchips', 'Sensors', 'Circuit Boards'] },
+  { name: 'Organic Foods',              change: '+12%', category: 'Food & Beverages',  details: ['Organic Veg', 'Plant-Based Products', 'Health Snacks'] },
+  { name: 'Smart Textiles',             change: '+10%', category: 'Textiles',          details: ['Wearables', 'Smart Fabrics'] },
 ];
 
 const trendingContainer = document.getElementById('trending');
@@ -229,9 +197,13 @@ function mashaAddMessage(text, sender) {
   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const row = document.createElement('div');
   row.className = `msg-row ${sender}`;
+
   const avatar = document.createElement('div');
   avatar.className = 'msg-bubble-avatar';
-  avatar.textContent = sender === 'bot' ? '🤖' : '👤';
+  avatar.innerHTML = sender === 'bot'
+    ? '<i class="ri-robot-2-line"></i>'
+    : '<i class="ri-user-3-line"></i>';
+
   const wrap = document.createElement('div');
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
@@ -251,13 +223,18 @@ function mashaAddMessage(text, sender) {
 
 function mashaShowTyping() {
   const row = document.createElement('div');
-  row.className = 'msg-row bot'; row.id = 'mashaTypingRow';
+  row.className = 'msg-row bot';
+  row.id = 'mashaTypingRow';
+
   const avatar = document.createElement('div');
-  avatar.className = 'msg-bubble-avatar'; avatar.textContent = '🤖';
+  avatar.className = 'msg-bubble-avatar';
+  avatar.innerHTML = '<i class="ri-robot-2-line"></i>';
+
   const indicator = document.createElement('div');
   indicator.className = 'masha-typing';
   indicator.innerHTML = '<div class="masha-typing-dot"></div><div class="masha-typing-dot"></div><div class="masha-typing-dot"></div>';
-  row.appendChild(avatar); row.appendChild(indicator);
+  row.appendChild(avatar);
+  row.appendChild(indicator);
   mashaMessages.appendChild(row);
   mashaMessages.scrollTop = mashaMessages.scrollHeight;
 }
