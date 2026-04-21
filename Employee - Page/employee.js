@@ -225,58 +225,27 @@ allTabContent.forEach(el => {
   el.style.display = el.dataset.tabContent === 'assigned' ? '' : 'none';
 });
 
-
 /* ============================================================
    TRADE GRID EMPLOYEE — employee-masha.js
-   Masha AI widget logic (extracted from inline script)
+   Masha AI widget logic — icon-based chat avatars (no emojis)
    ============================================================ */
 
 const mashaKB = [
-  {
-    patterns: ['complete', 'finish', 'verification task', 'how do i verify', 'verify business'],
-    response: `To complete a verification task:\n\n1. 📋 Open the task from **My Tasks** → Assigned tab\n2. Click the task card to view attached documents\n3. Review: business registration, license, and ID docs\n4. If all clear → mark as **Approved** ✅\n5. If something is missing → click **Request More Info**\n\nCompleted tasks move automatically to the Completed tab.`
-  },
-  {
-    patterns: ['push', 'escalate', 'admin', 'push to admin'],
-    response: `To push a message to admin:\n\n1. Go to **User Messages** using the top tabs\n2. Find the relevant message card\n3. Click **Push to Admin** (the teal button with the arrow)\n4. Add a note explaining why you're escalating\n5. The admin is notified immediately\n\n💡 Use this for suspended account appeals, compliance flags, or anything that needs admin authority.`
-  },
-  {
-    patterns: ['reply', 'respond', 'reply to user', 'message user'],
-    response: `To reply to a user message:\n\n1. Switch to **User Messages** tab\n2. Find the message card\n3. Click **Reply to User**\n4. Write your response in the reply panel\n5. Hit **Send** — the user gets an email notification\n\n✉️ Keep replies professional and reference the specific issue.`
-  },
-  {
-    patterns: ['assign', 'task', 'create task', 'assign to task'],
-    response: `To assign a user message to a task:\n\n1. In **User Messages**, find the message\n2. Click **Assign to Task**\n3. Link to an existing task or create a new one\n4. The message is attached to the task for tracking\n\nThis keeps your task list and messages in sync.`
-  },
-  {
-    patterns: ['mark as read', 'read', 'unread'],
-    response: `To mark a message as read:\n\n• Click **Mark as Read** on any unread message card\n• The blue unread dot disappears\n• You can filter by Read/Unread using the filter button 🔽\n\nUnread messages are shown with a blue dot next to the title.`
-  },
-  {
-    patterns: ['filter', 'search', 'find message', 'priority'],
-    response: `To filter messages:\n\n• Use the **search bar** to find by company name or subject\n• Click the **filter icon** 🔽 to filter by:\n  - Priority: High / Medium / Low\n  - Status: Read / Unread\n\nYou can combine multiple filters at once. Click **Clear All Filters** to reset.`
-  },
-  {
-    patterns: ['tab', 'switch', 'pending tab', 'completed tab', 'assigned tab'],
-    response: `Task tabs explained:\n\n📌 **Assigned** — tasks currently given to you\n⏳ **Pending** — tasks waiting on more information\n✅ **Completed** — finished tasks\n\nSwitch between them using the sub-tabs above the task list.`
-  },
-  {
-    patterns: ['hello', 'hi', 'hey', 'howzit', 'good morning', 'good afternoon'],
-    response: `Hi there! 👋 I'm **Masha**, your Trade Grid assistant.\n\nI can help you with:\n• Completing verification tasks\n• Replying to user messages\n• Escalating to admin\n• Filtering and managing your queue\n\nWhat do you need?`
-  },
-  {
-    patterns: ['help', 'what can you do', 'how do you work'],
-    response: `Here's what I can help you with:\n\n✅ **Verifications** — how to review and approve docs\n💬 **User messages** — replying, filtering, pushing to admin\n📋 **Tasks** — managing assigned, pending, completed tabs\n🔼 **Escalation** — when and how to push to admin\n\nJust ask me anything!`
-  },
+  { patterns:['complete','finish','verification task','how do i verify','verify business'], response:`To complete a verification task:\n\n1. Open the task from My Tasks → Assigned tab\n2. Click the task card to view attached documents\n3. Review: business registration, license, and ID docs\n4. If all clear → mark as Approved\n5. If something is missing → click Request More Info\n\nCompleted tasks move automatically to the Completed tab.` },
+  { patterns:['push','escalate','admin','push to admin'], response:`To push a message to admin:\n\n1. Go to User Messages using the top tabs\n2. Find the relevant message card\n3. Click Push to Admin (the button with the arrow)\n4. Add a note explaining why you're escalating\n5. The admin is notified immediately\n\nUse this for suspended account appeals, compliance flags, or anything that needs admin authority.` },
+  { patterns:['reply','respond','reply to user','message user'], response:`To reply to a user message:\n\n1. Switch to User Messages tab\n2. Find the message card\n3. Click Reply to User\n4. Write your response in the reply panel\n5. Hit Send — the user gets an email notification\n\nKeep replies professional and reference the specific issue.` },
+  { patterns:['assign','task','create task','assign to task'], response:`To assign a user message to a task:\n\n1. In User Messages, find the message\n2. Click Assign to Task\n3. Link to an existing task or create a new one\n4. The message is attached to the task for tracking\n\nThis keeps your task list and messages in sync.` },
+  { patterns:['mark as read','read','unread'], response:`To mark a message as read:\n\n- Click Mark as Read on any unread message card\n- The blue unread dot disappears\n- You can filter by Read/Unread using the filter button\n\nUnread messages are shown with a blue dot next to the title.` },
+  { patterns:['filter','search','find message','priority'], response:`To filter messages:\n\n- Use the search bar to find by company name or subject\n- Click the filter icon to filter by:\n  Priority: High / Medium / Low\n  Status: Read / Unread\n\nYou can combine multiple filters at once. Click Clear All Filters to reset.` },
+  { patterns:['tab','switch','pending tab','completed tab','assigned tab'], response:`Task tabs explained:\n\nAssigned — tasks currently given to you\nPending — tasks waiting on more information\nCompleted — finished tasks\n\nSwitch between them using the sub-tabs above the task list.` },
+  { patterns:['hello','hi','hey','howzit','good morning','good afternoon'], response:`Hi there! I'm Masha, your Trade Grid assistant.\n\nI can help you with:\n- Completing verification tasks\n- Replying to user messages\n- Escalating to admin\n- Filtering and managing your queue\n\nWhat do you need?` },
+  { patterns:['help','what can you do','how do you work'], response:`Here's what I can help you with:\n\nVerifications — how to review and approve docs\nUser messages — replying, filtering, pushing to admin\nTasks — managing assigned, pending, completed tabs\nEscalation — when and how to push to admin\n\nJust ask me anything!` },
 ];
-
-const mashaFallback = `I'm not sure about that one. 🤖\n\nFor platform issues, use **Report Issue** in Quick Links, or ask your team lead.\n\nIs there something else I can help you with?`;
+const mashaFallback = `I'm not sure about that one.\n\nFor platform issues, use Report Issue in Quick Links, or ask your team lead.\n\nIs there something else I can help you with?`;
 
 function getResponse(input) {
   const lower = input.toLowerCase();
-  for (const entry of mashaKB) {
-    if (entry.patterns.some(p => lower.includes(p))) return entry.response;
-  }
+  for (const entry of mashaKB) { if (entry.patterns.some(p => lower.includes(p))) return entry.response; }
   return mashaFallback;
 }
 
@@ -290,32 +259,24 @@ function getResponse(input) {
   const minimizeBtn = document.getElementById('mashaMinimize');
   const chips       = document.querySelectorAll('.masha-chip');
   const chipsBar    = document.getElementById('mashaChips');
-
   if (!fab) return;
 
   let isOpen = false;
-
   function toggleChat() {
-    isOpen = !isOpen;
-    win.classList.toggle('open', isOpen);
-    fab.classList.toggle('open', isOpen);
-    if (isOpen) {
-      const dot = fab.querySelector('.fab-dot');
-      if (dot) dot.style.display = 'none';
-      setTimeout(() => inputEl.focus(), 300);
-    }
+    isOpen = !isOpen; win.classList.toggle('open', isOpen); fab.classList.toggle('open', isOpen);
+    if (isOpen) { const dot=fab.querySelector('.fab-dot'); if(dot) dot.style.display='none'; setTimeout(()=>inputEl.focus(),300); }
   }
-
   fab.addEventListener('click', toggleChat);
   minimizeBtn.addEventListener('click', toggleChat);
 
   function addMessage(text, sender) {
-    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const row = document.createElement('div');
+    const now = new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+    const row  = document.createElement('div');
     row.className = `msg-row ${sender}`;
 
     const avatar = document.createElement('div');
     avatar.className = 'msg-bubble-avatar';
+    // Remix icon — no emoji
     avatar.innerHTML = sender === 'bot'
       ? '<i class="ri-robot-2-line"></i>'
       : '<i class="ri-user-3-line"></i>';
@@ -323,84 +284,42 @@ function getResponse(input) {
     const wrap   = document.createElement('div');
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
-    bubble.innerHTML = text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/\n/g, '<br>');
-    const time = document.createElement('div');
-    time.className = 'msg-time';
-    time.textContent = now;
-    wrap.appendChild(bubble);
-    wrap.appendChild(time);
-    if (sender === 'bot') { row.appendChild(avatar); row.appendChild(wrap); }
-    else                  { row.appendChild(wrap);   row.appendChild(avatar); }
-    messagesEl.appendChild(row);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    bubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    const time = document.createElement('div'); time.className='msg-time'; time.textContent=now;
+    wrap.appendChild(bubble); wrap.appendChild(time);
+    if (sender==='bot') { row.appendChild(avatar); row.appendChild(wrap); }
+    else                { row.appendChild(wrap);   row.appendChild(avatar); }
+    messagesEl.appendChild(row); messagesEl.scrollTop=messagesEl.scrollHeight;
   }
 
   function showTyping() {
-    const row = document.createElement('div');
-    row.className = 'msg-row bot';
-    row.id = 'typingRow';
-
-    const avatar = document.createElement('div');
-    avatar.className = 'msg-bubble-avatar';
+    const row=document.createElement('div'); row.className='msg-row bot'; row.id='typingRow';
+    const avatar=document.createElement('div'); avatar.className='msg-bubble-avatar';
+    // Remix icon for typing indicator — no emoji
     avatar.innerHTML = '<i class="ri-robot-2-line"></i>';
-
-    const indicator = document.createElement('div');
-    indicator.className = 'typing-indicator';
-    indicator.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-    row.appendChild(avatar);
-    row.appendChild(indicator);
-    messagesEl.appendChild(row);
-    messagesEl.scrollTop = messagesEl.scrollHeight;
+    const indicator=document.createElement('div'); indicator.className='typing-indicator';
+    indicator.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+    row.appendChild(avatar); row.appendChild(indicator);
+    messagesEl.appendChild(row); messagesEl.scrollTop=messagesEl.scrollHeight;
   }
-
-  function hideTyping() {
-    const row = document.getElementById('typingRow');
-    if (row) row.remove();
-  }
+  function hideTyping() { const r=document.getElementById('typingRow'); if(r) r.remove(); }
 
   function sendMessage(text) {
-    const msg = (text || inputEl.value).trim();
-    if (!msg) return;
-    addMessage(msg, 'user');
-    inputEl.value = '';
-    inputEl.style.height = 'auto';
-    sendBtn.disabled = true;
-    chipsBar.style.display = 'none';
-    showTyping();
-    setTimeout(() => {
-      hideTyping();
-      addMessage(getResponse(msg), 'bot');
-      sendBtn.disabled = false;
-      inputEl.focus();
-    }, 800 + Math.random() * 500);
+    const msg=(text||inputEl.value).trim(); if(!msg) return;
+    addMessage(msg,'user'); inputEl.value=''; inputEl.style.height='auto'; sendBtn.disabled=true;
+    chipsBar.style.display='none'; showTyping();
+    setTimeout(()=>{ hideTyping(); addMessage(getResponse(msg),'bot'); sendBtn.disabled=false; inputEl.focus(); }, 800+Math.random()*500);
   }
 
-  sendBtn.addEventListener('click', () => sendMessage());
-  inputEl.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-  });
-  inputEl.addEventListener('input', () => {
-    inputEl.style.height = 'auto';
-    inputEl.style.height = Math.min(inputEl.scrollHeight, 90) + 'px';
-    sendBtn.disabled = inputEl.value.trim() === '';
-  });
-
-  chips.forEach(chip => chip.addEventListener('click', () => sendMessage(chip.dataset.msg)));
-
-  clearBtn.addEventListener('click', () => {
-    messagesEl.innerHTML = '';
-    chipsBar.style.display = 'flex';
-    addGreeting();
-  });
+  sendBtn.addEventListener('click', ()=>sendMessage());
+  inputEl.addEventListener('keydown', (e)=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();} });
+  inputEl.addEventListener('input', ()=>{ inputEl.style.height='auto'; inputEl.style.height=Math.min(inputEl.scrollHeight,90)+'px'; sendBtn.disabled=inputEl.value.trim()===''; });
+  chips.forEach(chip=>chip.addEventListener('click',()=>sendMessage(chip.dataset.msg)));
+  clearBtn.addEventListener('click',()=>{ messagesEl.innerHTML=''; chipsBar.style.display='flex'; addGreeting(); });
 
   function addGreeting() {
-    setTimeout(() => {
-      addMessage(`Hi! 👋 I'm **Masha**, your Trade Grid assistant.\n\nI can help with verifications, user messages, escalating to admin, and managing your task queue.\n\nWhat do you need?`, 'bot');
-    }, 400);
+    setTimeout(()=>{ addMessage(`Hi! I'm **Masha**, your Trade Grid assistant.\n\nI can help with verifications, user messages, escalating to admin, and managing your task queue.\n\nWhat do you need?`,'bot'); },400);
   }
-
-  sendBtn.disabled = true;
+  sendBtn.disabled=true;
   addGreeting();
 })();

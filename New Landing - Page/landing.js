@@ -17,12 +17,7 @@
   hamburger.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = mobileMenu.classList.contains('open');
-    if (isOpen) {
-      closeMobileMenu();
-    } else {
-      hamburger.classList.add('open');
-      mobileMenu.classList.add('open');
-    }
+    if (isOpen) { closeMobileMenu(); } else { hamburger.classList.add('open'); mobileMenu.classList.add('open'); }
   });
 
   document.querySelectorAll('[data-mobile-link]').forEach(link => {
@@ -30,9 +25,7 @@
   });
 
   document.addEventListener('click', (e) => {
-    if (!mobileMenu.contains(e.target) && e.target !== hamburger) {
-      closeMobileMenu();
-    }
+    if (!mobileMenu.contains(e.target) && e.target !== hamburger) closeMobileMenu();
   });
 })();
 
@@ -46,14 +39,8 @@
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const id = entry.target.id;
-        navLinks.forEach(link => {
-          link.classList.remove('active');
-          if (link.dataset.section === id) link.classList.add('active');
-        });
-        mobileLinks.forEach(link => {
-          link.classList.remove('active');
-          if (link.dataset.section === id) link.classList.add('active');
-        });
+        navLinks.forEach(link => { link.classList.remove('active'); if (link.dataset.section === id) link.classList.add('active'); });
+        mobileLinks.forEach(link => { link.classList.remove('active'); if (link.dataset.section === id) link.classList.add('active'); });
       }
     });
   }, { threshold: 0.2, rootMargin: '-60px 0px 0px 0px' });
@@ -75,7 +62,6 @@ const trendingContainer = document.getElementById('trending');
 trendingProducts.forEach(product => {
   const item = document.createElement('div');
   item.className = 'trend-item';
-
   const main = document.createElement('div');
   main.className = 'trend-main';
   main.innerHTML = `
@@ -85,18 +71,15 @@ trendingProducts.forEach(product => {
     </div>
     <div class="trend-growth">${product.change} <i data-lucide="trending-up"></i></div>
   `;
-
   const dropdown = document.createElement('div');
   dropdown.className = 'trend-dropdown';
   dropdown.style.display = 'none';
   dropdown.innerHTML = `<ul>${product.details.map(i => `<li>${i}</li>`).join('')}</ul>`;
-
   main.addEventListener('click', () => {
     const isOpen = dropdown.style.display === 'block';
     dropdown.style.display = isOpen ? 'none' : 'block';
     main.setAttribute('aria-expanded', !isOpen);
   });
-
   item.appendChild(main);
   item.appendChild(dropdown);
   trendingContainer.appendChild(item);
@@ -106,68 +89,36 @@ lucide.createIcons();
 
 /* ── Masha AI knowledge base ── */
 const mashaKB = [
-  {
-    patterns: ['how does', 'what is trade grid', 'tell me about', 'what do you do', 'work'],
-    response: `Trade Grid is a smart B2B trade matching platform. 🌐\n\nWe help importers and exporters worldwide find verified trading partners using AI-powered matching. Just create a profile, set your trade preferences, and start discovering matches!`
-  },
-  {
-    patterns: ['verify', 'verification', 'document', 'license', 'certificate'],
-    response: `Business verification on Trade Grid involves three steps:\n\n1. 📄 Upload your business registration documents\n2. 🔐 Submit identity verification\n3. ✅ Our team reviews within 48 hours\n\nOnce verified, you'll get a verified badge that builds trust with trading partners.`
-  },
-  {
-    patterns: ['market', 'region', 'country', 'south africa', 'johannesburg'],
-    response: `We currently cover markets including:\n\n📍 South Africa — Finance, Mining, Tech\n📍 Netherlands — Tourism, Fintech\n📍 India — Trade & Logistics\n📍 Germany — Automotive, Exports\n\nWith 150+ countries in our global network!`
-  },
-  {
-    patterns: ['partner', 'find', 'match', 'connect', 'trading'],
-    response: `Finding trading partners is easy on Trade Grid! 🤝\n\n• Use our **Discover** page to browse matches\n• Our AI suggests partners based on your industry and region\n• Swipe, match, and start trading conversations\n\nWant to get started? Click "Get Started" in the top menu.`
-  },
-  {
-    patterns: ['price', 'cost', 'fee', 'subscription', 'plan', 'free'],
-    response: `Trade Grid offers flexible plans:\n\n🆓 **Starter** — Free, basic matching\n⭐ **Professional** — R499/mo, unlimited matches + analytics\n🏢 **Enterprise** — Custom pricing for large businesses\n\nContact our sales team at sales@tradegrid.com for more details.`
-  },
-  {
-    patterns: ['contact', 'support', 'help', 'email', 'phone', 'reach'],
-    response: `You can reach our support team at:\n\n📧 support@tradegrid.com\n📞 +27 (83) 720-4520\n🕐 Mon-Fri 9am–6pm SAST\n\nOr scroll down to our **Contact Us** section!`
-  },
-  {
-    patterns: ['sign up', 'register', 'account', 'create', 'join', 'get started'],
-    response: `Getting started is simple! 🚀\n\n1. Click **"Get Started"** in the navigation\n2. Complete your business profile\n3. Upload verification documents\n4. Start discovering trading partners!\n\nThe whole process takes less than 10 minutes.`
-  },
-  {
-    patterns: ['import', 'export', 'trade', 'goods', 'products'],
-    response: `Trade Grid supports both importers and exporters across all major product categories:\n\n📦 Agricultural products\n⚡ Energy & renewables\n🏭 Manufacturing goods\n💊 Healthcare & medical\n📱 Electronics & tech\n\nWhat industry are you in? I can give more specific info!`
-  },
-  {
-    patterns: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'howzit'],
-    response: `Hello! 👋 I'm Masha, your Trade Grid AI assistant.\n\nI can help you with:\n• Understanding how Trade Grid works\n• Business verification process\n• Finding trading partners\n• Market information\n\nWhat would you like to know?`
-  },
-  {
-    patterns: ['about', 'founders', 'team', 'who made', 'who built'],
-    response: `Trade Grid was founded by a passionate team of six:\n\n👩‍💼 Tashlyn Mitchell — Project Leader\n💻 TJP Mabotja — Back-end Developer\n🎨 Valery Mutetwa — Front-end Developer\n🗄️ Siyanda Xaba — Database Manager\n🎨 Khethukhanyo Mbekeni — Front-end Developer\n💻 Sifiso Sibanyoni — Back-end Developer\n\nScroll to the About Us section to meet the team!`
-  },
+  { patterns:['how does','what is trade grid','tell me about','what do you do','work'], response:`Trade Grid is a smart B2B trade matching platform.\n\nWe help importers and exporters worldwide find verified trading partners using AI-powered matching. Just create a profile, set your trade preferences, and start discovering matches!` },
+  { patterns:['verify','verification','document','license','certificate'], response:`Business verification on Trade Grid involves three steps:\n\n1. Upload your business registration documents\n2. Submit identity verification\n3. Our team reviews within 48 hours\n\nOnce verified, you'll get a verified badge that builds trust with trading partners.` },
+  { patterns:['market','region','country','south africa','johannesburg'], response:`We currently cover markets including:\n\nSouth Africa — Finance, Mining, Tech\nNetherlands — Tourism, Fintech\nIndia — Trade & Logistics\nGermany — Automotive, Exports\n\nWith 150+ countries in our global network!` },
+  { patterns:['partner','find','match','connect','trading'], response:`Finding trading partners is easy on Trade Grid!\n\n- Use our Discover page to browse matches\n- Our AI suggests partners based on your industry and region\n- Connect and start trading conversations\n\nWant to get started? Click "Get Started" in the top menu.` },
+  { patterns:['price','cost','fee','subscription','plan','free'], response:`Trade Grid offers flexible plans:\n\nStarter — Free, basic matching\nProfessional — R499/mo, unlimited matches + analytics\nEnterprise — Custom pricing for large businesses\n\nContact our sales team at sales@tradegrid.com for more details.` },
+  { patterns:['contact','support','help','email','phone','reach'], response:`You can reach our support team at:\n\nsupport@tradegrid.com\n+27 (83) 720-4520\nMon-Fri 9am–6pm SAST\n\nOr scroll down to our Contact Us section!` },
+  { patterns:['sign up','register','account','create','join','get started'], response:`Getting started is simple!\n\n1. Click "Get Started" in the navigation\n2. Complete your business profile\n3. Upload verification documents\n4. Start discovering trading partners!\n\nThe whole process takes less than 10 minutes.` },
+  { patterns:['import','export','trade','goods','products'], response:`Trade Grid supports both importers and exporters across all major product categories:\n\nAgricultural products\nEnergy & renewables\nManufacturing goods\nHealthcare & medical\nElectronics & tech\n\nWhat industry are you in? I can give more specific info!` },
+  { patterns:['hello','hi','hey','good morning','good afternoon','howzit'], response:`Hello! I'm Masha, your Trade Grid AI assistant.\n\nI can help you with:\n- Understanding how Trade Grid works\n- Business verification process\n- Finding trading partners\n- Market information\n\nWhat would you like to know?` },
+  { patterns:['about','founders','team','who made','who built'], response:`Trade Grid was founded by a passionate team of six:\n\nTashlyn Mitchell — Project Leader\nTJP Mabotja — Back-end Developer\nValery Mutetwa — Front-end Developer\nSiyanda Xaba — Database Manager\nKhethukhanyo Mbekeni — Front-end Developer\nSifiso Sibanyoni — Back-end Developer\n\nScroll to the About Us section to meet the team!` },
 ];
 
-const mashaFallback = `I'm not sure about that yet, but I'm learning! 🤖\n\nFor specific queries, please contact our support team at support@tradegrid.com or call +27 (83) 720-4520.\n\nIs there anything else I can help you with?`;
+const mashaFallback = `I'm not sure about that yet, but I'm learning!\n\nFor specific queries, please contact our support team at support@tradegrid.com or call +27 (83) 720-4520.\n\nIs there anything else I can help you with?`;
 
 function mashaGetResponse(input) {
   const lower = input.toLowerCase();
-  for (const entry of mashaKB) {
-    if (entry.patterns.some(p => lower.includes(p))) return entry.response;
-  }
+  for (const entry of mashaKB) { if (entry.patterns.some(p => lower.includes(p))) return entry.response; }
   return mashaFallback;
 }
 
 /* ── Masha DOM refs ── */
-const mashaFab        = document.getElementById('mashaFab');
-const mashaWin        = document.getElementById('mashaWindow');
-const mashaMessages   = document.getElementById('mashaMessages');
-const mashaInput      = document.getElementById('mashaInput');
-const mashaSend       = document.getElementById('mashaSend');
-const mashaClear      = document.getElementById('mashaClear');
-const mashaMinimize   = document.getElementById('mashaMinimize');
-const mashaChipBtns   = document.querySelectorAll('.masha-chip');
-const mashaChipsBar   = document.getElementById('mashaChips');
+const mashaFab      = document.getElementById('mashaFab');
+const mashaWin      = document.getElementById('mashaWindow');
+const mashaMessages = document.getElementById('mashaMessages');
+const mashaInput    = document.getElementById('mashaInput');
+const mashaSend     = document.getElementById('mashaSend');
+const mashaClear    = document.getElementById('mashaClear');
+const mashaMinimize = document.getElementById('mashaMinimize');
+const mashaChipBtns = document.querySelectorAll('.masha-chip');
+const mashaChipsBar = document.getElementById('mashaChips');
 const mashaFooterLink = document.getElementById('mashaFooterLink');
 let mashaOpen = false;
 
@@ -193,6 +144,9 @@ if (mashaFooterLink) {
   });
 }
 
+/**
+ * Add a message row using Remix icon avatars — no emoji in chat.
+ */
 function mashaAddMessage(text, sender) {
   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const row = document.createElement('div');
@@ -200,11 +154,12 @@ function mashaAddMessage(text, sender) {
 
   const avatar = document.createElement('div');
   avatar.className = 'msg-bubble-avatar';
+  // Use Remix icon instead of emoji
   avatar.innerHTML = sender === 'bot'
     ? '<i class="ri-robot-2-line"></i>'
     : '<i class="ri-user-3-line"></i>';
 
-  const wrap = document.createElement('div');
+  const wrap   = document.createElement('div');
   const bubble = document.createElement('div');
   bubble.className = 'msg-bubble';
   bubble.innerHTML = text
@@ -215,8 +170,10 @@ function mashaAddMessage(text, sender) {
   time.textContent = now;
   wrap.appendChild(bubble);
   wrap.appendChild(time);
+
   if (sender === 'bot') { row.appendChild(avatar); row.appendChild(wrap); }
-  else { row.appendChild(wrap); row.appendChild(avatar); }
+  else                  { row.appendChild(wrap);   row.appendChild(avatar); }
+
   mashaMessages.appendChild(row);
   mashaMessages.scrollTop = mashaMessages.scrollHeight;
 }
@@ -283,7 +240,7 @@ mashaClear.addEventListener('click', () => {
 
 function mashaGreeting() {
   setTimeout(() => {
-    mashaAddMessage(`Hi there! 👋 I'm **Masha**, your Trade Grid AI assistant.\n\nI can help you with verification, finding trading partners, markets, and more. What would you like to know?`, 'bot');
+    mashaAddMessage(`Hi there! I'm **Masha**, your Trade Grid AI assistant.\n\nI can help you with verification, finding trading partners, markets, and more. What would you like to know?`, 'bot');
   }, 400);
 }
 

@@ -24,34 +24,18 @@ document.querySelectorAll('[data-page]').forEach(el => {
   el.addEventListener('click', (e) => { e.preventDefault(); navigateTo(el.dataset.page); });
 });
 
-// ── Sidebar: push-slide behaviour ──
+// ── Sidebar ──
 const sidebar        = document.getElementById('sidebar');
 const mainWrapper    = document.querySelector('.main-wrapper');
 const sidebarToggle  = document.getElementById('sidebarToggle');
-
-// Remove old overlay references — not used anymore
 const sidebarOverlay = document.getElementById('sidebarOverlay');
 
-function openSidebar() {
-  sidebar.classList.add('open');
-  mainWrapper.classList.add('sidebar-pushed');
-}
-function closeSidebar() {
-  sidebar.classList.remove('open');
-  mainWrapper.classList.remove('sidebar-pushed');
-}
-function toggleSidebar() {
-  sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
-}
+function openSidebar()  { sidebar.classList.add('open'); mainWrapper.classList.add('sidebar-pushed'); }
+function closeSidebar() { sidebar.classList.remove('open'); mainWrapper.classList.remove('sidebar-pushed'); }
+function toggleSidebar() { sidebar.classList.contains('open') ? closeSidebar() : openSidebar(); }
 
 sidebarToggle.addEventListener('click', (e) => { e.stopPropagation(); toggleSidebar(); });
-
-// Close sidebar if user clicks on the main content area while sidebar is open
-mainWrapper.addEventListener('click', (e) => {
-  if (sidebar.classList.contains('open')) {
-    closeSidebar();
-  }
-});
+mainWrapper.addEventListener('click', () => { if (sidebar.classList.contains('open')) closeSidebar(); });
 
 // ── Logout Modal ──
 function createLogoutModal() {
@@ -71,9 +55,7 @@ function createLogoutModal() {
     </div>
   `;
   document.body.appendChild(backdrop);
-
   const closeModal = () => backdrop.classList.remove('open');
-
   document.getElementById('logoutModalClose').addEventListener('click', closeModal);
   document.getElementById('btnLogoutCancel').addEventListener('click', closeModal);
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
@@ -81,9 +63,7 @@ function createLogoutModal() {
     window.location.href = '../Login - Page/login.html';
   });
 }
-
 createLogoutModal();
-
 document.getElementById('logoutBtn').addEventListener('click', () => {
   document.getElementById('logoutModalBackdrop').classList.add('open');
   closeSidebar();
@@ -105,7 +85,7 @@ function showUserToast(msg) {
 }
 
 // ── IMAGE SEARCH PANEL ──
-const imgSearchBtn     = document.getElementById('imgSearchBtn');
+const imgSearchBtn     = document.getElementById('imgSearchBtn');       // camera btn inside search bar
 const imgSearchPanel   = document.getElementById('imgSearchPanel');
 const imgSearchClose   = document.getElementById('imgSearchClose');
 const imgFileInput     = document.getElementById('imgFileInput');
@@ -134,12 +114,16 @@ let currentProduct = null;
 function openImgPanel()  { imgSearchPanel.classList.add('open'); notifPanel.classList.add('hidden'); }
 function closeImgPanel() { imgSearchPanel.classList.remove('open'); }
 
-imgSearchBtn.addEventListener('click', (e) => { e.stopPropagation(); imgSearchPanel.classList.contains('open') ? closeImgPanel() : openImgPanel(); });
+imgSearchBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  imgSearchPanel.classList.contains('open') ? closeImgPanel() : openImgPanel();
+});
 imgSearchClose.addEventListener('click', closeImgPanel);
-document.addEventListener('click', (e) => { if (!imgSearchPanel.contains(e.target) && e.target !== imgSearchBtn) closeImgPanel(); });
+document.addEventListener('click', (e) => {
+  if (!imgSearchPanel.contains(e.target) && e.target !== imgSearchBtn) closeImgPanel();
+});
 
 imgFileInput.addEventListener('change', (e) => { if (e.target.files[0]) handleImageFile(e.target.files[0]); });
-
 imgUploadZone.addEventListener('dragover', (e) => { e.preventDefault(); imgUploadZone.classList.add('drag-over'); });
 imgUploadZone.addEventListener('dragleave', () => imgUploadZone.classList.remove('drag-over'));
 imgUploadZone.addEventListener('drop', (e) => {
@@ -194,11 +178,11 @@ btnViewProduct.addEventListener('click', () => {
 
 function renderProductDetail(p) {
   const el = document.getElementById('productDetailContent');
-  const specsHtml = p.specs.map(s => '<div class="product-spec-item"><span class="spec-label">' + s.label + '</span><span class="spec-value">' + s.value + '</span></div>').join('');
+  const specsHtml     = p.specs.map(s => '<div class="product-spec-item"><span class="spec-label">' + s.label + '</span><span class="spec-value">' + s.value + '</span></div>').join('');
   const suppliersHtml = p.suppliers.map(s => '<div class="supplier-row"><div class="supplier-avatar">' + s.init + '</div><div class="supplier-info"><div class="supplier-name">' + s.name + '</div><div class="supplier-meta">' + s.meta + '</div></div><span class="supplier-badge">' + s.score + ' match</span></div>').join('');
-  const demandHtml = p.demand.map(d => '<div class="market-demand-row"><span>' + d.market + '</span><div class="demand-bar-wrap"><div class="demand-bar" style="width:' + d.pct + '%"></div></div><span class="demand-pct">' + d.pct + '%</span></div>').join('');
-  const badgesHtml = p.tags.map(t => '<span class="product-hero-badge">' + t + '</span>').join('') + '<span class="product-hero-badge green"><i class="ri-shield-check-fill"></i> Trade Ready</span>';
-  const tagsHtml = p.tags.map(t => '<span class="product-tag-full">' + t + '</span>').join('');
+  const demandHtml    = p.demand.map(d => '<div class="market-demand-row"><span>' + d.market + '</span><div class="demand-bar-wrap"><div class="demand-bar" style="width:' + d.pct + '%"></div></div><span class="demand-pct">' + d.pct + '%</span></div>').join('');
+  const badgesHtml    = p.tags.map(t => '<span class="product-hero-badge">' + t + '</span>').join('') + '<span class="product-hero-badge green"><i class="ri-shield-check-fill"></i> Trade Ready</span>';
+  const tagsHtml      = p.tags.map(t => '<span class="product-tag-full">' + t + '</span>').join('');
 
   el.innerHTML =
     '<div class="product-detail-hero">' +
@@ -226,7 +210,9 @@ function renderProductDetail(p) {
   document.getElementById('btnSaveProduct').addEventListener('click', () => showUserToast('Product saved to watchlist!'));
 }
 
-// ── Masha AI ──
+// ============================================================
+//   MASHA AI — icon-based chat bubbles (no emojis in chat)
+// ============================================================
 const mashaFab      = document.getElementById('mashaFab');
 const mashaWindow   = document.getElementById('mashaWindow');
 const mashaClose    = document.getElementById('mashaClose');
@@ -237,52 +223,66 @@ const openMasha     = document.getElementById('openMasha');
 let mashaOpen = false;
 
 const mashaKB = [
-  { patterns:['verify','document','license'], response:'To complete verification, go to Verification in the sidebar and upload your remaining documents. Our team reviews within 48 hours. ✅' },
-  { patterns:['match','partner','find','connect'], response:'Visit the Discover page to find new trading partners, or check Matches for your AI-curated suggestions! 🤝' },
-  { patterns:['message','chat','contact'], response:'Head to the Messages section to chat with your trading partners directly. 💬' },
-  { patterns:['analytic','insight','stat'], response:'Your Analytics page shows profile views, match rates, and trending market data. 📊' },
-  { patterns:['image','photo','picture','camera','product search'], response:'Use the 📷 camera button in the top bar to search by product image! Upload a photo and I will identify the product and show trade details.' },
-  { patterns:['hello','hi','hey','howzit'], response:"Hi there! 👋 I'm Masha. I can help you navigate Trade Grid — verification, matches, messages, image search, anything!" },
-  { patterns:['help','how'], response:'I can help with: finding trading partners, verification status, analytics, image product search, or messaging. What do you need? 🌐' },
+  { patterns:['verify','document','license'], response:'To complete verification, go to Verification in the sidebar and upload your remaining documents. Our team reviews within 48 hours.' },
+  { patterns:['match','partner','find','connect'], response:'Visit the Discover page to find new trading partners, or check Matches for your AI-curated suggestions!' },
+  { patterns:['message','chat','contact'], response:'Head to the Messages section to chat with your trading partners directly.' },
+  { patterns:['analytic','insight','stat'], response:'Your Analytics page shows profile views, match rates, and trending market data.' },
+  { patterns:['image','photo','picture','camera','product search'], response:'Use the camera button inside the search bar to search by product image! Upload a photo and I will identify the product and show trade details.' },
+  { patterns:['hello','hi','hey','howzit'], response:"Hi there! I'm Masha. I can help you navigate Trade Grid — verification, matches, messages, image search, anything!" },
+  { patterns:['help','how'], response:'I can help with: finding trading partners, verification status, analytics, image product search, or messaging. What do you need?' },
 ];
 
 function mashaGetResponse(text) {
   const lower = text.toLowerCase();
   for (const entry of mashaKB) { if (entry.patterns.some(p => lower.includes(p))) return entry.response; }
-  return "I'm not sure about that, but contact support at support@tradegrid.com. Is there anything else I can help with? 😊";
+  return "I'm not sure about that, but contact support at support@tradegrid.com. Is there anything else I can help with?";
 }
 
+/**
+ * Add a message bubble using Remix icon avatars — no emojis.
+ * sender: 'bot' | 'user'
+ */
 function mashaAddMsg(text, sender) {
   const row = document.createElement('div');
-  row.style.cssText = 'display:flex;gap:8px;align-items:flex-end;flex-direction:' + (sender==='user'?'row-reverse':'row') + ';';
+  row.className = 'masha-msg-row ' + sender;
+
   const avatar = document.createElement('div');
-  avatar.style.cssText = 'width:26px;height:26px;border-radius:50%;background:' + (sender==='bot'?'rgba(15,163,177,0.12)':'rgba(13,59,59,0.12)') + ';display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;color:' + (sender==='bot'?'#0FA3B1':'#0D3B3B') + ';';
+  avatar.className = 'masha-msg-avatar';
   avatar.innerHTML = sender === 'bot'
     ? '<i class="ri-robot-2-line"></i>'
     : '<i class="ri-user-3-line"></i>';
+
   const bubble = document.createElement('div');
-  bubble.style.cssText = 'max-width:80%;padding:9px 13px;border-radius:14px;font-size:12px;line-height:1.55;' + (sender==='bot'?'background:#F0FAFB;border:1px solid rgba(13,59,59,0.1);color:#1A1A1A;border-bottom-left-radius:4px;':'background:#0D3B3B;color:#fff;border-bottom-right-radius:4px;');
+  bubble.className = 'masha-msg-bubble';
   bubble.textContent = text;
-  if (sender==='bot') { row.appendChild(avatar); row.appendChild(bubble); } else { row.appendChild(bubble); row.appendChild(avatar); }
+
+  if (sender === 'bot') { row.appendChild(avatar); row.appendChild(bubble); }
+  else                  { row.appendChild(bubble); row.appendChild(avatar); }
+
   mashaMessages.appendChild(row);
   mashaMessages.scrollTop = mashaMessages.scrollHeight;
-}
-
-function mashaSendMsg() {
-  const text = mashaInput.value.trim();
-  if (!text) return;
-  mashaAddMsg(text, 'user'); mashaInput.value = '';
-  setTimeout(() => mashaAddMsg(mashaGetResponse(text), 'bot'), 700);
 }
 
 function toggleMasha() {
   mashaOpen = !mashaOpen;
   mashaWindow.classList.toggle('open', mashaOpen);
-  const io = mashaFab.querySelector('.icon-open'); const ic = mashaFab.querySelector('.icon-close');
+  const io = mashaFab.querySelector('.icon-open');
+  const ic = mashaFab.querySelector('.icon-close');
   if (io) io.style.display = mashaOpen ? 'none' : 'flex';
   if (ic) ic.style.display = mashaOpen ? 'flex' : 'none';
-  const pulse = mashaFab.querySelector('.fab-pulse'); if (pulse) pulse.style.display = 'none';
-  if (mashaOpen && mashaMessages.children.length === 0) setTimeout(() => mashaAddMsg("Hi! 👋 I'm Masha. How can I help you today?", 'bot'), 300);
+  const pulse = mashaFab.querySelector('.fab-pulse');
+  if (pulse) pulse.style.display = 'none';
+  if (mashaOpen && mashaMessages.children.length === 0) {
+    setTimeout(() => mashaAddMsg("Hi! I'm Masha. How can I help you today?", 'bot'), 300);
+  }
+}
+
+function mashaSendMsg() {
+  const text = mashaInput.value.trim();
+  if (!text) return;
+  mashaAddMsg(text, 'user');
+  mashaInput.value = '';
+  setTimeout(() => mashaAddMsg(mashaGetResponse(text), 'bot'), 700);
 }
 
 mashaFab.addEventListener('click', toggleMasha);
@@ -308,13 +308,18 @@ document.addEventListener('click', (e) => { if (!notifPanel.contains(e.target) &
 // ── Topbar search ──
 const topbarSearchBtn   = document.getElementById('topbarSearchBtn');
 const topbarSearchInput = document.getElementById('topbarSearchInput');
-topbarSearchBtn.addEventListener('click', () => { const q = topbarSearchInput.value.trim(); if (q) { showUserToast('Searching for "' + q + '"...'); navigateTo('discover'); } });
+topbarSearchBtn.addEventListener('click', () => {
+  const q = topbarSearchInput.value.trim();
+  if (q) { showUserToast('Searching for "' + q + '"...'); navigateTo('discover'); }
+});
 topbarSearchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') topbarSearchBtn.click(); });
 
 document.getElementById('avatarBtn').addEventListener('click', () => navigateTo('profile'));
 
 // ── Profile edit ──
-document.querySelectorAll('.profile-sec-edit').forEach(btn => { btn.addEventListener('click', () => showUserToast('Editing ' + (btn.dataset.field || 'section') + '...')); });
+document.querySelectorAll('.profile-sec-edit').forEach(btn => {
+  btn.addEventListener('click', () => showUserToast('Editing ' + (btn.dataset.field || 'section') + '...'));
+});
 document.getElementById('editProfileBtn')?.addEventListener('click', () => showUserToast('Opening profile editor...'));
 
 // ── Verification ──
@@ -325,13 +330,20 @@ document.getElementById('uploadDocBtn')?.addEventListener('click', () => showUse
 
 // ── Analytics ──
 document.querySelectorAll('.period-tab').forEach(tab => {
-  tab.addEventListener('click', () => { document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active')); tab.classList.add('active'); showUserToast('Showing ' + tab.textContent + ' analytics'); });
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    showUserToast('Showing ' + tab.textContent + ' analytics');
+  });
 });
 document.querySelector('.btn-export-report')?.addEventListener('click', () => showUserToast('Preparing report for download...'));
 
 // ── Settings ──
 document.querySelectorAll('.toggle input').forEach(toggle => {
-  toggle.addEventListener('change', () => { const label = toggle.closest('.setting-row')?.querySelector('p')?.textContent || 'Setting'; showUserToast(label + ' ' + (toggle.checked ? 'enabled' : 'disabled')); });
+  toggle.addEventListener('change', () => {
+    const label = toggle.closest('.setting-row')?.querySelector('p')?.textContent || 'Setting';
+    showUserToast(label + ' ' + (toggle.checked ? 'enabled' : 'disabled'));
+  });
 });
 
 // ── Messages send ──
@@ -351,7 +363,8 @@ document.querySelectorAll('.btn-ph-primary').forEach(btn => {
   btn.addEventListener('click', () => {
     const company = btn.closest('.placeholder-card')?.querySelector('h4')?.textContent || 'company';
     showUserToast('Connection request sent to ' + company);
-    btn.innerHTML = '<i class="ri-check-line"></i> Requested'; btn.disabled = true; btn.style.opacity = '0.7';
+    btn.innerHTML = '<i class="ri-check-line"></i> Requested';
+    btn.disabled = true; btn.style.opacity = '0.7';
   });
 });
 

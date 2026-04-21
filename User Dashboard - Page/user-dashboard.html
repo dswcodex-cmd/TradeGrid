@@ -52,15 +52,18 @@
       <button class="topbar-menu-btn" id="sidebarToggle" title="Toggle menu">
         <i class="ri-menu-line"></i>
       </button>
+
+      <!-- SEARCH BAR — camera icon now lives inside, just before the Search button -->
       <div class="topbar-search">
         <i class="ri-search-line"></i>
         <input type="text" id="topbarSearchInput" placeholder="Search companies, products, markets..." />
-        <button class="topbar-search-btn" id="topbarSearchBtn">Search</button>
-      </div>
-      <div class="topbar-actions">
-        <button class="topbar-btn" title="Search by product image" id="imgSearchBtn">
+        <button class="topbar-img-search-btn" id="imgSearchBtn" title="Search by product image">
           <i class="ri-camera-line"></i>
         </button>
+        <button class="topbar-search-btn" id="topbarSearchBtn">Search</button>
+      </div>
+
+      <div class="topbar-actions">
         <button class="topbar-btn" title="Notifications" id="notifBtn">
           <i class="ri-notification-3-line"></i>
           <span class="topbar-notif" id="notifCount">5</span>
