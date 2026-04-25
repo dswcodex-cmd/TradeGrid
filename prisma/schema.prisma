@@ -10,6 +10,7 @@ model Company {
   company_id              Int               @id @default(autoincrement())
   company_name            String
   registration_number     String            @unique
+  email                   String            @unique
   Password                String
   business_type           String
   number_of_employees     Int?

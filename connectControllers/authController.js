@@ -1,12 +1,11 @@
 import prisma from "../prismaClient.js";
 import dotenv from "dotenv"
 
-
 export const sendConnectionRequest = async (req, res) => {
   try {
     const source_company_id = Number(req.company.company_id);
     const { target_company_id, notes } = req.body;
-    const numericTargetCompanyId = Number(target_company_id);
+    const numericTargetCompanyId = Number(target_company_id); 
 
     if (!target_company_id) {
       return res.status(400).json({ error: "target_company_id is required" });
