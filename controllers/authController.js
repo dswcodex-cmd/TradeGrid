@@ -35,13 +35,22 @@ export const signup = async (req, res) => {
       data: {
         registration_number,
         email,
+        is_email_verified: false,
         Password: hashedPassword,
         company_name,
         business_type
       }
     });
 
-    res.status(201).json(user);
+    res.status(201).json({
+      message: "Signup successful. Verify your email before logging in.",
+      user: {
+        company_id: user.company_id,
+        company_name: user.company_name,
+        email: user.email,
+        is_email_verified: user.is_email_verified
+      }
+    });
 
   } catch (error) {
     console.error(error); 
@@ -59,6 +68,10 @@ export const login = async (req, res) => {
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
+    }
+
+    if (!user.is_email_verified) {
+      return res.status(403).json({ message: "Verify your email before logging in" });
     }
 
     const isMatch = await bcrypt.compare(Password, user.Password);
@@ -140,6 +153,22 @@ export const verifyEmailCode = async (req, res) => {
         status: verificationCheck.status
       });
     }
+
+    const user = await prisma.company.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "Company not found for this email" });
+    }
+
+    await prisma.company.update({
+      where: { email },
+      data: {
+        is_email_verified: true,
+        email_verified_at: new Date()
+      }
+    });
 
     return res.status(200).json({
       message: "Email verified successfully",

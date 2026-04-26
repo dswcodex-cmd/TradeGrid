@@ -2,15 +2,29 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import { paystackWebhook } from "./controllers/paymentController.js";
 
 dotenv.config();
 
 const app = express();
 
 app.use(cors());
+app.post("/payments/webhook", express.raw({ type: "application/json" }), paystackWebhook);
 app.use(express.json());
 
 app.use("/auth", authRoutes);
+app.use("/payments", paymentRoutes);
+
+app.get("/payment-return", (req, res) => {
+  const { reference, trxref } = req.query;
+
+  return res.status(200).json({
+    message: "Paystack redirected back successfully",
+    reference: reference || trxref || null,
+    note: "Payment status is finalized by webhook or verification, not by this redirect alone."
+  });
+});
 
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
