@@ -28,17 +28,26 @@ export const signup = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "Company already registered" });
     }
+    
+    const RegExEmail= /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const RegExPassword= /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+    if (!RegExEmail.test(email) || !RegExPassword.test(Password)) {
+      return res.status(400).json({
+        error: "Invalid email or password format"
+      });
+    }
 
     const hashedPassword = await bcrypt.hash(Password, 10);
 
     const user = await prisma.company.create({
-      data: {
-        registration_number,
-        email,
-        is_email_verified: false,
-        Password: hashedPassword,
-        company_name,
-        business_type
+    data: {
+      registration_number,
+      email,
+      is_email_verified: false,
+      Password: hashedPassword,
+      company_name,
+      business_type
       }
     });
 
@@ -51,7 +60,6 @@ export const signup = async (req, res) => {
         is_email_verified: user.is_email_verified
       }
     });
-
   } catch (error) {
     console.error(error); 
     res.status(500).json({ error: error.message });
