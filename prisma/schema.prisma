@@ -33,6 +33,10 @@ model Company {
   triggered_notifications Notification[]    @relation("RelatedCompanyNotifications")
   payments_sent           Payment[]         @relation("PayerCompany")
   payments_received       Payment[]         @relation("RecipientCompany")
+  conversations_started   Conversation[]    @relation("ConversationCompany1")
+  conversations_joined    Conversation[]    @relation("ConversationCompany2")
+  messages_sent           Message[]         @relation("MessageSender")
+  messages_received       Message[]         @relation("MessageReceiver")
 }
 
 model Industry {
@@ -135,4 +139,33 @@ model Payment {
   payer_company     Company        @relation("PayerCompany", fields: [payer_company_id], references: [company_id])
   recipient_company Company        @relation("RecipientCompany", fields: [recipient_company_id], references: [company_id])
   notifications     Notification[]
+}
+
+model Conversation {
+  conversation_id Int       @id @default(autoincrement())
+  company1_id     Int
+  company2_id     Int
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  last_message_at DateTime?
+
+  company1 Company   @relation("ConversationCompany1", fields: [company1_id], references: [company_id])
+  company2 Company   @relation("ConversationCompany2", fields: [company2_id], references: [company_id])
+  messages Message[]
+
+  @@unique([company1_id, company2_id])
+}
+
+model Message {
+  message_id          Int      @id @default(autoincrement())
+  conversation_id     Int
+  sender_company_id   Int
+  receiver_company_id Int
+  content             String
+  is_read             Boolean  @default(false)
+  created_at          DateTime @default(now())
+
+  conversation     Conversation @relation(fields: [conversation_id], references: [conversation_id])
+  sender_company   Company      @relation("MessageSender", fields: [sender_company_id], references: [company_id])
+  receiver_company Company      @relation("MessageReceiver", fields: [receiver_company_id], references: [company_id])
 }

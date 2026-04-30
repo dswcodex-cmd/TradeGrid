@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
+import messageRoutes from "./routes/messageRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import { paystackWebhook } from "./controllers/paymentController.js";
 
@@ -14,6 +15,7 @@ app.post("/payments/webhook", express.raw({ type: "application/json" }), paystac
 app.use(express.json());
 
 app.use("/auth", authRoutes);
+app.use("/messages", messageRoutes);
 app.use("/payments", paymentRoutes);
 
 app.get("/payment-return", (req, res) => {
@@ -40,5 +42,5 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port http://localhost:${PORT}`);
 });
