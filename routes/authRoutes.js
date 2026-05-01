@@ -5,7 +5,10 @@ import {
   rejectConnectionRequest,
   getPendingRequests,
   getMyConnections,
-  getMyNotifications
+  getMyNotifications,
+  getUnreadNotificationCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead
 } from "../connectControllers/authController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import {
@@ -27,5 +30,8 @@ router.post("/reject", authMiddleware, rejectConnectionRequest);
 router.get("/pending", authMiddleware, getPendingRequests);
 router.get("/", authMiddleware, getMyConnections);
 router.get("/notifications", authMiddleware, getMyNotifications);
+router.get("/notifications/unread-count", authMiddleware, getUnreadNotificationCount);
+router.patch("/notifications/:notificationId/read", authMiddleware, markNotificationAsRead);
+router.patch("/notifications/read-all", authMiddleware, markAllNotificationsAsRead);
 
 export default router;

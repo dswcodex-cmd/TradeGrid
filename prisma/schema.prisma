@@ -7,36 +7,47 @@ datasource db {
 }
 
 model Company {
-  company_id              Int               @id @default(autoincrement())
+  company_id              Int                      @id @default(autoincrement())
   company_name            String
-  registration_number     String            @unique
-  email                   String            @unique
-  is_email_verified       Boolean           @default(false)
+  registration_number     String                   @unique
+  email                   String                   @unique
+  is_email_verified       Boolean                  @default(false)
   email_verified_at       DateTime?
   Password                String
   business_type           String
+  phone                   String?
+  website                 String?
+  address                 String?
+  annual_trade_volume     String?
+  looking_for_description String?
+  profile_visibility      Boolean                  @default(true)
+  show_trade_volume       Boolean                  @default(false)
   number_of_employees     Int?
   year_established        Int?
   company_description     String?
-  created_at              DateTime          @default(now())
+  created_at              DateTime                 @default(now())
   industry_id             Int?
   location_id             Int?
-  industry                Industry?         @relation(fields: [industry_id], references: [industry_id])
-  location                Location?         @relation(fields: [location_id], references: [location_id])
-  matches                 CompanyMatches[]  @relation("Company1")
-  matched_with            CompanyMatches[]  @relation("Company2")
+  industry                Industry?                @relation(fields: [industry_id], references: [industry_id])
+  location                Location?                @relation(fields: [location_id], references: [location_id])
+  matches                 CompanyMatches[]         @relation("Company1")
+  matched_with            CompanyMatches[]         @relation("Company2")
   products                CompanyProducts[]
   regions                 CompanyRegions[]
-  targets                 CompanyTargets[]  @relation("SourceCompany")
-  target_of               CompanyTargets[]  @relation("TargetCompany")
-  notifications           Notification[]    @relation("CompanyNotifications")
-  triggered_notifications Notification[]    @relation("RelatedCompanyNotifications")
-  payments_sent           Payment[]         @relation("PayerCompany")
-  payments_received       Payment[]         @relation("RecipientCompany")
-  conversations_started   Conversation[]    @relation("ConversationCompany1")
-  conversations_joined    Conversation[]    @relation("ConversationCompany2")
-  messages_sent           Message[]         @relation("MessageSender")
-  messages_received       Message[]         @relation("MessageReceiver")
+  targets                 CompanyTargets[]         @relation("SourceCompany")
+  target_of               CompanyTargets[]         @relation("TargetCompany")
+  notifications           Notification[]           @relation("CompanyNotifications")
+  triggered_notifications Notification[]           @relation("RelatedCompanyNotifications")
+  payments_sent           Payment[]                @relation("PayerCompany")
+  payments_received       Payment[]                @relation("RecipientCompany")
+  conversations_started   Conversation[]           @relation("ConversationCompany1")
+  conversations_joined    Conversation[]           @relation("ConversationCompany2")
+  messages_sent           Message[]                @relation("MessageSender")
+  messages_received       Message[]                @relation("MessageReceiver")
+  desired_products        CompanyDesiredProducts[]
+  enquiries_sent          Enquiry[]                @relation("EnquirySender")
+  enquiries_received      Enquiry[]                @relation("EnquiryRecipient")
+  verification_documents  VerificationDocument[]
 }
 
 model Industry {
@@ -52,12 +63,23 @@ model Location {
 }
 
 model Product {
-  product_id   Int               @id @default(autoincrement())
-  product_name String            @unique
-  companies    CompanyProducts[]
+  product_id           Int                      @id @default(autoincrement())
+  product_name         String                   @unique
+  companies            CompanyProducts[]
+  desired_by_companies CompanyDesiredProducts[]
+  enquiries            Enquiry[]
 }
 
 model CompanyProducts {
+  company_id Int
+  product_id Int
+  company    Company @relation(fields: [company_id], references: [company_id])
+  product    Product @relation(fields: [product_id], references: [product_id])
+
+  @@id([company_id, product_id])
+}
+
+model CompanyDesiredProducts {
   company_id Int
   product_id Int
   company    Company @relation(fields: [company_id], references: [company_id])
@@ -168,4 +190,35 @@ model Message {
   conversation     Conversation @relation(fields: [conversation_id], references: [conversation_id])
   sender_company   Company      @relation("MessageSender", fields: [sender_company_id], references: [company_id])
   receiver_company Company      @relation("MessageReceiver", fields: [receiver_company_id], references: [company_id])
+}
+
+model Enquiry {
+  enquiry_id           Int      @id @default(autoincrement())
+  sender_company_id    Int
+  recipient_company_id Int
+  product_id           Int?
+  message              String
+  status               String   @default("pending")
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  sender_company    Company  @relation("EnquirySender", fields: [sender_company_id], references: [company_id])
+  recipient_company Company  @relation("EnquiryRecipient", fields: [recipient_company_id], references: [company_id])
+  product           Product? @relation(fields: [product_id], references: [product_id])
+}
+
+model VerificationDocument {
+  verification_document_id Int       @id @default(autoincrement())
+  company_id               Int
+  document_type            String
+  file_name                String?
+  file_url                 String?
+  notes                    String?
+  status                   String    @default("pending")
+  submitted_at             DateTime  @default(now())
+  reviewed_at              DateTime?
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+
+  company Company @relation(fields: [company_id], references: [company_id])
 }

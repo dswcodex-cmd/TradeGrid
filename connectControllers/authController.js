@@ -267,3 +267,79 @@ export const getMyNotifications = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const getUnreadNotificationCount = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+
+    const unread_count = await prisma.notification.count({
+      where: {
+        company_id: current_company_id,
+        is_read: false
+      }
+    });
+
+    return res.status(200).json({ unread_count });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const markNotificationAsRead = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+    const notification_id = Number(req.params.notificationId);
+
+    if (Number.isNaN(notification_id)) {
+      return res.status(400).json({ error: "notificationId must be a valid number" });
+    }
+
+    const notification = await prisma.notification.findFirst({
+      where: {
+        notification_id,
+        company_id: current_company_id
+      }
+    });
+
+    if (!notification) {
+      return res.status(404).json({ error: "Notification not found" });
+    }
+
+    const updatedNotification = await prisma.notification.update({
+      where: { notification_id },
+      data: {
+        is_read: true
+      }
+    });
+
+    return res.status(200).json({
+      message: "Notification marked as read",
+      notification: updatedNotification
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const markAllNotificationsAsRead = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+
+    const result = await prisma.notification.updateMany({
+      where: {
+        company_id: current_company_id,
+        is_read: false
+      },
+      data: {
+        is_read: true
+      }
+    });
+
+    return res.status(200).json({
+      message: "All notifications marked as read",
+      updated_count: result.count
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
