@@ -9,6 +9,8 @@
    Data
    ===================================================== */
 
+import { io } from 'socket.io-client';
+
 const matches = [
   {
     id: 1,
@@ -212,11 +214,7 @@ function sendMessage() {
   renderMessages();
 }
 
-/* =====================================================
-   Timer UI Updates
-   ===================================================== */
 
-/** Update all session-timer DOM elements. */
 function updateSessionUI() {
   const timerEl = document.getElementById('sessionTimer');
   timerEl.textContent = formatTime(sessionLeft);
@@ -247,9 +245,7 @@ function updateMatchUI() {
   bar.className   = 'match-progress-fill' + (urgent ? ' urgent' : '');
 }
 
-/* =====================================================
-   Timers
-   ===================================================== */
+
 
 // Session countdown — ticks every second
 setInterval(function () {
@@ -270,8 +266,43 @@ setInterval(function () {
   updateMatchUI();
 }, 1000);
 
-/* =====================================================
-   Initialise
-   ===================================================== */
 
 renderMatch();
+
+// Sifiso - connecting the back-end of live trading
+
+const socket = io('http://localhost:3000');
+
+socket.on('lobby_update', ({ onlineCount, matchesMade }) => {
+  document.getElementById('online-count').textContent = onlineCount;
+  document.getElementById('matches-made').textContent = matchesMade;
+});
+
+socket.on('round_tick', ({ timeRemaining, currentRound }) => {
+  document.getElementById('timer').textContent = formatTime(timeRemaining);
+  document.getElementById('round-label').textContent = `Round ${currentRound}`;
+});
+
+
+socket.emit('register_user', { userId, eventId });
+
+
+socket.on('status_update', ({ status }) => {
+  updateStatusBadge(status); 
+});
+
+
+socket.on('match_found', ({ matchId, partnerId, twilioToken, roomName }) => {
+  showMeetingScreen(matchId, partnerId, twilioToken, roomName);
+});
+
+
+socket.on('round_tick', ({ remaining }) => {
+  document.getElementById('match-time').textContent = formatTime(remaining);
+});
+
+
+socket.on('round_over', ({ matchId }) => {
+  showPostMatchCard(matchId);
+});
+

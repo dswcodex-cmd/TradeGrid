@@ -1,0 +1,149 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  company       String
+  email         String   @unique
+  passwordHash  String
+  country       String?
+  industry      String?
+  tradeType     TradeType @default(BOTH)
+  verified      Boolean  @default(false)
+  iecNumber     String?  //Importer Exporter Code
+  abnNumber     String?  // Australia: ABN
+  gstNumber     String?  // GST registration
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  registrations Registration[]
+  matchesAsA    ScheduledMatch[] @relation("UserA")
+  matchesAsB    ScheduledMatch[] @relation("UserB")
+  outcomes      MatchOutcome[]
+  messages      LobbyMessage[]
+}
+
+enum TradeType {
+  IMPORTER
+  EXPORTER
+  BOTH
+}
+
+
+model Event {
+  id                    String      @id @default(uuid())
+  title                 String
+  industry              String
+  description           String?
+  eventDate             DateTime
+  status                EventStatus @default(UPCOMING)
+  totalRounds           Int         @default(12)
+  roundDurationSeconds  Int         @default(180)
+  breakDurationSeconds  Int         @default(120)
+  currentRound          Int         @default(0)
+  createdAt             DateTime    @default(now())
+
+  registrations  Registration[]
+  matches        ScheduledMatch[]
+  messages       LobbyMessage[]
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  CLOSED
+}
+
+model Registration {
+  id                 String             @id @default(uuid())
+  userId             String
+  eventId            String
+  offering           String?
+  targetMarkets      String[]
+  sessionPreference  SessionPreference  @default(FULL_DAY)
+  status             UserEventStatus    @default(CONNECTED)
+  registeredAt       DateTime           @default(now())
+
+  user   User  @relation(fields: [userId], references: [id])
+  event  Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+}
+
+enum SessionPreference {
+  FULL_DAY
+  MORNING
+  AFTERNOON
+}
+
+enum UserEventStatus {
+  CONNECTED    // in lobby, not yet in queue
+  WAITING      // sitting in Redis queue
+  MATCHED      // partner found, room being created
+  IN_MEETING   // inside Twilio video room
+  POST_MATCH   // filling out post-match card
+  DONE         // finished all rounds
+}
+
+
+model ScheduledMatch {
+  id                  String      @id @default(uuid())
+  eventId             String
+  userAId             String
+  userBId             String
+  roundNumber         Int?
+  compatibilityScore  Int?
+  twilioRoomName      String?
+  startedAt           DateTime?
+  endedAt             DateTime?
+  createdAt           DateTime    @default(now())
+
+  event    Event          @relation(fields: [eventId], references: [id])
+  userA    User           @relation("UserA", fields: [userAId], references: [id])
+  userB    User           @relation("UserB", fields: [userBId], references: [id])
+  outcomes MatchOutcome[]
+}
+
+model MatchOutcome {
+  id        String   @id @default(uuid())
+  matchId   String
+  userId    String
+  decision  Decision
+  notes     String?
+  rating    Int?
+  createdAt DateTime @default(now())
+
+  match  ScheduledMatch @relation(fields: [matchId], references: [id])
+  user   User           @relation(fields: [userId], references: [id])
+
+  @@unique([matchId, userId])
+}
+
+enum Decision {
+  YES
+  NO
+  MAYBE
+}
+
+model LobbyMessage {
+  id        String   @id @default(uuid())
+  eventId   String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+
+  event  Event @relation(fields: [eventId], references: [id])
+  user   User  @relation(fields: [userId], references: [id])
+}
