@@ -1,8 +1,9 @@
-const twilio = require('twilio');
-const AccessToken = twilio.jwt.AccessToken;
-const VideoGrant = AccessToken.VideoGrant;
+import twilio from 'twilio';
 
-const createRoomToken = (userId, roomName) => {
+const { AccessToken } = twilio.jwt;
+const { VideoGrant } = AccessToken;
+
+export const createRoomToken = (userId, roomName) => {
   const token = new AccessToken(
     process.env.TWILIO_ACCOUNT_SID,
     process.env.TWILIO_API_KEY,

@@ -1,8 +1,8 @@
-const { dequeueTwo, joinQueue } = require('./queueService');
-const { createRoomToken } = require('./twilioService');
-const db = require('../models/db');
+import { dequeueTwo, joinQueue } from './queueService.js';
+import { createRoomToken } from './twilioService.js';
+import db from '../models/db.js';
 
-const updateStatus = async (eventId, userId, status) => {
+export const updateStatus = async (eventId, userId, status) => {
   await db.query(
     `UPDATE registrations SET status = $1
      WHERE event_id = $2 AND user_id = $3`,
@@ -10,23 +10,18 @@ const updateStatus = async (eventId, userId, status) => {
   );
 };
 
-const runMatchmaker = async (io, eventId) => {
+export const runMatchmaker = async (io, eventId) => {
   const queue = await getUsersInQueue(eventId);
 
-  
   if (queue.length < 2) return;
 
-  
   const [userA, userB] = await dequeueTwo(eventId);
   if (!userA || !userB) return;
 
-
   const roomName = `trade-pulse-${eventId}-${userA}-${userB}-${Date.now()}`;
-
 
   const tokenA = createRoomToken(userA, roomName);
   const tokenB = createRoomToken(userB, roomName);
-
 
   const match = await db.query(
     `INSERT INTO scheduled_matches
