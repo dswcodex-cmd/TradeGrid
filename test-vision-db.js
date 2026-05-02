@@ -1,7 +1,7 @@
-require('dotenv').config();
-const Groq = require('groq-sdk');
-const { neon } = require('@neondatabase/serverless');
-const fs = require('fs');
+import Groq from 'groq-sdk';
+import { neon } from '@neondatabase/serverless';
+import fs from 'fs';
+import 'dotenv/config';
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const sql  = neon(process.env.DATABASE_URL);
@@ -21,8 +21,8 @@ function fixJSON(str) {
 
 async function run() {
 
-
-  console.log('Identifying product from image...');
+  // STEP 1: Identify product from image
+  console.log('🔍 Identifying product from image...');
 
   const imageBuffer = fs.readFileSync(IMAGE_PATH);
   const base64Image = imageBuffer.toString('base64');
@@ -53,17 +53,17 @@ Return ONLY a raw JSON object — no markdown, no backticks — in this exact sh
   console.log(`✅ Product identified: "${productInfo.product_name}"`);
 
 
-  console.log('\nFetching all products from database...');
+  console.log('\n🗄️  Fetching all products from database...');
   const allProducts = await sql`SELECT product_id, product_name FROM "Product"`;
   console.log(`   Found ${allProducts.length} products in database`);
 
   if (allProducts.length === 0) {
-    console.log('No products in database at all.');
+    console.log('❌ No products in database at all.');
     return;
   }
 
- 
-  console.log('\nAI is checking which database products are related...');
+
+  console.log('\n🧠 AI is checking which database products are related...');
 
   const productList = allProducts.map(p => `- ${p.product_name}`).join('\n');
 
@@ -94,32 +94,30 @@ If none are related return an empty array: []`,
     const raw = matchResponse.choices[0].message.content.trim().replace(/```json|```/g, '').trim();
     matchedNames = JSON.parse(raw);
   } catch {
-    console.log('Could not parse AI matching response, falling back to product name only');
     matchedNames = [];
   }
 
-  console.log(`   AI matched these database products: ${matchedNames.length > 0 ? matchedNames.join(', ') : 'none'}`);
 
- 
   const exactMatches = allProducts
     .filter(p => p.product_name.toLowerCase().includes(productInfo.product_name.toLowerCase()))
     .map(p => p.product_name);
 
   const allMatchedNames = [...new Set([...matchedNames, ...exactMatches])];
+  console.log(`   AI matched: ${allMatchedNames.length > 0 ? allMatchedNames.join(', ') : 'none'}`);
 
   if (allMatchedNames.length === 0) {
     console.log(`\n No related products found in database for "${productInfo.product_name}"`);
     return;
   }
 
- 
+
   const matchedProducts = allProducts.filter(p =>
     allMatchedNames.some(name => name.toLowerCase() === p.product_name.toLowerCase())
   );
   const matchedIds = matchedProducts.map(p => p.product_id);
 
 
-  console.log('\n Finding companies that supply related products...');
+  console.log('\nFinding companies that supply related products...');
 
   const companies = await sql`
     SELECT
@@ -141,7 +139,7 @@ If none are related return an empty array: []`,
     ORDER BY c.company_name ASC
   `;
 
- 
+  // Deduplicate by company_id
   const seen = new Set();
   const uniqueCompanies = companies.filter(c => {
     if (seen.has(c.company_id)) return false;
@@ -149,9 +147,9 @@ If none are related return an empty array: []`,
     return true;
   });
 
-  
+  // STEP 6: Display results
   if (uniqueCompanies.length === 0) {
-    console.log(`\nNo companies found that supply "${productInfo.product_name}" or anything related`);
+    console.log(`\n❌ No companies found that supply "${productInfo.product_name}" or anything related`);
   } else {
     console.log(`\n✅ Found ${uniqueCompanies.length} company(s):\n`);
     uniqueCompanies.forEach((c, i) => {
