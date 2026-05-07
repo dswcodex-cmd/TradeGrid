@@ -446,10 +446,84 @@ document.querySelectorAll('.btn-ph-primary').forEach(btn => {
 });
 
 // ── Message list switch ──
+// Conversation data keyed by the avatar initials shown in each list item
+const conversationData = {
+  AT: {
+    name:    'Asian Trade Co',
+    sub:     'Japan · Electronics Importer',
+    avatar:  'AT',
+    messages: [
+      { type: 'them', text: 'Hi, we came across your profile on Trade Grid. We\'re very interested in your export offerings. Could we schedule a call?' },
+      { type: 'me',   text: 'Hello! Great to hear from you. Yes, we\'d love to connect. What time zone are you in and when works best?' },
+      { type: 'them', text: 'We\'re in JST (UTC+9). Any weekday morning your time would work well for us.' },
+    ]
+  },
+  EI: {
+    name:    'Euro Import Solutions',
+    sub:     'Germany · Manufacturing Importer',
+    avatar:  'EI',
+    messages: [
+      { type: 'them', text: 'Good day! We reviewed your company profile and are impressed with your agricultural export range.' },
+      { type: 'me',   text: 'Thank you! We\'d be happy to discuss further. What products are you most interested in?' },
+      { type: 'them', text: 'Could you send us a product catalogue for the Q3 range? Particularly interested in maize and citrus.' },
+      { type: 'me',   text: 'Absolutely, I\'ll put that together and send it over by end of day.' },
+    ]
+  },
+  TG: {
+    name:    'Trade Grid Support',
+    sub:     'Platform Support',
+    avatar:  'TG',
+    messages: [
+      { type: 'them', text: 'Hello! Welcome to Trade Grid. We\'re here to help you get the most out of the platform.' },
+      { type: 'them', text: 'Your document verification has been received and is currently under review. Our team will process it within 24–48 hours.' },
+      { type: 'me',   text: 'Thank you for the update. How will I be notified once it\'s approved?' },
+      { type: 'them', text: 'You\'ll receive a notification in the platform and an email to the address on your account.' },
+    ]
+  }
+};
+
+function loadConversation(initials) {
+  const data = conversationData[initials];
+  if (!data) return;
+
+  // Update chat header
+  const chatHeader = document.querySelector('.msg-chat-header');
+  if (chatHeader) {
+    chatHeader.innerHTML = `
+      <div class="ml-avatar">${data.avatar}</div>
+      <div>
+        <p class="chat-name">${data.name}</p>
+        <p class="chat-sub">${data.sub}</p>
+      </div>
+    `;
+  }
+
+  // Rebuild chat body with this conversation's messages
+  const chatBody = document.querySelector('.msg-chat-body');
+  if (chatBody) {
+    chatBody.innerHTML = '';
+    data.messages.forEach(msg => {
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble ' + msg.type;
+      bubble.textContent = msg.text;
+      chatBody.appendChild(bubble);
+    });
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+}
+
 document.querySelectorAll('.msg-list-item').forEach(item => {
   item.addEventListener('click', () => {
+    // Update active state in list
     document.querySelectorAll('.msg-list-item').forEach(i => i.classList.remove('active'));
     item.classList.add('active');
-    const unread = item.querySelector('.ml-unread'); if (unread) unread.remove();
+
+    // Remove unread badge
+    const unread = item.querySelector('.ml-unread');
+    if (unread) unread.remove();
+
+    // Load the matching conversation
+    const initials = item.querySelector('.ml-avatar')?.textContent?.trim();
+    if (initials) loadConversation(initials);
   });
 });
