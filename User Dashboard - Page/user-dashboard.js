@@ -84,8 +84,88 @@ function showUserToast(msg) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(20px)'; }, 2500);
 }
 
+// ============================================================
+//   PAYMENT MODAL
+// ============================================================
+const paymentModalBackdrop = document.getElementById('paymentModalBackdrop');
+const paymentModalClose    = document.getElementById('paymentModalClose');
+const btnPaymentCancel     = document.getElementById('btnPaymentCancel');
+const btnPaymentSend       = document.getElementById('btnPaymentSend');
+const msgPayBtn            = document.getElementById('msgPayBtn');
+const payCurrency          = document.getElementById('payCurrency');
+const payAmount            = document.getElementById('payAmount');
+const payReference         = document.getElementById('payReference');
+
+// Currency symbol map
+const currencySymbols = {
+  ZAR: 'R',
+  USD: '$',
+  EUR: '€',
+  GBP: '£',
+  JPY: '¥',
+  AED: 'د.إ'
+};
+
+function openPaymentModal() {
+  // Reset fields
+  payAmount.value    = '';
+  payReference.value = '';
+  payCurrency.value  = 'ZAR';
+  paymentModalBackdrop.classList.add('open');
+}
+
+function closePaymentModal() {
+  paymentModalBackdrop.classList.remove('open');
+}
+
+// Open from payment button in chat input
+msgPayBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  openPaymentModal();
+});
+
+// Close actions
+paymentModalClose.addEventListener('click', closePaymentModal);
+btnPaymentCancel.addEventListener('click', closePaymentModal);
+paymentModalBackdrop.addEventListener('click', (e) => {
+  if (e.target === paymentModalBackdrop) closePaymentModal();
+});
+
+// Send payment
+btnPaymentSend.addEventListener('click', () => {
+  const amount = parseFloat(payAmount.value);
+  const ref    = payReference.value.trim();
+  const currency = payCurrency.value;
+  const symbol   = currencySymbols[currency] || currency;
+
+  if (!amount || amount <= 0) {
+    payAmount.focus();
+    payAmount.style.borderColor = '#dc2626';
+    setTimeout(() => { payAmount.style.borderColor = ''; }, 1500);
+    return;
+  }
+
+  // Build confirmation bubble text
+  const amountDisplay = `${currency} ${symbol}${amount.toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+  const refDisplay    = ref ? ` · ${ref}` : '';
+  const bubbleText    = `Payment of ${amountDisplay} sent${refDisplay}`;
+
+  // Inject payment bubble into chat
+  const chatBody = document.querySelector('.msg-chat-body');
+  if (chatBody) {
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble payment-bubble';
+    bubble.innerHTML = `<i class="ri-money-dollar-circle-line"></i>${bubbleText}`;
+    chatBody.appendChild(bubble);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  closePaymentModal();
+  showUserToast('Payment sent successfully!');
+});
+
 // ── IMAGE SEARCH PANEL ──
-const imgSearchBtn     = document.getElementById('imgSearchBtn');       // camera btn inside search bar
+const imgSearchBtn     = document.getElementById('imgSearchBtn');
 const imgSearchPanel   = document.getElementById('imgSearchPanel');
 const imgSearchClose   = document.getElementById('imgSearchClose');
 const imgFileInput     = document.getElementById('imgFileInput');
@@ -228,8 +308,9 @@ const mashaKB = [
   { patterns:['message','chat','contact'], response:'Head to the Messages section to chat with your trading partners directly.' },
   { patterns:['analytic','insight','stat'], response:'Your Analytics page shows profile views, match rates, and trending market data.' },
   { patterns:['image','photo','picture','camera','product search'], response:'Use the camera button inside the search bar to search by product image! Upload a photo and I will identify the product and show trade details.' },
-  { patterns:['hello','hi','hey','howzit'], response:"Hi there! I'm Masha. I can help you navigate Trade Grid — verification, matches, messages, image search, anything!" },
-  { patterns:['help','how'], response:'I can help with: finding trading partners, verification status, analytics, image product search, or messaging. What do you need?' },
+  { patterns:['payment','pay','send money','transfer'], response:'Use the green payment button in the Messages chat to send a secure business payment to your trading partner!' },
+  { patterns:['hello','hi','hey','howzit'], response:"Hi there! I'm Masha. I can help you navigate Trade Grid — verification, matches, messages, image search, payments, anything!" },
+  { patterns:['help','how'], response:'I can help with: finding trading partners, verification status, analytics, image product search, sending payments, or messaging. What do you need?' },
 ];
 
 function mashaGetResponse(text) {
@@ -238,10 +319,6 @@ function mashaGetResponse(text) {
   return "I'm not sure about that, but contact support at support@tradegrid.com. Is there anything else I can help with?";
 }
 
-/**
- * Add a message bubble using Remix icon avatars — no emojis.
- * sender: 'bot' | 'user'
- */
 function mashaAddMsg(text, sender) {
   const row = document.createElement('div');
   row.className = 'masha-msg-row ' + sender;
@@ -348,7 +425,7 @@ document.querySelectorAll('.toggle input').forEach(toggle => {
 
 // ── Messages send ──
 const chatInput = document.querySelector('.msg-chat-input input');
-const chatSend  = document.querySelector('.msg-chat-input button');
+const chatSend  = document.getElementById('chatSendBtn');
 chatSend?.addEventListener('click', () => {
   const val = chatInput?.value.trim(); if (!val) return;
   const body = document.querySelector('.msg-chat-body');

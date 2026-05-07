@@ -206,7 +206,14 @@
               <div class="chat-bubble me">Hello! Great to hear from you. Yes, we'd love to connect. What time zone are you in and when works best?</div>
               <div class="chat-bubble them">We're in JST (UTC+9). Any weekday morning your time would work well for us.</div>
             </div>
-            <div class="msg-chat-input"><input type="text" placeholder="Type a message..." /><button><i class="ri-send-plane-fill"></i></button></div>
+            <!-- ── Message input + Send + Payment buttons ── -->
+            <div class="msg-chat-input">
+              <input type="text" placeholder="Type a message..." />
+              <button class="msg-send-btn" id="chatSendBtn"><i class="ri-send-plane-fill"></i></button>
+              <button class="msg-pay-btn" id="msgPayBtn" title="Send Payment">
+                <i class="ri-money-dollar-circle-line"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -328,6 +335,76 @@
     </main>
 
   </div><!-- /main-wrapper -->
+
+  <!-- ============================================================
+       PAYMENT MODAL
+       ============================================================ -->
+  <div class="payment-modal-backdrop" id="paymentModalBackdrop">
+    <div class="payment-modal" id="paymentModal">
+
+      <!-- Header -->
+      <div class="payment-modal-header">
+        <div class="payment-modal-header-left">
+          <div class="payment-modal-icon"><i class="ri-money-dollar-circle-line"></i></div>
+          <div>
+            <div class="payment-modal-title">Send Payment</div>
+            <div class="payment-modal-sub">Secure business transfer</div>
+          </div>
+        </div>
+        <button class="payment-modal-close" id="paymentModalClose"><i class="ri-close-line"></i></button>
+      </div>
+
+      <!-- Body -->
+      <div class="payment-modal-body">
+
+        <!-- Recipient -->
+        <div class="payment-recipient">
+          <div class="payment-recipient-avatar" id="payRecipientAvatar">AT</div>
+          <div class="payment-recipient-info">
+            <p id="payRecipientName">Asian Trade Co</p>
+            <span id="payRecipientMeta">Japan · Electronics Importer</span>
+          </div>
+        </div>
+
+        <!-- Amount -->
+        <div class="payment-amount-wrap">
+          <label>Amount</label>
+          <div class="payment-amount-row">
+            <select class="payment-currency-select" id="payCurrency">
+              <option value="ZAR">ZAR R</option>
+              <option value="USD">USD $</option>
+              <option value="EUR">EUR €</option>
+              <option value="GBP">GBP £</option>
+              <option value="JPY">JPY ¥</option>
+              <option value="AED">AED د.إ</option>
+            </select>
+            <input class="payment-amount-input" id="payAmount" type="number" min="1" placeholder="0.00" />
+          </div>
+        </div>
+
+        <!-- Reference -->
+        <div class="payment-ref-wrap">
+          <label>Payment Reference</label>
+          <input class="payment-ref-input" id="payReference" type="text" placeholder="e.g. Invoice #1042 — Q3 order deposit" />
+        </div>
+
+        <!-- Security note -->
+        <div class="payment-fee-note">
+          <i class="ri-shield-check-line"></i>
+          <span>Payments are secured and logged as trade transactions on Trade Grid.</span>
+        </div>
+
+        <!-- Actions -->
+        <div class="payment-modal-actions">
+          <button class="btn-payment-cancel" id="btnPaymentCancel">Cancel</button>
+          <button class="btn-payment-send" id="btnPaymentSend">
+            <i class="ri-send-plane-fill"></i> Send Payment
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <!-- Masha AI FAB -->
   <button class="masha-fab" id="mashaFab">
