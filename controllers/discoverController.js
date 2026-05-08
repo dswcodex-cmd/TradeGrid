@@ -35,6 +35,7 @@ export const discoverCompanies = async (req, res) => {
         company_id: {
           not: current_company_id
         },
+        account_status: "active",
         profile_visibility: true,
         ...(business_type ? { business_type } : {}),
         ...(industry
@@ -178,6 +179,7 @@ export const getPublicCompanyProfile = async (req, res) => {
     const company = await prisma.company.findFirst({
       where: {
         company_id,
+        account_status: "active",
         profile_visibility: true
       },
       include: {

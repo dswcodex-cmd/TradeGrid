@@ -15,13 +15,15 @@ import {
   signup,
   login,
   sendEmailVerification,
-  verifyEmailCode
+  verifyEmailCode,
+  verifyRegistrationNumber
 } from "../controllers/authController.js";
 
 const router = express.Router();
 
 router.post("/signup", signup);
 router.post("/login", login);
+router.post("/verify-registration-number", verifyRegistrationNumber);
 router.post("/send-email-verification", sendEmailVerification);
 router.post("/verify-email-code", verifyEmailCode);
 router.post("/request", authMiddleware, sendConnectionRequest);

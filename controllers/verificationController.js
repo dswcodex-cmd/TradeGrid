@@ -138,6 +138,8 @@ export const replaceVerificationDocument = async (req, res) => {
         file_url: file_url || existingDocument.file_url,
         notes: notes || existingDocument.notes,
         status: "pending",
+        review_notes: null,
+        reviewed_by_admin_id: null,
         submitted_at: new Date(),
         reviewed_at: null
       }

@@ -1,13 +1,17 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import adminRoutes from "./routes/adminRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import discoverRoutes from "./routes/discoverRoutes.js";
 import matchRoutes from "./routes/matchRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import settingsRoutes from "./routes/settingsRoutes.js";
+import supportRoutes from "./routes/supportRoutes.js";
 import verificationRoutes from "./routes/verificationRoutes.js";
+import watchlistRoutes from "./routes/watchlistRoutes.js";
 import { paystackWebhook } from "./controllers/paymentController.js";
 
 dotenv.config();
@@ -19,10 +23,14 @@ app.post("/payments/webhook", express.raw({ type: "application/json" }), paystac
 app.use(express.json());
 
 app.use("/auth", authRoutes);
+app.use("/admin", adminRoutes);
 app.use("/discover", discoverRoutes);
 app.use("/matches", matchRoutes);
 app.use("/profile", profileRoutes);
+app.use("/settings", settingsRoutes);
+app.use("/support", supportRoutes);
 app.use("/verification", verificationRoutes);
+app.use("/watchlist", watchlistRoutes);
 app.use("/messages", messageRoutes);
 app.use("/payments", paymentRoutes);
 

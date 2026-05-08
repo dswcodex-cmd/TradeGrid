@@ -67,6 +67,7 @@ export const getMatches = async (req, res) => {
         company_id: {
           not: current_company_id
         },
+        account_status: "active",
         profile_visibility: true
       },
       include: {
