@@ -1,7 +1,44 @@
 /* ============================================================
    TRADE GRID — landing.js
-   Scroll-spy | Trending products | Masha AI widget | Hamburger menu
+   Scroll-spy | Trending products | Masha AI widget | Hamburger menu | Dark Mode
    ============================================================ */
+
+/* ── Dark Mode ── */
+(function () {
+  const STORAGE_KEY = 'tradegrid-dark-mode';
+
+  function applyTheme(dark) {
+    document.body.classList.toggle('dark-mode', dark);
+    // Sync all toggle buttons
+    document.querySelectorAll('.dark-mode-toggle').forEach(btn => {
+      btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
+      btn.setAttribute('title',      dark ? 'Switch to light mode' : 'Switch to dark mode');
+    });
+  }
+
+  function toggleDarkMode() {
+    const isDark = !document.body.classList.contains('dark-mode');
+    localStorage.setItem(STORAGE_KEY, isDark ? '1' : '0');
+    applyTheme(isDark);
+  }
+
+  // On load — respect saved preference only, default to LIGHT (teal) if no preference saved
+  const saved = localStorage.getItem(STORAGE_KEY);
+  const startDark = saved === '1'; // only go dark if user explicitly chose it before
+  applyTheme(startDark);
+
+  // Wire up buttons after DOM is ready
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.dark-mode-toggle').forEach(btn => {
+      btn.addEventListener('click', toggleDarkMode);
+    });
+  });
+
+  // Also wire up immediately in case script runs after DOM
+  document.querySelectorAll('.dark-mode-toggle').forEach(btn => {
+    btn.addEventListener('click', toggleDarkMode);
+  });
+})();
 
 /* ── Mobile hamburger menu ── */
 (function () {
@@ -144,9 +181,6 @@ if (mashaFooterLink) {
   });
 }
 
-/**
- * Add a message row using Remix icon avatars — no emoji in chat.
- */
 function mashaAddMessage(text, sender) {
   const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const row = document.createElement('div');
@@ -154,7 +188,6 @@ function mashaAddMessage(text, sender) {
 
   const avatar = document.createElement('div');
   avatar.className = 'msg-bubble-avatar';
-  // Use Remix icon instead of emoji
   avatar.innerHTML = sender === 'bot'
     ? '<i class="ri-robot-2-line"></i>'
     : '<i class="ri-user-3-line"></i>';

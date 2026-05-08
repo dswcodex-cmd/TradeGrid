@@ -25,7 +25,26 @@ document.addEventListener('DOMContentLoaded', () => {
   initLogout();
   initToast();
   initMasha();
+  initAdminSettings();
+  injectLogoutIcon();
 });
+
+/* ============================================================
+   INJECT LOGOUT ICON INTO BUTTON
+   The HTML has a standalone <i class="ri-logout-box-r-line"> and
+   a separate <button class="logout">Logout</button>.
+   We hide the icon via CSS and prepend it inside the button here.
+   ============================================================ */
+function injectLogoutIcon() {
+  const btn = document.querySelector('.logout');
+  if (!btn) return;
+  // Only inject if icon isn't already inside
+  if (!btn.querySelector('i')) {
+    const icon = document.createElement('i');
+    icon.className = 'ri-logout-box-r-line';
+    btn.insertBefore(icon, btn.firstChild);
+  }
+}
 
 /* ============================================================
    TOAST NOTIFICATION SYSTEM
@@ -255,6 +274,159 @@ function initLogout() {
 function confirmLogout() { closeModal(); showToast('Logging out...','ri-logout-box-r-line'); setTimeout(()=>{window.location.href='../Login - Page/login.html';},1000); }
 
 /* ============================================================
+   ADMIN SETTINGS MODAL
+   ============================================================ */
+function initAdminSettings() {
+  // Build the modal once and append to body
+  if (document.getElementById('adminSettingsBackdrop')) return;
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'adminSettingsBackdrop';
+  backdrop.className = 'admin-settings-backdrop';
+  backdrop.innerHTML = `
+    <div class="admin-settings-modal">
+
+      <div class="admin-settings-header">
+        <h3><i class="ri-settings-3-line"></i> Settings</h3>
+        <button class="admin-settings-x" id="adminSettingsX"><i class="ri-close-line"></i></button>
+      </div>
+
+      <div class="admin-settings-body">
+
+        <!-- Notifications -->
+        <div class="admin-settings-section">
+          <div class="admin-settings-section-title">Notifications</div>
+
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>Employee request alerts</p>
+              <span>Notify when an employee pushes a request to admin</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" checked id="notifEmpRequests"><span class="admin-toggle-slider"></span></label>
+          </div>
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>New user registrations</p>
+              <span>Get alerted when a new business registers</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" checked id="notifNewUsers"><span class="admin-toggle-slider"></span></label>
+          </div>
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>Pending verification reminders</p>
+              <span>Daily digest of verifications awaiting review</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" checked id="notifVerif"><span class="admin-toggle-slider"></span></label>
+          </div>
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>Compliance flags</p>
+              <span>Immediate alert when a profile is flagged</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" checked id="notifCompliance"><span class="admin-toggle-slider"></span></label>
+          </div>
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>Suspension & reinstatement actions</p>
+              <span>Confirm email when an account is suspended or reinstated</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" id="notifSuspend"><span class="admin-toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <!-- Platform -->
+        <div class="admin-settings-section">
+          <div class="admin-settings-section-title">Platform</div>
+
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>Require reason for suspensions</p>
+              <span>Enforce that a reason is typed before suspending</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" checked id="requireReason"><span class="admin-toggle-slider"></span></label>
+          </div>
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>Auto-mark requests as read on reply</p>
+              <span>Mark an employee request read when you reply</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" checked id="autoMarkRead"><span class="admin-toggle-slider"></span></label>
+          </div>
+          <div class="admin-settings-row">
+            <div class="admin-settings-row-info">
+              <p>Show growth percentages on stats</p>
+              <span>Display +% labels on dashboard stat cards</span>
+            </div>
+            <label class="admin-toggle"><input type="checkbox" checked id="showGrowth"><span class="admin-toggle-slider"></span></label>
+          </div>
+        </div>
+
+        <!-- Account -->
+        <div class="admin-settings-section">
+          <div class="admin-settings-section-title">Account</div>
+
+          <div class="admin-info-row">
+            <span class="admin-info-label">Name</span>
+            <span class="admin-info-value">Platform Administrator</span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Role</span>
+            <span class="admin-info-value">Super Admin</span>
+          </div>
+          <div class="admin-info-row">
+            <span class="admin-info-label">Panel</span>
+            <span class="admin-info-value">Trade Grid Admin</span>
+          </div>
+
+          <button class="admin-settings-change-password" id="adminChangePassword">
+            <i class="ri-lock-password-line"></i> Change Password
+          </button>
+        </div>
+
+      </div>
+
+      <div class="admin-settings-footer">
+        <button class="admin-settings-cancel" id="adminSettingsCancel">Close</button>
+        <button class="admin-settings-save" id="adminSettingsSave">Save Changes</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+
+  const close = () => backdrop.classList.remove('open');
+  document.getElementById('adminSettingsX').addEventListener('click', close);
+  document.getElementById('adminSettingsCancel').addEventListener('click', close);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+
+  // Show/hide growth labels toggle
+  document.getElementById('showGrowth').addEventListener('change', function () {
+    document.querySelectorAll('.stats .card .growth').forEach(el => {
+      el.style.display = this.checked ? '' : 'none';
+    });
+  });
+
+  // Change password placeholder
+  document.getElementById('adminChangePassword').addEventListener('click', function () {
+    this.textContent = 'Password reset link sent to your email';
+    this.disabled = true;
+  });
+
+  // Save
+  document.getElementById('adminSettingsSave').addEventListener('click', () => {
+    close();
+    showToast('Settings saved', 'ri-checkbox-circle-line');
+  });
+
+  // Wire the settings gear icon in the header
+  const settingsIcon = document.querySelector('.header-actions .ri-settings-3-line');
+  if (settingsIcon) {
+    settingsIcon.addEventListener('click', () => {
+      backdrop.classList.add('open');
+    });
+  }
+}
+
+/* ============================================================
    MASHA AI — icon-based chat (no emoji avatars)
    ============================================================ */
 const mashaKB = [
@@ -263,6 +435,7 @@ const mashaKB = [
   { patterns:['stat','analytics','numbers','growth','metric'], response:`Current platform stats:\n\n2,847 total users (+12.5%)\n1,423 active businesses (+8.3%)\n4,892 total matches (+15.7%)\n892 messages today (+23.1%)` },
   { patterns:['reply','respond','employee request'], response:`To reply to an employee request:\n\n1. Switch to Employee Requests tab\n2. Click Reply on the relevant card\n3. Type your response\n4. Hit Send — the employee is notified` },
   { patterns:['filter','priority','unread','read'], response:`To filter employee requests:\n\n1. Switch to the Employee Requests tab\n2. Click the filter icon next to the search bar\n3. Select Priority (High/Medium/Low) and/or Status (Read/Unread)\n4. Cards are filtered instantly` },
+  { patterns:['settings','notification','password'], response:`Open Settings using the gear icon in the top header.\n\nAdmin settings include:\n- Notification preferences (requests, registrations, flags)\n- Platform behaviour (require reasons, auto-mark read)\n- Account info and password change` },
   { patterns:['hello','hi','hey'], response:`Hello, Admin! I'm Masha, your Trade Grid AI assistant.\n\nI can help with verifications, user management, employee requests, filtering, and platform stats.\n\nWhat do you need?` },
   { patterns:['delete','remove user'], response:`To permanently delete a user:\n\nThis cannot be undone.\n\n1. Open User Management\n2. Click the actions menu next to the user\n3. Select Delete Account\n4. Type DELETE to confirm` },
 ];
@@ -298,7 +471,6 @@ function initMasha() {
     row.className = `msg-row ${sender}`;
     const av = document.createElement('div');
     av.className = 'msg-bubble-avatar';
-    // Icon avatar — no emoji
     av.innerHTML = sender === 'bot'
       ? '<i class="ri-robot-2-line"></i>'
       : '<i class="ri-user-3-line"></i>';
@@ -316,7 +488,6 @@ function initMasha() {
   function showTyping() {
     const row=document.createElement('div'); row.className='msg-row bot'; row.id='typingRow';
     const av=document.createElement('div'); av.className='msg-bubble-avatar';
-    // Icon avatar for typing — no emoji
     av.innerHTML = '<i class="ri-robot-2-line"></i>';
     const ind=document.createElement('div'); ind.className='typing-indicator';
     ind.innerHTML='<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';

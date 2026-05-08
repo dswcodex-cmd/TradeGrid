@@ -23,6 +23,13 @@
         <a href="#contact" data-section="contact">CONTACT US</a>
       </div>
       <div class="auth-buttons">
+        <!-- Dark Mode Toggle — lamp icon, left of Sign In -->
+        <button class="dark-mode-toggle" aria-label="Switch to dark mode" title="Switch to dark mode">
+          <!-- Lamp OFF icon (shown in light mode = click to go dark) -->
+          <span class="icon-lamp-off"><i class="ri-lightbulb-line"></i></span>
+          <!-- Lamp ON icon (shown in dark mode = click to go light) -->
+          <span class="icon-lamp-on"><i class="ri-lightbulb-fill"></i></span>
+        </button>
         <a href="../Login - Page/login.html" class="btn-ghost">Sign In</a>
         <a href="../Onboarding - Page/onboarding.html" class="btn-primary">Get Started</a>
       </div>
@@ -41,6 +48,15 @@
     <a href="#aboutus" data-section="aboutus" data-mobile-link>ABOUT US</a>
     <a href="#markets" data-section="markets" data-mobile-link>MARKETS</a>
     <a href="#contact" data-section="contact" data-mobile-link>CONTACT US</a>
+    <div class="mobile-menu-divider"></div>
+    <!-- Dark mode toggle row in mobile menu -->
+    <div class="mobile-dark-toggle-row">
+      <span class="mobile-dark-label">DARK MODE</span>
+      <button class="dark-mode-toggle" aria-label="Switch to dark mode" title="Switch to dark mode">
+        <span class="icon-lamp-off"><i class="ri-lightbulb-line"></i></span>
+        <span class="icon-lamp-on"><i class="ri-lightbulb-fill"></i></span>
+      </button>
+    </div>
     <div class="mobile-menu-divider"></div>
     <a href="../Login - Page/login.html" class="mobile-btn-ghost">Sign In</a>
     <a href="../Onboarding - Page/onboarding.html" class="mobile-btn-primary">Get Started</a>
@@ -337,7 +353,8 @@
 
     </div>
   </div>
-<!-- SECTION 4: CONTACT US -->
+
+  <!-- SECTION 4: CONTACT US -->
   <div id="contact" class="contact-gradient-bg">
     <div class="page-container">
 
@@ -422,9 +439,7 @@
           </button>
         </div>
       </div>
-      <!-- ↑ contact-layout ends here -->
 
-      <!-- MAP — full width below both cards -->
       <div class="map-section">
         <div class="map-header">
           <h3 class="map-title">Find Us</h3>
@@ -434,7 +449,7 @@
           <iframe
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3580.7!2d28.0473!3d-26.2041!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2s1437+Market+Street+Johannesburg!5e0!3m2!1sen!2sza!4v1"
             width="100%"
-            height=550px
+            height="550px"
             style="border: 0;"
             allowfullscreen=""
             loading="lazy"
@@ -444,9 +459,7 @@
       </div>
 
     </div>
-    <!-- ↑ page-container ends here -->
   </div>
-  
 
   <!-- FOOTER -->
   <footer class="footer">
