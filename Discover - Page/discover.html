@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Discover Companies — Trade Grid</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="discover.css">
+  <link rel="stylesheet" href="../Assets/darkmode-pages.css">
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav class="top-nav">
+    <div class="nav-container">
+      <a href="../New Landing - Page/landing.html" class="logo">Trade Grid</a>
+      <div class="nav-right">
+        <a href="../New Landing - Page/landing.html" class="nav-back">
+          <i class="ri-arrow-left-line"></i>Back to Home
+        </a>
+        <a href="../Login - Page/login.html" class="btn-ghost">Sign In</a>
+        <a href="../Onboarding - Page/onboarding.html" class="btn-primary-nav">Get Started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- PAGE WRAPPER -->
+  <div class="page-wrapper">
+    <div class="page-inner">
+
+      <!-- HERO -->
+      <div class="discover-hero">
+        <div class="hero-badge">
+          <i class="ri-global-line"></i>GLOBAL TRADE NETWORK
+        </div>
+        <h1>Discover Trading Partners</h1>
+        <p>Browse verified importers and exporters from around the world. Sign in to unlock unlimited matches and start trading.</p>
+      </div>
+
+      <!-- FILTER BAR (decorative / view-only) -->
+      <div class="filter-bar">
+        <span class="filter-label">FILTER:</span>
+        <span class="filter-chip active"><i class="ri-global-line"></i>All Markets</span>
+        <span class="filter-chip"><i class="ri-export-line"></i>Exporters</span>
+        <span class="filter-chip"><i class="ri-import-line"></i>Importers</span>
+        <span class="filter-chip"><i class="ri-leaf-line"></i>Agriculture</span>
+        <span class="filter-chip"><i class="ri-computer-line"></i>Tech</span>
+        <span class="filter-chip"><i class="ri-medicine-bottle-line"></i>Healthcare</span>
+      </div>
+
+      <!-- PREVIEW LABEL -->
+      <div class="preview-label">
+        <p class="preview-label-left">Showing <span>3</span> preview companies — sign in to see all</p>
+        <div class="preview-count-chip">
+          <i class="ri-lock-2-line"></i>50,000+ companies available after login
+        </div>
+      </div>
+
+      <!-- COMPANY CARDS -->
+      <div class="companies-grid">
+
+        <!-- Card 1: AgroVerde Exports -->
+        <div class="company-card">
+          <div class="card-banner card-banner-1">
+            <div class="verified-badge"><i class="ri-shield-check-fill"></i> VERIFIED</div>
+          </div>
+          <div class="card-avatar avatar-1">AG</div>
+          <div class="card-body">
+            <div class="card-header-row">
+              <div>
+                <div class="card-company-name">AgroVerde Exports</div>
+                <div class="card-location"><i class="ri-map-pin-2-line"></i>Cape Town, South Africa</div>
+              </div>
+              <div class="card-type-badge badge-exporter">EXPORTER</div>
+            </div>
+            <p class="card-description">Specialising in premium organic produce, citrus fruits, and processed agricultural goods to European and Asian markets.</p>
+            <div class="card-tags">
+              <span class="card-tag">Agriculture</span>
+              <span class="card-tag">Organic</span>
+              <span class="card-tag">Citrus</span>
+              <span class="card-tag">HACCP Certified</span>
+            </div>
+            <div class="card-stats">
+              <div class="card-stat">
+                <span class="stat-num">12+</span>
+                <span class="stat-lbl">Years Active</span>
+              </div>
+              <div class="card-stat">
+                <span class="stat-num">28</span>
+                <span class="stat-lbl">Countries</span>
+              </div>
+              <div class="card-stat">
+                <span class="stat-num">4.9&#9733;</span>
+                <span class="stat-lbl">Rating</span>
+              </div>
+            </div>
+            <div class="card-actions">
+              <div class="btn-connect-locked"><i class="ri-lock-2-line"></i>Sign in to Connect</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: NordiLink B.V. -->
+        <div class="company-card">
+          <div class="card-banner card-banner-2">
+            <div class="verified-badge"><i class="ri-shield-check-fill"></i> VERIFIED</div>
+          </div>
+          <div class="card-avatar avatar-2">NL</div>
+          <div class="card-body">
+            <div class="card-header-row">
+              <div>
+                <div class="card-company-name">NordiLink B.V.</div>
+                <div class="card-location"><i class="ri-map-pin-2-line"></i>Amsterdam, Netherlands</div>
+              </div>
+              <div class="card-type-badge badge-both">IMPORTER / EXPORTER</div>
+            </div>
+            <p class="card-description">Dutch trade intermediary specialising in sourcing high-value goods from Africa and Asia for redistribution across the EU.</p>
+            <div class="card-tags">
+              <span class="card-tag">Fintech</span>
+              <span class="card-tag">Logistics</span>
+              <span class="card-tag">Consumer Goods</span>
+            </div>
+            <div class="card-stats">
+              <div class="card-stat">
+                <span class="stat-num">7+</span>
+                <span class="stat-lbl">Years Active</span>
+              </div>
+              <div class="card-stat">
+                <span class="stat-num">41</span>
+                <span class="stat-lbl">Countries</span>
+              </div>
+              <div class="card-stat">
+                <span class="stat-num">4.7&#9733;</span>
+                <span class="stat-lbl">Rating</span>
+              </div>
+            </div>
+            <div class="card-actions">
+              <div class="btn-connect-locked"><i class="ri-lock-2-line"></i>Sign in to Connect</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Stellar Imports Pvt. -->
+        <div class="company-card">
+          <div class="card-banner card-banner-3">
+            <div class="verified-badge"><i class="ri-shield-check-fill"></i> VERIFIED</div>
+          </div>
+          <div class="card-avatar avatar-3">SI</div>
+          <div class="card-body">
+            <div class="card-header-row">
+              <div>
+                <div class="card-company-name">Stellar Imports Pvt.</div>
+                <div class="card-location"><i class="ri-map-pin-2-line"></i>Mumbai, India</div>
+              </div>
+              <div class="card-type-badge badge-importer">IMPORTER</div>
+            </div>
+            <p class="card-description">Leading Indian importer of mining equipment, renewable energy components, and raw materials for domestic manufacturing.</p>
+            <div class="card-tags">
+              <span class="card-tag">Mining</span>
+              <span class="card-tag">Renewables</span>
+              <span class="card-tag">Manufacturing</span>
+              <span class="card-tag">ISO 9001</span>
+            </div>
+            <div class="card-stats">
+              <div class="card-stat">
+                <span class="stat-num">15+</span>
+                <span class="stat-lbl">Years Active</span>
+              </div>
+              <div class="card-stat">
+                <span class="stat-num">19</span>
+                <span class="stat-lbl">Countries</span>
+              </div>
+              <div class="card-stat">
+                <span class="stat-num">4.8&#9733;</span>
+                <span class="stat-lbl">Rating</span>
+              </div>
+            </div>
+            <div class="card-actions">
+              <div class="btn-connect-locked"><i class="ri-lock-2-line"></i>Sign in to Connect</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- LOCK / CTA SECTION -->
+      <div class="lock-section">
+        <div class="lock-icon-wrap"><i class="ri-lock-2-line"></i></div>
+        <h2>Unlock the Full Network</h2>
+        <p>You're previewing 3 of over 50,000 verified companies on Trade Grid. Create a free account to access unlimited matches, send connection requests, and grow your international trade business.</p>
+        <div class="lock-actions">
+          <a href="../Onboarding - Page/onboarding.html" class="btn-lock-primary">
+            <i class="ri-rocket-line"></i>Get Started — It's Free
+          </a>
+          <a href="../Login - Page/login.html" class="btn-lock-secondary">
+            <i class="ri-login-box-line"></i>Sign In
+          </a>
+        </div>
+        <div class="lock-perks">
+          <div class="lock-perk"><i class="ri-check-line"></i>Unlimited company matches</div>
+          <div class="lock-perk"><i class="ri-check-line"></i>Direct messaging</div>
+          <div class="lock-perk"><i class="ri-check-line"></i>Verified partner access</div>
+          <div class="lock-perk"><i class="ri-check-line"></i>Market insights &amp; analytics</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="page-footer">
+    <p>&copy; 2026 Trade Grid. All rights reserved.</p>
+  </footer>
+
+  <script src="discover.js"></script>
+
+</body>
+</html>

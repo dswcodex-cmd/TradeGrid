@@ -8,17 +8,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css">
   <link rel="stylesheet" href="login.css">
+  <link rel="stylesheet" href="../Assets/darkmode-pages.css">
 </head>
 
 <body>
   <div class="login-page">
 
-    <!-- ===== LEFT: FORM PANEL ===== -->
+    <!-- LEFT: FORM PANEL -->
     <div class="form-panel">
       <div class="form-inner">
 
-        <!-- Logo -->
-        <a href="../New Landing - Page/landing.html" class="brand-logo">
+        <a href="../ New Landing - Page/landing.html" class="brand-logo">
           <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="2" y1="12" x2="22" y2="12"></line>
@@ -27,13 +27,11 @@
           Trade Grid
         </a>
 
-        <!-- Heading -->
         <div class="form-heading">
           <h1>Welcome Back</h1>
           <p>Sign in to continue to Trade Grid</p>
         </div>
 
-        <!-- Tab row -->
         <div class="login-type-row">
           <a href="../New Landing - Page/landing.html" class="back-link">
             <i class="ri-arrow-left-line"></i> Back
@@ -44,7 +42,6 @@
           </div>
         </div>
 
-        <!-- Form -->
         <form id="loginForm" class="auth-form">
           <div class="form-group">
             <label for="email">Email</label>
@@ -62,7 +59,6 @@
           </div>
 
           <a href="#" class="forgot-link">Forgot password?</a>
-
           <button type="submit" class="btn-submit">Sign In</button>
         </form>
 
@@ -71,7 +67,7 @@
       </div>
     </div>
 
-    <!-- ===== RIGHT: ILLUSTRATION PANEL ===== -->
+    <!-- RIGHT: ILLUSTRATION PANEL -->
     <div class="visual-panel">
       <div class="blob blob-1"></div>
       <div class="blob blob-2"></div>
@@ -79,20 +75,15 @@
 
       <div class="illustration-wrap">
         <svg viewBox="0 0 520 480" fill="none" xmlns="http://www.w3.org/2000/svg" class="trade-svg">
-          <!-- Globe base -->
           <circle cx="260" cy="220" r="160" stroke="#B5EAF0" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.3"/>
           <circle cx="260" cy="220" r="120" stroke="#B5EAF0" stroke-width="1" opacity="0.2"/>
           <circle cx="260" cy="220" r="90" fill="rgba(15,163,177,0.08)" stroke="#0FA3B1" stroke-width="1.5" opacity="0.6"/>
-
-          <!-- Globe meridians -->
           <ellipse cx="260" cy="220" rx="55" ry="90" stroke="#0FA3B1" stroke-width="1" opacity="0.4"/>
           <ellipse cx="260" cy="220" rx="90" ry="90" stroke="#0FA3B1" stroke-width="1" opacity="0.2"/>
           <line x1="170" y1="220" x2="350" y2="220" stroke="#0FA3B1" stroke-width="1" opacity="0.4"/>
           <line x1="260" y1="130" x2="260" y2="310" stroke="#0FA3B1" stroke-width="1" opacity="0.4"/>
           <path d="M175 185 Q260 175 345 185" stroke="#0FA3B1" stroke-width="1" opacity="0.3"/>
           <path d="M175 255 Q260 265 345 255" stroke="#0FA3B1" stroke-width="1" opacity="0.3"/>
-
-          <!-- Connection nodes -->
           <circle cx="180" cy="140" r="10" fill="#0D3B3B" stroke="#0FA3B1" stroke-width="2"/>
           <circle cx="180" cy="140" r="4" fill="#B5EAF0"/>
           <circle cx="340" cy="160" r="10" fill="#0D3B3B" stroke="#0FA3B1" stroke-width="2"/>
@@ -103,40 +94,29 @@
           <circle cx="380" cy="280" r="4" fill="#B5EAF0"/>
           <circle cx="260" cy="110" r="10" fill="#0D3B3B" stroke="#0FA3B1" stroke-width="2"/>
           <circle cx="260" cy="110" r="4" fill="#B5EAF0"/>
-
-          <!-- Connection lines -->
           <line x1="180" y1="140" x2="260" y2="110" stroke="#0FA3B1" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
           <line x1="260" y1="110" x2="340" y2="160" stroke="#0FA3B1" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
           <line x1="180" y1="140" x2="140" y2="270" stroke="#0FA3B1" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
           <line x1="340" y1="160" x2="380" y2="280" stroke="#0FA3B1" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
           <line x1="140" y1="270" x2="380" y2="280" stroke="#0FA3B1" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
-
-          <!-- Floating trade cards -->
           <rect x="60" y="120" width="100" height="56" rx="10" fill="#0D3B3B" stroke="#0FA3B1" stroke-width="1" opacity="0.9"/>
           <text x="110" y="143" font-family="Inter,sans-serif" font-size="9" fill="#B5EAF0" text-anchor="middle" font-weight="600">SOUTH AFRICA</text>
           <text x="110" y="158" font-family="Inter,sans-serif" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700">Exporter</text>
           <rect x="76" y="164" width="68" height="4" rx="2" fill="#0FA3B1" opacity="0.5"/>
-
           <rect x="360" y="100" width="100" height="56" rx="10" fill="#0D3B3B" stroke="#0FA3B1" stroke-width="1" opacity="0.9"/>
           <text x="410" y="123" font-family="Inter,sans-serif" font-size="9" fill="#B5EAF0" text-anchor="middle" font-weight="600">JAPAN</text>
           <text x="410" y="138" font-family="Inter,sans-serif" font-size="13" fill="#FFFFFF" text-anchor="middle" font-weight="700">Importer</text>
           <rect x="376" y="144" width="68" height="4" rx="2" fill="#0FA3B1" opacity="0.5"/>
-
           <rect x="195" y="370" width="130" height="52" rx="26" fill="#0FA3B1" opacity="0.95"/>
           <text x="260" y="391" font-family="Inter,sans-serif" font-size="9" fill="white" text-anchor="middle" font-weight="600" opacity="0.85">SMART MATCH</text>
-          <text x="260" y="408" font-family="Inter,sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="700">✓ Connected</text>
-
-          <!-- Animated dot -->
+          <text x="260" y="408" font-family="Inter,sans-serif" font-size="13" fill="white" text-anchor="middle" font-weight="700">&#10003; Connected</text>
           <circle cx="180" cy="140" r="3" fill="#0FA3B1" opacity="0.9">
             <animate attributeName="cx" values="180;340;380;140;180" dur="6s" repeatCount="indefinite"/>
             <animate attributeName="cy" values="140;160;280;270;140" dur="6s" repeatCount="indefinite"/>
           </circle>
-
-          <!-- Stats -->
           <rect x="60" y="310" width="90" height="50" rx="8" fill="rgba(13,59,59,0.8)" stroke="rgba(181,234,240,0.3)" stroke-width="1"/>
           <text x="105" y="330" font-family="Inter,sans-serif" font-size="8" fill="#B5EAF0" text-anchor="middle">BUSINESSES</text>
           <text x="105" y="348" font-family="Inter,sans-serif" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="800">50K+</text>
-
           <rect x="370" y="310" width="90" height="50" rx="8" fill="rgba(13,59,59,0.8)" stroke="rgba(181,234,240,0.3)" stroke-width="1"/>
           <text x="415" y="330" font-family="Inter,sans-serif" font-size="8" fill="#B5EAF0" text-anchor="middle">COUNTRIES</text>
           <text x="415" y="348" font-family="Inter,sans-serif" font-size="14" fill="#FFFFFF" text-anchor="middle" font-weight="800">150+</text>

@@ -1,0 +1,203 @@
+/* ============================================================
+   TRADE GRID — settings-fab.css
+   Settings floating button + panel (landing page only)
+   ============================================================ */
+
+/* ── Settings FAB (bottom-left, mirrors Masha on the right) ── */
+.settings-fab {
+  position: fixed;
+  bottom: 28px;
+  left: 28px;
+  z-index: 2000;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0D3B3B 0%, #0FA3B1 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 24px rgba(13,59,59,0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+body.dark-mode .settings-fab {
+  background: linear-gradient(135deg, #011635 0%, #0FA3B1 100%);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.settings-fab:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 10px 32px rgba(13,59,59,0.4);
+}
+.settings-fab i {
+  font-size: 24px;
+  color: #fff;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+.settings-fab.open i {
+  transform: rotate(90deg);
+}
+
+/* ── Settings panel ── */
+.settings-panel {
+  position: fixed;
+  bottom: 100px;
+  left: 28px;
+  z-index: 1999;
+  width: 300px;
+  background: var(--dm-surface);
+  border-radius: 20px;
+  border: 1px solid var(--dm-border);
+  box-shadow: 0 20px 60px rgba(13,59,59,0.18);
+  overflow: hidden;
+  /* hidden state */
+  transform: scale(0.92) translateY(20px);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s,
+              background 0.3s, border-color 0.3s;
+}
+body.dark-mode .settings-panel {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.settings-panel.open {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Header */
+.settings-panel-header {
+  background: linear-gradient(135deg, #0D3B3B 0%, #0f4848 100%);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+body.dark-mode .settings-panel-header {
+  background: linear-gradient(135deg, #010e24 0%, #021f4a 100%);
+}
+.settings-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+.settings-panel-title i {
+  font-size: 18px;
+  color: #B5EAF0;
+}
+.settings-panel-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(181,234,240,0.1);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(181,234,240,0.8);
+  font-size: 16px;
+  transition: background 0.2s, color 0.2s;
+}
+.settings-panel-close:hover {
+  background: rgba(181,234,240,0.2);
+  color: #fff;
+}
+
+/* Body */
+.settings-panel-body {
+  padding: 20px;
+}
+
+/* Section label */
+.settings-panel-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+/* Setting row */
+.settings-panel-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--dm-border);
+}
+.settings-panel-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.settings-panel-row-info p {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--dm-text);
+  margin-bottom: 2px;
+  transition: color 0.3s;
+}
+.settings-panel-row-info span {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Toggle switch */
+.sp-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.sp-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.sp-toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: rgba(13,59,59,0.15);
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.sp-toggle-slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 3px;
+  top: 3px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.sp-toggle input:checked + .sp-toggle-slider {
+  background: #0FA3B1;
+}
+.sp-toggle input:checked + .sp-toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* Footer note */
+.settings-panel-footer {
+  padding: 0 20px 16px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: center;
+  transition: color 0.3s;
+}
+.settings-panel-footer span {
+  color: #0FA3B1;
+  font-weight: 600;
+}

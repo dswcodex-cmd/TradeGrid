@@ -1,42 +1,34 @@
 /* ============================================================
    TRADE GRID — landing.js
-   Scroll-spy | Trending products | Masha AI widget | Hamburger menu | Dark Mode
+   Settings FAB | Scroll-spy | Trending products | Masha AI | Hamburger
    ============================================================ */
 
-/* ── Dark Mode ── */
+/* ── Dark Mode (read + apply on load, controlled only via Settings FAB) ── */
 (function () {
-  const STORAGE_KEY = 'tradegrid-dark-mode';
+  const KEY = 'tradegrid-dark-mode';
 
   function applyTheme(dark) {
     document.body.classList.toggle('dark-mode', dark);
-    // Sync all toggle buttons
-    document.querySelectorAll('.dark-mode-toggle').forEach(btn => {
-      btn.setAttribute('aria-label', dark ? 'Switch to light mode' : 'Switch to dark mode');
-      btn.setAttribute('title',      dark ? 'Switch to light mode' : 'Switch to dark mode');
-    });
+    /* Sync the toggle inside the settings panel */
+    const toggle = document.getElementById('settingsDarkToggle');
+    if (toggle) toggle.checked = dark;
   }
 
-  function toggleDarkMode() {
-    const isDark = !document.body.classList.contains('dark-mode');
-    localStorage.setItem(STORAGE_KEY, isDark ? '1' : '0');
-    applyTheme(isDark);
+  function setDark(dark) {
+    localStorage.setItem(KEY, dark ? '1' : '0');
+    applyTheme(dark);
   }
 
-  // On load — respect saved preference only, default to LIGHT (teal) if no preference saved
-  const saved = localStorage.getItem(STORAGE_KEY);
-  const startDark = saved === '1'; // only go dark if user explicitly chose it before
-  applyTheme(startDark);
+  /* Apply saved preference immediately (before DOM ready to avoid flash) */
+  applyTheme(localStorage.getItem(KEY) === '1');
 
-  // Wire up buttons after DOM is ready
+  /* Wire up after DOM ready */
   document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.dark-mode-toggle').forEach(btn => {
-      btn.addEventListener('click', toggleDarkMode);
-    });
-  });
-
-  // Also wire up immediately in case script runs after DOM
-  document.querySelectorAll('.dark-mode-toggle').forEach(btn => {
-    btn.addEventListener('click', toggleDarkMode);
+    const toggle = document.getElementById('settingsDarkToggle');
+    if (toggle) {
+      toggle.checked = localStorage.getItem(KEY) === '1';
+      toggle.addEventListener('change', () => setDark(toggle.checked));
+    }
   });
 })();
 
@@ -53,12 +45,11 @@
 
   hamburger.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isOpen = mobileMenu.classList.contains('open');
-    if (isOpen) { closeMobileMenu(); } else { hamburger.classList.add('open'); mobileMenu.classList.add('open'); }
+    mobileMenu.classList.contains('open') ? closeMobileMenu() : (hamburger.classList.add('open'), mobileMenu.classList.add('open'));
   });
 
   document.querySelectorAll('[data-mobile-link]').forEach(link => {
-    link.addEventListener('click', () => { closeMobileMenu(); });
+    link.addEventListener('click', closeMobileMenu);
   });
 
   document.addEventListener('click', (e) => {
@@ -82,47 +73,72 @@
     });
   }, { threshold: 0.2, rootMargin: '-60px 0px 0px 0px' });
 
-  sections.forEach(section => observer.observe(section));
+  sections.forEach(s => observer.observe(s));
+})();
+
+/* ── Settings FAB ── */
+(function () {
+  document.addEventListener('DOMContentLoaded', () => {
+    const fab     = document.getElementById('settingsFab');
+    const panel   = document.getElementById('settingsPanel');
+    const closeBtn = document.getElementById('settingsPanelClose');
+    if (!fab || !panel) return;
+
+    let isOpen = false;
+
+    function openPanel()  { isOpen = true;  panel.classList.add('open');  fab.classList.add('open'); }
+    function closePanel() { isOpen = false; panel.classList.remove('open'); fab.classList.remove('open'); }
+    function togglePanel() { isOpen ? closePanel() : openPanel(); }
+
+    fab.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(); });
+    closeBtn && closeBtn.addEventListener('click', closePanel);
+
+    document.addEventListener('click', (e) => {
+      if (isOpen && !panel.contains(e.target) && e.target !== fab) closePanel();
+    });
+  });
 })();
 
 /* ── Trending products ── */
 const trendingProducts = [
-  { name: 'Renewable Energy Equipment', change: '+23%', category: 'Energy',           details: ['Solar Panels', 'Wind Turbines', 'Hydropower'] },
-  { name: 'Medical Supplies',           change: '+18%', category: 'Healthcare',        details: ['Masks', 'Gloves', 'Ventilators'] },
-  { name: 'Electronic Components',      change: '+15%', category: 'Electronics',       details: ['Microchips', 'Sensors', 'Circuit Boards'] },
-  { name: 'Organic Foods',              change: '+12%', category: 'Food & Beverages',  details: ['Organic Veg', 'Plant-Based Products', 'Health Snacks'] },
-  { name: 'Smart Textiles',             change: '+10%', category: 'Textiles',          details: ['Wearables', 'Smart Fabrics'] },
+  { name: 'Renewable Energy Equipment', change: '+23%', category: 'Energy',          details: ['Solar Panels', 'Wind Turbines', 'Hydropower'] },
+  { name: 'Medical Supplies',           change: '+18%', category: 'Healthcare',       details: ['Masks', 'Gloves', 'Ventilators'] },
+  { name: 'Electronic Components',      change: '+15%', category: 'Electronics',      details: ['Microchips', 'Sensors', 'Circuit Boards'] },
+  { name: 'Organic Foods',              change: '+12%', category: 'Food & Beverages', details: ['Organic Veg', 'Plant-Based Products', 'Health Snacks'] },
+  { name: 'Smart Textiles',             change: '+10%', category: 'Textiles',         details: ['Wearables', 'Smart Fabrics'] },
 ];
 
-const trendingContainer = document.getElementById('trending');
+document.addEventListener('DOMContentLoaded', () => {
+  const trendingContainer = document.getElementById('trending');
+  if (!trendingContainer) return;
 
-trendingProducts.forEach(product => {
-  const item = document.createElement('div');
-  item.className = 'trend-item';
-  const main = document.createElement('div');
-  main.className = 'trend-main';
-  main.innerHTML = `
-    <div>
-      <div class="trend-name">${product.name}</div>
-      <div class="trend-category">${product.category}</div>
-    </div>
-    <div class="trend-growth">${product.change} <i data-lucide="trending-up"></i></div>
-  `;
-  const dropdown = document.createElement('div');
-  dropdown.className = 'trend-dropdown';
-  dropdown.style.display = 'none';
-  dropdown.innerHTML = `<ul>${product.details.map(i => `<li>${i}</li>`).join('')}</ul>`;
-  main.addEventListener('click', () => {
-    const isOpen = dropdown.style.display === 'block';
-    dropdown.style.display = isOpen ? 'none' : 'block';
-    main.setAttribute('aria-expanded', !isOpen);
+  trendingProducts.forEach(product => {
+    const item = document.createElement('div');
+    item.className = 'trend-item';
+    const main = document.createElement('div');
+    main.className = 'trend-main';
+    main.innerHTML = `
+      <div>
+        <div class="trend-name">${product.name}</div>
+        <div class="trend-category">${product.category}</div>
+      </div>
+      <div class="trend-growth">${product.change} <i data-lucide="trending-up"></i></div>
+    `;
+    const dropdown = document.createElement('div');
+    dropdown.className = 'trend-dropdown';
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = `<ul>${product.details.map(i => `<li>${i}</li>`).join('')}</ul>`;
+    main.addEventListener('click', () => {
+      const isOpen = dropdown.style.display === 'block';
+      dropdown.style.display = isOpen ? 'none' : 'block';
+    });
+    item.appendChild(main);
+    item.appendChild(dropdown);
+    trendingContainer.appendChild(item);
   });
-  item.appendChild(main);
-  item.appendChild(dropdown);
-  trendingContainer.appendChild(item);
-});
 
-lucide.createIcons();
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+});
 
 /* ── Masha AI knowledge base ── */
 const mashaKB = [
@@ -138,7 +154,7 @@ const mashaKB = [
   { patterns:['about','founders','team','who made','who built'], response:`Trade Grid was founded by a passionate team of six:\n\nTashlyn Mitchell — Project Leader\nTJP Mabotja — Back-end Developer\nValery Mutetwa — Front-end Developer\nSiyanda Xaba — Database Manager\nKhethukhanyo Mbekeni — Front-end Developer\nSifiso Sibanyoni — Back-end Developer\n\nScroll to the About Us section to meet the team!` },
 ];
 
-const mashaFallback = `I'm not sure about that yet, but I'm learning!\n\nFor specific queries, please contact our support team at support@tradegrid.com or call +27 (83) 720-4520.\n\nIs there anything else I can help you with?`;
+const mashaFallback = `I'm not sure about that yet, but I'm learning!\n\nFor specific queries, please contact our support team at support@tradegrid.com or call +27 (83) 720-4520.\n\nIs there anything else I can help with?`;
 
 function mashaGetResponse(input) {
   const lower = input.toLowerCase();
@@ -146,136 +162,113 @@ function mashaGetResponse(input) {
   return mashaFallback;
 }
 
-/* ── Masha DOM refs ── */
-const mashaFab      = document.getElementById('mashaFab');
-const mashaWin      = document.getElementById('mashaWindow');
-const mashaMessages = document.getElementById('mashaMessages');
-const mashaInput    = document.getElementById('mashaInput');
-const mashaSend     = document.getElementById('mashaSend');
-const mashaClear    = document.getElementById('mashaClear');
-const mashaMinimize = document.getElementById('mashaMinimize');
-const mashaChipBtns = document.querySelectorAll('.masha-chip');
-const mashaChipsBar = document.getElementById('mashaChips');
-const mashaFooterLink = document.getElementById('mashaFooterLink');
-let mashaOpen = false;
+document.addEventListener('DOMContentLoaded', () => {
+  const mashaFab      = document.getElementById('mashaFab');
+  const mashaWin      = document.getElementById('mashaWindow');
+  const mashaMessages = document.getElementById('mashaMessages');
+  const mashaInput    = document.getElementById('mashaInput');
+  const mashaSend     = document.getElementById('mashaSend');
+  const mashaClear    = document.getElementById('mashaClear');
+  const mashaMinimize = document.getElementById('mashaMinimize');
+  const mashaChipBtns = document.querySelectorAll('.masha-chip');
+  const mashaChipsBar = document.getElementById('mashaChips');
+  const mashaFooterLink = document.getElementById('mashaFooterLink');
+  if (!mashaFab) return;
 
-function mashaToggle(forceOpen) {
-  mashaOpen = forceOpen !== undefined ? forceOpen : !mashaOpen;
-  mashaWin.classList.toggle('open', mashaOpen);
-  mashaFab.classList.toggle('open', mashaOpen);
-  if (mashaOpen) {
-    const dot = mashaFab.querySelector('.fab-dot');
-    if (dot) dot.style.display = 'none';
-    setTimeout(() => mashaInput.focus(), 300);
+  let mashaOpen = false;
+
+  function mashaToggle(forceOpen) {
+    mashaOpen = forceOpen !== undefined ? forceOpen : !mashaOpen;
+    mashaWin.classList.toggle('open', mashaOpen);
+    mashaFab.classList.toggle('open', mashaOpen);
+    if (mashaOpen) {
+      const dot = mashaFab.querySelector('.fab-dot');
+      if (dot) dot.style.display = 'none';
+      setTimeout(() => mashaInput.focus(), 300);
+    }
   }
-}
 
-mashaFab.addEventListener('click', () => mashaToggle());
-mashaMinimize.addEventListener('click', () => mashaToggle(false));
+  mashaFab.addEventListener('click', () => mashaToggle());
+  mashaMinimize.addEventListener('click', () => mashaToggle(false));
 
-if (mashaFooterLink) {
-  mashaFooterLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    mashaToggle(true);
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  if (mashaFooterLink) {
+    mashaFooterLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      mashaToggle(true);
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    });
+  }
+
+  function mashaAddMessage(text, sender) {
+    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const row = document.createElement('div');
+    row.className = `msg-row ${sender}`;
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-bubble-avatar';
+    avatar.innerHTML = sender === 'bot' ? '<i class="ri-robot-2-line"></i>' : '<i class="ri-user-3-line"></i>';
+    const wrap   = document.createElement('div');
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+    const time = document.createElement('div');
+    time.className = 'msg-time';
+    time.textContent = now;
+    wrap.appendChild(bubble);
+    wrap.appendChild(time);
+    if (sender === 'bot') { row.appendChild(avatar); row.appendChild(wrap); }
+    else                  { row.appendChild(wrap);   row.appendChild(avatar); }
+    mashaMessages.appendChild(row);
+    mashaMessages.scrollTop = mashaMessages.scrollHeight;
+  }
+
+  function mashaShowTyping() {
+    const row = document.createElement('div');
+    row.className = 'msg-row bot'; row.id = 'mashaTypingRow';
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-bubble-avatar';
+    avatar.innerHTML = '<i class="ri-robot-2-line"></i>';
+    const ind = document.createElement('div');
+    ind.className = 'masha-typing';
+    ind.innerHTML = '<div class="masha-typing-dot"></div><div class="masha-typing-dot"></div><div class="masha-typing-dot"></div>';
+    row.appendChild(avatar); row.appendChild(ind);
+    mashaMessages.appendChild(row);
+    mashaMessages.scrollTop = mashaMessages.scrollHeight;
+  }
+  function mashaHideTyping() { const r = document.getElementById('mashaTypingRow'); if (r) r.remove(); }
+
+  function mashaSendMessage(text) {
+    const msg = (text || mashaInput.value).trim();
+    if (!msg) return;
+    mashaAddMessage(msg, 'user');
+    mashaInput.value = ''; mashaInput.style.height = 'auto';
+    mashaSend.disabled = true; mashaChipsBar.style.display = 'none';
+    mashaShowTyping();
+    setTimeout(() => {
+      mashaHideTyping();
+      mashaAddMessage(mashaGetResponse(msg), 'bot');
+      mashaSend.disabled = false;
+      mashaInput.focus();
+    }, 900 + Math.random() * 600);
+  }
+
+  mashaSend.addEventListener('click', () => mashaSendMessage());
+  mashaInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mashaSendMessage(); } });
+  mashaInput.addEventListener('input', () => {
+    mashaInput.style.height = 'auto';
+    mashaInput.style.height = Math.min(mashaInput.scrollHeight, 100) + 'px';
+    mashaSend.disabled = mashaInput.value.trim() === '';
   });
-}
+  mashaChipBtns.forEach(chip => chip.addEventListener('click', () => mashaSendMessage(chip.dataset.msg)));
+  mashaClear.addEventListener('click', () => {
+    mashaMessages.innerHTML = ''; mashaChipsBar.style.display = 'flex'; mashaGreeting();
+  });
 
-function mashaAddMessage(text, sender) {
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const row = document.createElement('div');
-  row.className = `msg-row ${sender}`;
+  function mashaGreeting() {
+    setTimeout(() => {
+      mashaAddMessage(`Hi there! I'm **Masha**, your Trade Grid AI assistant.\n\nI can help you with verification, finding trading partners, markets, and more. What would you like to know?`, 'bot');
+    }, 400);
+  }
 
-  const avatar = document.createElement('div');
-  avatar.className = 'msg-bubble-avatar';
-  avatar.innerHTML = sender === 'bot'
-    ? '<i class="ri-robot-2-line"></i>'
-    : '<i class="ri-user-3-line"></i>';
-
-  const wrap   = document.createElement('div');
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
-  bubble.innerHTML = text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>');
-  const time = document.createElement('div');
-  time.className = 'msg-time';
-  time.textContent = now;
-  wrap.appendChild(bubble);
-  wrap.appendChild(time);
-
-  if (sender === 'bot') { row.appendChild(avatar); row.appendChild(wrap); }
-  else                  { row.appendChild(wrap);   row.appendChild(avatar); }
-
-  mashaMessages.appendChild(row);
-  mashaMessages.scrollTop = mashaMessages.scrollHeight;
-}
-
-function mashaShowTyping() {
-  const row = document.createElement('div');
-  row.className = 'msg-row bot';
-  row.id = 'mashaTypingRow';
-
-  const avatar = document.createElement('div');
-  avatar.className = 'msg-bubble-avatar';
-  avatar.innerHTML = '<i class="ri-robot-2-line"></i>';
-
-  const indicator = document.createElement('div');
-  indicator.className = 'masha-typing';
-  indicator.innerHTML = '<div class="masha-typing-dot"></div><div class="masha-typing-dot"></div><div class="masha-typing-dot"></div>';
-  row.appendChild(avatar);
-  row.appendChild(indicator);
-  mashaMessages.appendChild(row);
-  mashaMessages.scrollTop = mashaMessages.scrollHeight;
-}
-
-function mashaHideTyping() {
-  const row = document.getElementById('mashaTypingRow');
-  if (row) row.remove();
-}
-
-function mashaSendMessage(text) {
-  const msg = (text || mashaInput.value).trim();
-  if (!msg) return;
-  mashaAddMessage(msg, 'user');
-  mashaInput.value = '';
-  mashaInput.style.height = 'auto';
   mashaSend.disabled = true;
-  mashaChipsBar.style.display = 'none';
-  mashaShowTyping();
-  setTimeout(() => {
-    mashaHideTyping();
-    mashaAddMessage(mashaGetResponse(msg), 'bot');
-    mashaSend.disabled = false;
-    mashaInput.focus();
-  }, 900 + Math.random() * 600);
-}
-
-mashaSend.addEventListener('click', () => mashaSendMessage());
-mashaInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); mashaSendMessage(); }
-});
-mashaInput.addEventListener('input', () => {
-  mashaInput.style.height = 'auto';
-  mashaInput.style.height = Math.min(mashaInput.scrollHeight, 100) + 'px';
-  mashaSend.disabled = mashaInput.value.trim() === '';
-});
-
-mashaChipBtns.forEach(chip => {
-  chip.addEventListener('click', () => mashaSendMessage(chip.dataset.msg));
-});
-
-mashaClear.addEventListener('click', () => {
-  mashaMessages.innerHTML = '';
-  mashaChipsBar.style.display = 'flex';
   mashaGreeting();
 });
-
-function mashaGreeting() {
-  setTimeout(() => {
-    mashaAddMessage(`Hi there! I'm **Masha**, your Trade Grid AI assistant.\n\nI can help you with verification, finding trading partners, markets, and more. What would you like to know?`, 'bot');
-  }, 400);
-}
-
-mashaSend.disabled = true;
-mashaGreeting();

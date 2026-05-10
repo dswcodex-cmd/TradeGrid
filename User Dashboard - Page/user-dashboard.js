@@ -527,3 +527,57 @@ document.querySelectorAll('.msg-list-item').forEach(item => {
     if (initials) loadConversation(initials);
   });
 });
+
+/* ============================================================
+   TRADE GRID USER DASHBOARD — darkmode patch
+   Add this BEFORE user-dashboard.js in the HTML:
+     <script src="user-dashboard-darkmode-patch.js"></script>
+     <script src="user-dashboard.js"></script>
+
+   What it does:
+   1. Reads localStorage on load and applies dark-mode class
+   2. After DOM ready, injects a "Dark Mode" toggle row into
+      the existing Settings page and keeps it in sync.
+   ============================================================ */
+
+/* 1 ── Apply theme immediately (before DOM) */
+(function () {
+  if (localStorage.getItem('tradegrid-dark-mode') === '1') {
+    document.body.classList.add('dark-mode');
+  }
+})();
+
+/* 2 ── Inject Dark Mode row into Settings page after DOM ready */
+document.addEventListener('DOMContentLoaded', function () {
+  var settingsGrid = document.querySelector('#page-settings .settings-grid');
+  if (!settingsGrid) return;
+
+  /* Build a new card for Appearance */
+  var card = document.createElement('div');
+  card.className = 'settings-card';
+  card.innerHTML =
+    '<h3>Appearance</h3>' +
+    '<div class="setting-row" id="dashDarkModeRow">' +
+      '<div>' +
+        '<p>Dark Mode</p>' +
+        '<span>Applied across all Trade Grid pages</span>' +
+      '</div>' +
+      '<label class="toggle">' +
+        '<input type="checkbox" id="dashDarkModeToggle">' +
+        '<span class="toggle-slider"></span>' +
+      '</label>' +
+    '</div>';
+
+  /* Prepend before the existing Notifications card */
+  settingsGrid.insertBefore(card, settingsGrid.firstChild);
+
+  var toggle = document.getElementById('dashDarkModeToggle');
+  if (!toggle) return;
+  toggle.checked = localStorage.getItem('tradegrid-dark-mode') === '1';
+
+  toggle.addEventListener('change', function () {
+    var isDark = toggle.checked;
+    localStorage.setItem('tradegrid-dark-mode', isDark ? '1' : '0');
+    document.body.classList.toggle('dark-mode', isDark);
+  });
+});

@@ -713,3 +713,58 @@ function getResponse(input) {
   sendBtn.disabled=true;
   addGreeting();
 })();
+
+/* ============================================================
+   TRADE GRID EMPLOYEE — darkmode patch
+   Add this BEFORE employee.js in the HTML:
+     <script src="employee-darkmode-patch.js"></script>
+     <script src="employee.js"></script>
+     <script src="employee-masha.js"></script>
+
+   What it does:
+   1. Reads localStorage on load and applies dark-mode class
+   2. After employee.js builds the Settings modal, injects a
+      "Dark Mode" toggle row into it and keeps it in sync.
+   ============================================================ */
+
+/* 1 ── Apply theme immediately (before DOM) */
+(function () {
+  if (localStorage.getItem('tradegrid-dark-mode') === '1') {
+    document.body.classList.add('dark-mode');
+  }
+})();
+
+/* 2 ── After DOM ready, inject Dark Mode row into Settings modal */
+document.addEventListener('DOMContentLoaded', function () {
+  setTimeout(function () {
+    var body = document.querySelector('.settings-sections');
+    if (!body) return;
+
+    var section = document.createElement('div');
+    section.className = 'settings-section';
+    section.innerHTML =
+      '<div class="settings-section-title">Appearance</div>' +
+      '<div class="settings-row" id="empDarkModeRow">' +
+        '<div class="settings-row-info">' +
+          '<p>Dark Mode</p>' +
+          '<span>Applied across all Trade Grid pages</span>' +
+        '</div>' +
+        '<label class="emp-toggle">' +
+          '<input type="checkbox" id="empDarkModeToggle">' +
+          '<span class="emp-toggle-slider"></span>' +
+        '</label>' +
+      '</div>';
+
+    body.insertBefore(section, body.firstChild);
+
+    var toggle = document.getElementById('empDarkModeToggle');
+    if (!toggle) return;
+    toggle.checked = localStorage.getItem('tradegrid-dark-mode') === '1';
+
+    toggle.addEventListener('change', function () {
+      var isDark = toggle.checked;
+      localStorage.setItem('tradegrid-dark-mode', isDark ? '1' : '0');
+      document.body.classList.toggle('dark-mode', isDark);
+    });
+  }, 0);
+});

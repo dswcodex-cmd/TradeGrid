@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="../Assets/darkmode-pages.css">
 </head>
 <body>
 
@@ -108,7 +109,6 @@
 
         <!-- EMPLOYEE REQUESTS TAB -->
         <div id="employee-requests" class="tab-content" style="display:none;">
-
           <div class="emp-search-row">
             <input type="text" placeholder="Search messages..." class="search">
             <div class="emp-filter-wrap">
@@ -215,9 +215,8 @@
               <button class="btn-secondary">View Details</button>
             </div>
           </div>
-
-        </div><!-- /employee-requests -->
-      </div><!-- /left-panel -->
+        </div>
+      </div>
 
       <!-- RIGHT PANEL -->
       <div class="right-panel">
@@ -225,27 +224,15 @@
           <h3>Pending Verifications</h3>
           <div class="pending-item">
             <div class="pending-icon"><i class="ri-time-line"></i></div>
-            <div class="pending-info">
-              <p>Tech Import Corp</p>
-              <span>Document Verification</span>
-              <span class="pending-date">2026-04-01</span>
-            </div>
+            <div class="pending-info"><p>Tech Import Corp</p><span>Document Verification</span><span class="pending-date">2026-04-01</span></div>
           </div>
           <div class="pending-item">
             <div class="pending-icon"><i class="ri-time-line"></i></div>
-            <div class="pending-info">
-              <p>Global Trade Partners</p>
-              <span>Business License</span>
-              <span class="pending-date">2026-03-31</span>
-            </div>
+            <div class="pending-info"><p>Global Trade Partners</p><span>Business License</span><span class="pending-date">2026-03-31</span></div>
           </div>
           <div class="pending-item">
             <div class="pending-icon"><i class="ri-time-line"></i></div>
-            <div class="pending-info">
-              <p>International Exports Inc</p>
-              <span>Identity Verification</span>
-              <span class="pending-date">2026-03-30</span>
-            </div>
+            <div class="pending-info"><p>International Exports Inc</p><span>Identity Verification</span><span class="pending-date">2026-03-30</span></div>
           </div>
           <button class="view-all">View All Pending</button>
         </div>
@@ -297,6 +284,8 @@
     <div class="masha-powered">Powered by <span>Masha AI</span> · Admin Panel</div>
   </div>
 
+  <!-- Dark mode patch must come before admin.js -->
+  <script src="admin-darkmode-patch.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>
