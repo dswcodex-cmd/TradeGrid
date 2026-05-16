@@ -1,4 +1,10 @@
+import fs from "fs";
+import Groq from "groq-sdk";
 import prisma from "../prismaClient.js";
+
+const groqProductIdentifier = process.env.GROQ_API_KEY_PI
+  ? new Groq({ apiKey: process.env.GROQ_API_KEY_PI })
+  : null;
 
 const serializePublicCompany = (company) => ({
   company_id: company.company_id,
@@ -16,6 +22,49 @@ const serializePublicCompany = (company) => ({
   desired_products: company.desired_products.map((item) => item.product.product_name),
   target_regions: company.regions.map((item) => item.region.region_name)
 });
+
+const normalizeModelJson = (value) => {
+  const clean = String(value || "")
+    .replace(/```json|```/gi, "")
+    .trim();
+
+  const opens = (clean.match(/{/g) || []).length;
+  const closes = (clean.match(/}/g) || []).length;
+
+  if (opens > closes) {
+    return `${clean}${"}".repeat(opens - closes)}`;
+  }
+
+  return clean;
+};
+
+const parseMatchedNames = (value) => {
+  try {
+    const clean = String(value || "")
+      .replace(/```json|```/gi, "")
+      .trim();
+    const parsed = JSON.parse(clean);
+
+    return Array.isArray(parsed)
+      ? parsed.filter((item) => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const loadImageBase64 = (image_base64, image_path) => {
+  if (image_base64) {
+    return String(image_base64).trim();
+  }
+
+  if (image_path) {
+    const imageBuffer = fs.readFileSync(String(image_path));
+    return imageBuffer.toString("base64");
+  }
+
+  return null;
+};
 
 export const discoverCompanies = async (req, res) => {
   try {
@@ -209,6 +258,183 @@ export const getPublicCompanyProfile = async (req, res) => {
 
     return res.status(200).json({
       company: serializePublicCompany(company)
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const discoverCompaniesByImage = async (req, res) => {
+  try {
+    if (!groqProductIdentifier) {
+      return res.status(500).json({
+        error: "GROQ_API_KEY_PI is not configured"
+      });
+    }
+
+    const current_company_id = Number(req.company.company_id);
+    const { image_base64, image_path, mime_type = "image/jpeg" } = req.body;
+    const encodedImage = loadImageBase64(image_base64, image_path);
+
+    if (!encodedImage) {
+      return res.status(400).json({
+        error: "Provide image_base64 or image_path"
+      });
+    }
+
+    const aiResponse = await groqProductIdentifier.chat.completions.create({
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      max_tokens: 500,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:${mime_type};base64,${encodedImage}`
+              }
+            },
+            {
+              type: "text",
+              text: `Identify the product in this image. Return ONLY a raw JSON object in this exact shape: {"product_name":"..."}`
+            }
+          ]
+        }
+      ]
+    });
+
+    const identifiedProduct = JSON.parse(
+      normalizeModelJson(aiResponse.choices?.[0]?.message?.content)
+    );
+    const productName = String(identifiedProduct?.product_name || "").trim();
+
+    if (!productName) {
+      return res.status(422).json({
+        error: "The image could not be identified as a product"
+      });
+    }
+
+    const allProducts = await prisma.product.findMany({
+      select: {
+        product_id: true,
+        product_name: true
+      },
+      orderBy: {
+        product_name: "asc"
+      }
+    });
+
+    if (allProducts.length === 0) {
+      return res.status(404).json({
+        product_name: productName,
+        matched_products: [],
+        companies: []
+      });
+    }
+
+    const productList = allProducts.map((product) => `- ${product.product_name}`).join("\n");
+
+    const matchResponse = await groqProductIdentifier.chat.completions.create({
+      model: "meta-llama/llama-4-scout-17b-16e-instruct",
+      max_tokens: 500,
+      messages: [
+        {
+          role: "user",
+          content: `The user is searching for companies that supply: "${productName}"
+
+Here is a list of products in our database:
+${productList}
+
+Your job: decide which of these database products are related to or fall under what the user is looking for.
+A product is related if it is the same thing, a type of it, a part of it, or serves the same purpose.
+
+Return ONLY a raw JSON array of the matching product names.
+If none are related return an empty array: []`
+        }
+      ]
+    });
+
+    const aiMatchedNames = parseMatchedNames(matchResponse.choices?.[0]?.message?.content);
+    const exactMatches = allProducts
+      .filter((product) =>
+        product.product_name.toLowerCase().includes(productName.toLowerCase())
+      )
+      .map((product) => product.product_name);
+
+    const allMatchedNames = [...new Set([...aiMatchedNames, ...exactMatches])];
+
+    if (allMatchedNames.length === 0) {
+      return res.status(200).json({
+        product_name: productName,
+        matched_products: [],
+        companies: []
+      });
+    }
+
+    const matchedProducts = allProducts.filter((product) =>
+      allMatchedNames.some(
+        (name) => name.toLowerCase() === product.product_name.toLowerCase()
+      )
+    );
+    const matchedProductIds = matchedProducts.map((product) => product.product_id);
+
+    const companies = await prisma.company.findMany({
+      where: {
+        company_id: {
+          not: current_company_id
+        },
+        account_status: "active",
+        profile_visibility: true,
+        products: {
+          some: {
+            product_id: {
+              in: matchedProductIds
+            }
+          }
+        }
+      },
+      include: {
+        industry: true,
+        location: true,
+        products: {
+          include: {
+            product: true
+          }
+        },
+        desired_products: {
+          include: {
+            product: true
+          }
+        },
+        regions: {
+          include: {
+            region: true
+          }
+        }
+      },
+      orderBy: {
+        company_name: "asc"
+      }
+    });
+
+    const companiesWithMatches = companies.map((company) => {
+      const companyMatchedProducts = company.products
+        .map((item) => item.product.product_name)
+        .filter((name) =>
+          allMatchedNames.some((matched) => matched.toLowerCase() === name.toLowerCase())
+        );
+
+      return {
+        ...serializePublicCompany(company),
+        matched_products: companyMatchedProducts
+      };
+    });
+
+    return res.status(200).json({
+      product_name: productName,
+      matched_products: matchedProducts.map((product) => product.product_name),
+      companies: companiesWithMatches
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

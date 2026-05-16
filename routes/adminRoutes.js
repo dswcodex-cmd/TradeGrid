@@ -15,6 +15,10 @@ import {
   reviewVerificationDocument
 } from "../controllers/adminController.js";
 import {
+  createAdminEvent,
+  getAdminEvents
+} from "../controllers/eventController.js";
+import {
   getAdminSupportTickets,
   getAdminSupportTicketById,
   assignSupportTicket,
@@ -37,6 +41,8 @@ router.get("/companies", getAdminCompanies);
 router.get("/companies/:companyId", getAdminCompanyById);
 router.patch("/companies/:companyId", updateAdminCompany);
 router.delete("/companies/:companyId", deleteAdminCompany);
+router.get("/events", getAdminEvents);
+router.post("/events", createAdminEvent);
 router.get("/verification", getAdminVerificationDocuments);
 router.patch("/verification/:documentId/review", reviewVerificationDocument);
 router.get("/support/tickets", getAdminSupportTickets);

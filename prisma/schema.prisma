@@ -26,6 +26,7 @@ model Company {
   company_name            String
   registration_number     String                   @unique
   business_type           String
+  trade_type              TradeType                @default(BOTH)
   number_of_employees     Int?
   year_established        Int?
   company_description     String?
@@ -51,11 +52,19 @@ model Company {
   admin_notes             String?
   suspended_at            DateTime?
   suspension_reason       String?
+  iec_number              String?
+  abn_number              String?
+  gst_number              String?
   industry                Industry?                @relation(fields: [industry_id], references: [industry_id])
   location                Location?                @relation(fields: [location_id], references: [location_id])
   desired_products        CompanyDesiredProducts[]
+  event_registrations     Registration[]
+  lobby_messages          LobbyMessage[]
   matches                 CompanyMatches[]         @relation("Company1")
   matched_with            CompanyMatches[]         @relation("Company2")
+  scheduled_matches_as_a  ScheduledMatch[]         @relation("ScheduledMatchCompanyA")
+  scheduled_matches_as_b  ScheduledMatch[]         @relation("ScheduledMatchCompanyB")
+  scheduled_match_reviews MatchOutcome[]           @relation("CompanyMatchOutcomes")
   products                CompanyProducts[]
   regions                 CompanyRegions[]
   targets                 CompanyTargets[]         @relation("SourceCompany")
@@ -74,6 +83,12 @@ model Company {
   support_tickets         SupportTicket[]
   support_ticket_messages SupportTicketMessage[]
   verification_documents  VerificationDocument[]
+}
+
+enum TradeType {
+  IMPORTER
+  EXPORTER
+  BOTH
 }
 
 model Industry {
@@ -237,6 +252,106 @@ model Enquiry {
   product              Product? @relation(fields: [product_id], references: [product_id])
   recipient_company    Company  @relation("EnquiryRecipient", fields: [recipient_company_id], references: [company_id])
   sender_company       Company  @relation("EnquirySender", fields: [sender_company_id], references: [company_id])
+}
+
+model Event {
+  id                  String           @id @default(uuid())
+  title               String
+  industry            String
+  description         String?
+  event_date          DateTime
+  status              EventStatus      @default(UPCOMING)
+  total_rounds        Int              @default(12)
+  round_duration_secs Int              @default(180)
+  break_duration_secs Int              @default(120)
+  current_round       Int              @default(0)
+  created_at          DateTime         @default(now())
+  registrations       Registration[]
+  matches             ScheduledMatch[]
+  messages            LobbyMessage[]
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  CLOSED
+}
+
+model Registration {
+  id                 String            @id @default(uuid())
+  company_id         Int
+  event_id           String
+  offering           String?
+  target_markets     String[]
+  session_preference SessionPreference @default(FULL_DAY)
+  status             UserEventStatus   @default(CONNECTED)
+  registered_at      DateTime          @default(now())
+  company            Company           @relation(fields: [company_id], references: [company_id])
+  event              Event             @relation(fields: [event_id], references: [id])
+
+  @@unique([company_id, event_id])
+}
+
+enum SessionPreference {
+  FULL_DAY
+  MORNING
+  AFTERNOON
+}
+
+enum UserEventStatus {
+  CONNECTED
+  WAITING
+  MATCHED
+  IN_MEETING
+  POST_MATCH
+  DONE
+}
+
+model ScheduledMatch {
+  id                  String         @id @default(uuid())
+  event_id            String
+  company_a_id        Int
+  company_b_id        Int
+  round_number        Int?
+  compatibility_score Int?
+  twilio_room_name    String?
+  started_at          DateTime?
+  ended_at            DateTime?
+  created_at          DateTime       @default(now())
+  event               Event          @relation(fields: [event_id], references: [id])
+  company_a           Company        @relation("ScheduledMatchCompanyA", fields: [company_a_id], references: [company_id])
+  company_b           Company        @relation("ScheduledMatchCompanyB", fields: [company_b_id], references: [company_id])
+  outcomes            MatchOutcome[]
+}
+
+model MatchOutcome {
+  id         String         @id @default(uuid())
+  match_id   String
+  company_id Int
+  decision   Decision
+  notes      String?
+  rating     Int?
+  created_at DateTime       @default(now())
+  match      ScheduledMatch @relation(fields: [match_id], references: [id])
+  company    Company        @relation("CompanyMatchOutcomes", fields: [company_id], references: [company_id])
+
+  @@unique([match_id, company_id])
+}
+
+enum Decision {
+  YES
+  NO
+  MAYBE
+}
+
+model LobbyMessage {
+  id         String   @id @default(uuid())
+  event_id   String
+  company_id Int
+  message    String
+  created_at DateTime @default(now())
+  event      Event    @relation(fields: [event_id], references: [id])
+  company    Company  @relation(fields: [company_id], references: [company_id])
 }
 
 model VerificationDocument {
