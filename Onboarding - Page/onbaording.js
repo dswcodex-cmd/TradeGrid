@@ -82,4 +82,31 @@
       window.addEventListener('resize', draw);
     })();
  
-  
+  function initUploadZone(dropZoneId, fileInputId, fileListId) {
+  const dropZone = document.getElementById(dropZoneId);
+  const fileInput = document.getElementById(fileInputId);
+  const fileList = document.getElementById(fileListId);
+
+  function addFiles(newFiles) {
+    Array.from(newFiles).forEach(file => {
+      const div = document.createElement('div');
+      div.className = 'file-item';
+      div.innerHTML = `<span>${file.name}</span>
+        <button type="button" onclick="this.parentElement.remove()" style="margin-left:auto">✕</button>`;
+      fileList.appendChild(div);
+    });
+  }
+
+  fileInput.addEventListener('change', e => addFiles(e.target.files));
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = '#d6f3f7'; });
+  dropZone.addEventListener('dragleave', () => dropZone.style.background = '');
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.background = '';
+    addFiles(e.dataTransfer.files);
+  });
+}
+
+// Initialise both zones
+initUploadZone('dropZone1', 'fileInput1', 'fileList1');
+initUploadZone('dropZone2', 'fileInput2', 'fileList2');

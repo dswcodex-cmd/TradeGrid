@@ -8,7 +8,9 @@
 </head>
 <body>
 
+  <!--hexagon background code -->
   <svg id="hex-canvas" xmlns="http://www.w3.org/2000/svg"></svg>
+
 
   <div class="gradient-bg full-height">
     <div class="auth-container">
@@ -40,30 +42,9 @@
               <input type="text" id="companyName" name="companyName" placeholder="Your company name" required />
             </div>
 
-            <div class="form-group">
-              <label for="email">Email *</label>
-              <input type="email" id="email" name="email" placeholder="Please enter your email" required />
-            </div>
-
-            <div class="form-group">
-              <label for="cipc">CIPC Number *</label>
-              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" required />
-            </div>
-
-            <div class="form-group">
-              <label for="password">Password *</label>
-              <div style="position: relative;">
-                <input type="password" id="password" name="password" placeholder="Please enter your password" required />
-                <button type="button" onclick="togglePassword('password', this)">Show</button>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="password-confirm">Confirm Password *</label>
-              <div style="position: relative;">
-                <input type="password" id="password-confirm" name="password-confirm" placeholder="Please confirm your password" required />
-                <button type="button" onclick="togglePassword('password-confirm', this)">Show</button>
-              </div>
+              <div class="form-group">
+              <label for="companyName">Email *</label>
+              <input type="text" id="companyName" name="email" placeholder="Your company email" required />
             </div>
 
             <div class="form-group">
@@ -73,20 +54,26 @@
                 <option value="importer">Importer</option>
                 <option value="exporter">Exporter</option>
               </select>
-            </div>
+          
 
-            <div class="form-group">
-              <label for="industry">Industry *</label>
-              <select id="industry" name="industry" required>
-                <option value="">Select industry</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Food & Beverages">Food &amp; Beverages</option>
-                <option value="Textiles & Apparel">Textiles &amp; Apparel</option>
-                <option value="Manufacturing & Industrial">Manufacturing &amp; Industrial</option>
-                <option value="Healthcare & Pharma">Healthcare &amp; Pharma</option>
-                <option value="Renewable Energy">Renewable Energy Equipment</option>
-              </select>
-            </div>
+             <label for="cipc">CIPC Number*</label>
+              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
+  </div>
+                    <div class="form-group">
+  <label for="password">Password*</label>
+  <div class="password-wrapper">
+    <input type="password" id="password" name="password" placeholder="Please enter your password" />
+    <button type="button" onclick="togglePassword('password', this)">Show</button>
+  </div>
+
+  <label for="password-confirm">Confirm Password*</label>
+  <div class="password-wrapper">
+    <input type="password" id="password-confirm" name="password-confirm" placeholder="Please confirm your password" />
+    <button type="button" onclick="togglePassword('password-confirm', this)">Show</button>
+  </div>
+</div>
+
+         
 
             <div class="form-buttons">
               <button type="button" class="btn-next" onclick="nextStep(2)">Next →</button>
@@ -106,6 +93,19 @@
             <div class="form-group">
               <label for="yearEstablished">Year Established *</label>
               <input type="date" id="yearEstablished" name="yearEstablished" required />
+            </div>
+
+               <div class="form-group">
+              <label for="industry">Industry *</label>
+              <select id="industry" name="industry" required>
+                <option value="">Select industry</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Food & Beverages">Food &amp; Beverages</option>
+                <option value="Textiles & Apparel">Textiles &amp; Apparel</option>
+                <option value="Manufacturing & Industrial">Manufacturing &amp; Industrial</option>
+                <option value="Healthcare & Pharma">Healthcare &amp; Pharma</option>
+                <option value="Renewable Energy">Renewable Energy equipment</option>
+              </select>
             </div>
 
             <div class="form-group">
@@ -140,20 +140,61 @@
 
           <!-- Step 3: Trading Preferences -->
           <div class="form-step" data-step="3">
-            <h3 class="step-title">Trading Preferences</h3>
+            <h3 class="step-title">Company Origin </h3>
 
-            <div class="form-group">
-              <label>Target Countries</label>
-              <div class="checkbox-group">
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="South Africa" /><span>South Africa</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Netherlands" /><span>Netherlands</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="India" /><span>India</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Australia" /><span>Australia</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Germany" /><span>Germany</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="New Zealand" /><span>New Zealand</span></label>
-                <label class="checkbox-label"><input type="checkbox" name="regions" value="Denmark" /><span>Denmark</span></label>
-              </div>
+              <div class="form-group">
+              <label for="employees">Company Origin*</label>
+              <select id="company origin" name="company origin" required>
+                <option value="">Select range</option>
+                <option value="South Africa">South Africa</option>
+                <option value="Zimbabwe">Zimbabwe</option>
+                <option value="Turkey">Turkey</option>
+                <option value="Mozambique">Mozambique</option>
+                <option value="Germany">Germany</option>
+                <option value="India">India</option>
+                <option value="China">China</option>
+                <option value="USA">USA</option>
+              </select>
             </div>
+
+          <div class="form-group">
+  <label>Company Registration Documents</label>
+  <div class="upload-zone" id="dropZone1">
+    <input type="file" id="fileInput1" multiple accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+    <strong>Drag & drop files here</strong>
+    <p>or <span style="color:#0FA3B1;">browse</span> to choose</p>
+  </div>
+  <p class="allowed-types">Accepted: PDF, DOC, DOCX, PNG, JPG · Max 10MB per file</p>
+  <div class="file-list" id="fileList1"></div>
+</div>
+
+<div class="form-group">
+  <label>Tax Clearance Certificate</label>
+  <div class="upload-zone" id="dropZone2">
+    <input type="file" id="fileInput2" multiple accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+    <strong>Drag & drop files here</strong>
+    <p>or <span style="color:#0FA3B1;">browse</span> to choose</p>
+  </div>
+  <p class="allowed-types">Accepted: PDF, DOC, DOCX, PNG, JPG · Max 10MB per file</p>
+  <div class="file-list" id="fileList2"></div>
+</div>
+
+         <!--- <div class="form-group">
+             
+              <label for="cipc">CIPC Number</label>
+              <input type="text" id="cipc" name="cipcNumber" placeholder="Please enter your CIPC number" />
+               <label for="password">Password</label>
+<div style="position: relative; display: inline-block;">
+  <input type="password" id="password" name="password" placeholder="Please enter your password" />
+  <button type="button" onclick="togglePassword('password', this)">Show</button>
+</div>
+
+<label for="password-confirm">Confirm Password</label>
+<div style="position: relative; display: inline-block;">
+  <input type="password" id="password-confirm" name="password-confirm" placeholder="Please confirm your password" />
+  <button type="button" onclick="togglePassword('password-confirm', this)">Show</button>
+</div>
+            </div>-->
 
             <div class="form-buttons">
               <button type="button" class="btn-back" onclick="prevStep(2)">← Back</button>
@@ -170,6 +211,7 @@
     </div>
   </div>
 
+  
 </body>
 <script src="onbaording.js"></script>
 </html>
