@@ -39,17 +39,23 @@
         <p>Browse verified importers and exporters from around the world. Sign in to unlock unlimited matches and start trading.</p>
       </div>
 
-      <!-- FILTER BAR (decorative / view-only) -->
-      <div class="filter-bar">
-        <span class="filter-label">FILTER:</span>
-        <span class="filter-chip active"><i class="ri-global-line"></i>All Markets</span>
-        <span class="filter-chip"><i class="ri-export-line"></i>Exporters</span>
-        <span class="filter-chip"><i class="ri-import-line"></i>Importers</span>
-        <span class="filter-chip"><i class="ri-leaf-line"></i>Agriculture</span>
-        <span class="filter-chip"><i class="ri-computer-line"></i>Tech</span>
-        <span class="filter-chip"><i class="ri-medicine-bottle-line"></i>Healthcare</span>
-      </div>
+    <!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">FILTER</span>
+  <button class="filter-btn active" onclick="setActive(this)"><i class="ri-global-line"></i>All Markets</button>
+  <button class="filter-btn" onclick="setActive(this)"><i class="ri-export-line"></i>Exporters</button>
+  <button class="filter-btn" onclick="setActive(this)"><i class="ri-import-line"></i>Importers</button>
+  <button class="filter-btn" onclick="setActive(this)"><i class="ri-leaf-line"></i>Agriculture</button>
+  <button class="filter-btn" onclick="setActive(this)"><i class="ri-computer-line"></i>Tech</button>
+  <button class="filter-btn" onclick="setActive(this)"><i class="ri-medicine-bottle-line"></i>Healthcare</button>
+</div>
 
+<script>
+function setActive(el) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+</script>
       <!-- PREVIEW LABEL -->
       <div class="preview-label">
         <p class="preview-label-left">Showing <span>3</span> preview companies — sign in to see all</p>
