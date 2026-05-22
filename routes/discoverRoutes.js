@@ -1,5 +1,6 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
+
 import {
   discoverCompaniesByImage,
   discoverCompanies,
@@ -8,8 +9,19 @@ import {
 
 const router = express.Router();
 
-router.post("/image-search", authMiddleware, discoverCompaniesByImage);
-router.get("/", authMiddleware, discoverCompanies);
-router.get("/:companyId", authMiddleware, getPublicCompanyProfile);
+/*
+  PUBLIC ROUTES
+*/
+router.get("/", discoverCompanies);
+router.get("/:companyId", getPublicCompanyProfile);
+
+/*
+  PROTECTED ROUTES
+*/
+router.post(
+  "/image-search",
+  authMiddleware,
+  discoverCompaniesByImage
+);
 
 export default router;

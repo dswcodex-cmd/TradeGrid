@@ -12,7 +12,7 @@ import authRoutes from "./routes/authRoutes.js";
 import discoverRoutes from "./routes/discoverRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import matchRoutes from "./routes/matchRoutes.js";
-import mashaAI from "./routes/mashaAI.js";
+//import mashaAI from "./routes/mashaAI.js";
 import messageRoutes from "./routes/messageRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
@@ -75,7 +75,7 @@ app.use("/settings", settingsRoutes);
 app.use("/support", supportRoutes);
 app.use("/verification", verificationRoutes);
 app.use("/watchlist", watchlistRoutes);
-app.use("/chat", mashaAI);
+//app.use("/chat", mashaAI);
 app.use("/messages", messageRoutes);
 app.use("/payments", paymentRoutes);
 app.use("/registration-validation", ValidationServiceRoute);
@@ -115,6 +115,6 @@ app.use((err, _req, res, _next) => {
 const PORT = process.env.PORT || 5000;
 registerEventSocket(io);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port http://localhost:${PORT}`);
 });

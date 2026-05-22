@@ -93,39 +93,31 @@ export const maybeRunMatchmaker = async (io, eventId) => {
   const tokenA = createRoomToken(String(companyAId), roomName);
   const tokenB = createRoomToken(String(companyBId), roomName);
 
-  io.to(`company:${companyAId}`).emit("match_found", {
-    matchId: match.id,
-    partner: companyB
-      ? {
-          company_id: companyB.company_id,
-          company_name: companyB.company_name,
-          country: companyB.location?.country || "N/A",
-          industry: companyB.industry?.industry_name || "N/A",
-          products: companyB.products.map((item) => item.product.product_name),
-          business_type: companyB.business_type
-        }
-      : null,
-    roomName,
-    twilioToken: tokenA,
-    roundDurationSeconds: event.round_duration_secs
-  });
+  io.to(`company:${companyAId}`).emit("match-ready", {
+  matchId: match.id,
+  roomName,
+  twilioToken: tokenA,
+  partner: companyB
+    ? {
+        company_id: companyB.company_id,
+        company_name: companyB.company_name
+      }
+    : null,
+  role: "A"
+});
 
-  io.to(`company:${companyBId}`).emit("match_found", {
-    matchId: match.id,
-    partner: companyA
-      ? {
-          company_id: companyA.company_id,
-          company_name: companyA.company_name,
-          country: companyA.location?.country || "N/A",
-          industry: companyA.industry?.industry_name || "N/A",
-          products: companyA.products.map((item) => item.product.product_name),
-          business_type: companyA.business_type
-        }
-      : null,
-    roomName,
-    twilioToken: tokenB,
-    roundDurationSeconds: event.round_duration_secs
-  });
+io.to(`company:${companyBId}`).emit("match-ready", {
+  matchId: match.id,
+  roomName,
+  twilioToken: tokenB,
+  partner: companyA
+    ? {
+        company_id: companyA.company_id,
+        company_name: companyA.company_name
+      }
+    : null,
+  role: "B"
+});
 
   startRoundTimer({
     io,

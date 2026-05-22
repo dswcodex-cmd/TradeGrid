@@ -68,7 +68,7 @@ const loadImageBase64 = (image_base64, image_path) => {
 
 export const discoverCompanies = async (req, res) => {
   try {
-    const current_company_id = Number(req.company.company_id);
+    const current_company_id = req.company ? Number(req.company.company_id) : null;
     const {
       search,
       business_type,
@@ -80,10 +80,15 @@ export const discoverCompanies = async (req, res) => {
     } = req.query;
 
     const companies = await prisma.company.findMany({
-      where: {
-        company_id: {
-          not: current_company_id
-        },
+       where: {
+    ...(current_company_id
+      ? {
+          company_id: {
+            not: current_company_id
+          }
+        }
+      : {}),
+        
         account_status: "active",
         profile_visibility: true,
         ...(business_type ? { business_type } : {}),
