@@ -809,3 +809,96 @@ body {
   .product-cta-row { flex-direction: column; }
   .topbar-search { max-width: 100%; }
 }
+/* ── Welcome banner actions group ── */
+.welcome-banner-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+/* ── Speed Connections button ── */
+.btn-speed-connections {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 22px;
+  background: rgba(181, 234, 240, 0.12);
+  color: var(--light);
+  border: 1.5px solid rgba(181, 234, 240, 0.35);
+  border-radius: 50px;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.15s, border-color 0.2s;
+  overflow: visible;
+}
+
+.btn-speed-connections:hover {
+  background: rgba(181, 234, 240, 0.22);
+  border-color: rgba(181, 234, 240, 0.55);
+  transform: translateY(-1px);
+}
+
+.btn-speed-connections:active {
+  transform: scale(0.97);
+}
+
+.speed-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  font-size: 15px;
+  transition: filter 0.5s ease, opacity 0.5s ease;
+  flex-shrink: 0;
+}
+
+.speed-btn-icon.blurred {
+  filter: blur(5px);
+  opacity: 0.3;
+}
+
+.speed-pulse-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50px;
+  border: 2px solid rgba(181, 234, 240, 0.5);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.speed-pulse-ring.animate {
+  animation: speed-pulse 0.7s ease-out forwards;
+}
+
+@keyframes speed-pulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+  }
+}
+
+.banner-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-speed-connections {
+  padding: 12px 22px;
+  /* match .btn-discover exactly */
+}
