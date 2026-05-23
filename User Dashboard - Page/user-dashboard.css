@@ -1357,3 +1357,10 @@ body.dark-mode .btn-edit-profile:hover {
   background: rgba(181,234,240,0.22);
   color: #ffffff;
 }
+/* ── DISCOVER PAGE HEX BACKGROUND ── */
+#discHexBg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath d='M40 0 L80 23 L80 69 L40 92 L0 69 L0 23 Z' fill='none' stroke='%230D3B3B' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 80px 92px;
+  background-repeat: repeat;
+}
+

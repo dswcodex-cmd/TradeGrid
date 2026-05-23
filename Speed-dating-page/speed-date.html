@@ -5,16 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Speed Date</title>
   <link rel="stylesheet" href="speed-date.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
 <div class="session" id="app">
 
   <!-- Header -->
+  
   <div class="header">
-    <div>
-      <div class="header-label">SPEED TRADING SESSION</div>
-      <div class="header-title">Live Connections</div>
+    <div style="display:flex; align-items:center; gap:16px;">
+      <a href="../User Dashboard - Page/user-dashboard.html" style="display:flex; align-items:center; gap:6px; color:rgb(224, 243, 241);
+                  text-decoration:none; font-size:13px; font-weight:600;
+                  padding:8px 14px; border:1px solid rgba(224, 226, 218, 0.2);
+                  border-radius:8px; transition:background 0.2s;"
+        onmouseover="this.style.background='rgba(190,195,175,0.1)'" onmouseout="this.style.background='transparent'">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 5l-7 7 7 7" />
+        </svg>
+        Dashboard
+      </a>
+      <div>
+        <div class="header-label">SPEED TRADING SESSION</div>
+        <div class="header-title">Live Connections</div>
+      </div>
     </div>
     <div class="header-right">
       <div class="session-timer-wrap">
@@ -22,10 +36,9 @@
         <div class="session-timer" id="sessionTimer">60:00</div>
       </div>
       <svg class="session-arc-svg" width="60" height="60" viewBox="0 0 60 60">
-        <circle cx="30" cy="30" r="25" stroke="rgba(190,195,175,0.1)" stroke-width="3" fill="none"/>
-        <circle id="sessionArc" cx="30" cy="30" r="25"
-          stroke="rgb(190,195,175)" stroke-width="3" fill="none"
-          stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157"/>
+        <circle cx="30" cy="30" r="25" stroke="rgba(190,195,175,0.1)" stroke-width="3" fill="none" />
+        <circle id="sessionArc" cx="30" cy="30" r="25" stroke="rgb(190,195,175)" stroke-width="3" fill="none"
+          stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157" />
       </svg>
     </div>
   </div>

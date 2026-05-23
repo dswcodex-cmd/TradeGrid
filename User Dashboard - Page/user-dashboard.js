@@ -80,6 +80,15 @@ function updateTopbarNotifCount() {
 }
 
 function navigateTo(pageId) {
+
+
+  if (pageId === 'speed-matches') {
+    showUserToast('Launching Speed Matches...');
+    setTimeout(() => {
+      window.location.href = '../Speed-dating-page/speed-date.html';
+    }, 900);
+    return;
+  }
   pages.forEach(p => p.classList.remove('active'));
   navItems.forEach(n => n.classList.remove('active'));
   const targetPage = document.getElementById('page-' + pageId);
@@ -1113,3 +1122,106 @@ speedConnectionsBtn?.addEventListener('click', () => {
   showUserToast('Finding your best connections...');
   setTimeout(() => { window.location.href = '../Speed-dating-page/speed-date.html'; }, 900);
 });
+
+// ============================================================
+//   DISCOVER — Swipe card interface
+// ============================================================
+const discCompanies = [
+  { avatar:'TC', name:'Tech Import Corp',          sub:'USA · Technology · Importer',         score:'71%', tags:['Technology','Importer','USA'],         volume:'$2M–$10M',   est:'2015', markets:'North America, Asia',    products:'Electronics, Components' },
+  { avatar:'GP', name:'Global Trade Partners',     sub:'Canada · Commodities · Both',          score:'68%', tags:['Commodities','Both','Canada'],         volume:'$5M–$20M',   est:'2010', markets:'Americas, Europe',       products:'Raw Materials, Metals'   },
+  { avatar:'IE', name:'International Exports Inc', sub:'Australia · Agriculture · Exporter',   score:'65%', tags:['Agriculture','Exporter','Australia'],  volume:'$1M–$5M',    est:'2018', markets:'Asia, Middle East',      products:'Grains, Livestock Feed'  },
+  { avatar:'AS', name:'AsiaSource Ltd',            sub:'Singapore · Electronics · Importer',   score:'79%', tags:['Electronics','Importer','Singapore'],  volume:'$10M–$50M',  est:'2008', markets:'Asia-Pacific',           products:'Semiconductors, PCBs'    },
+  { avatar:'AF', name:'AfricaTrade Hub',           sub:'Kenya · Agriculture · Both',            score:'74%', tags:['Agriculture','Both','Kenya'],          volume:'$500K–$2M',  est:'2019', markets:'Sub-Saharan Africa',     products:'Coffee, Tea, Spices'     },
+  { avatar:'EU', name:'EuroGoods BV',              sub:'Netherlands · Manufacturing · Both',    score:'82%', tags:['Manufacturing','Both','Netherlands'],  volume:'$20M–$80M',  est:'2005', markets:'Europe, Americas',       products:'Machinery, Chemicals'    },
+  { avatar:'IN', name:'IndoExport Co',             sub:'India · Textiles · Exporter',           score:'70%', tags:['Textiles','Exporter','India'],         volume:'$3M–$15M',   est:'2012', markets:'Europe, Middle East',    products:'Fabrics, Garments'       },
+  { avatar:'BR', name:'BrazilAgro SA',             sub:'Brazil · Agriculture · Exporter',       score:'67%', tags:['Agriculture','Exporter','Brazil'],     volume:'$8M–$30M',   est:'2009', markets:'Europe, Asia',           products:'Soybeans, Sugar, Corn'   },
+  { avatar:'ME', name:'MidEast Traders LLC',       sub:'UAE · Commodities · Both',              score:'76%', tags:['Commodities','Both','UAE'],            volume:'$15M–$60M',  est:'2011', markets:'Middle East, Africa',    products:'Oil Products, Metals'    },
+  { avatar:'JP', name:'Nippon Imports KK',         sub:'Japan · Electronics · Importer',        score:'88%', tags:['Electronics','Importer','Japan'],      volume:'$30M–$100M', est:'2001', markets:'Asia-Pacific, Americas', products:'Automotive Parts, Tech'  },
+];
+
+const discTips = [
+  'Companies with a match score above 75% are 3× more likely to respond.',
+  'Add more products to your profile to improve match accuracy.',
+  'Verified businesses get 2× more connection responses.',
+  'Connecting with partners in different regions reduces supply chain risk.',
+  'Complete your trade information to unlock more precise AI matching.',
+];
+
+let discIndex = 0, discConnected = 0, discPassed = 0;
+
+function discRenderCard() {
+  if (discIndex >= discCompanies.length) { discShowEmpty(); return; }
+  const c = discCompanies[discIndex];
+  document.getElementById('discCardAvatar').textContent   = c.avatar;
+  document.getElementById('discCardName').textContent     = c.name;
+  document.getElementById('discCardSub').innerHTML        = c.sub.replace(/·/g, '&bull;');
+  document.getElementById('discCardScore').textContent    = c.score + ' match';
+  document.getElementById('discCardVolume').textContent   = c.volume;
+  document.getElementById('discCardEst').textContent      = c.est;
+  document.getElementById('discCardMarkets').textContent  = c.markets;
+  document.getElementById('discCardProducts').textContent = c.products;
+  document.getElementById('discCardTags').innerHTML       = c.tags.map(t => `<span style="padding:4px 12px;border-radius:20px;background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);font-size:11px;font-weight:600;color:var(--accent);">${t}</span>`).join('');
+  document.getElementById('remainingCount').textContent   = (discCompanies.length - discIndex) + ' companies remaining';
+  document.getElementById('statViewed').textContent       = discIndex;
+  document.getElementById('statConnected').textContent    = discConnected;
+  document.getElementById('statPassed').textContent       = discPassed;
+  const pct = Math.round((discIndex / discCompanies.length) * 100);
+  document.getElementById('sessionProgress').style.width  = pct + '%';
+  document.getElementById('progressLabel').textContent    = pct + '% complete';
+  const tipEl = document.getElementById('tipText');
+  if (tipEl) tipEl.textContent = discTips[discIndex % discTips.length];
+}
+
+function discSwipe(dir) {
+  const card = document.getElementById('discMatchCard');
+  card.style.transform = dir === 'left' ? 'translateX(-150%) rotate(-20deg)' : 'translateX(150%) rotate(20deg)';
+  card.style.opacity = '0';
+  setTimeout(() => {
+    card.style.transition = 'none';
+    card.style.transform = ''; card.style.opacity = '1';
+    setTimeout(() => { card.style.transition = ''; discIndex++; discRenderCard(); }, 20);
+  }, 360);
+}
+
+function discShowEmpty() {
+  document.getElementById('discMatchCard').style.display  = 'none';
+  document.getElementById('discCardGhost').style.display  = 'none';
+  document.getElementById('discActionRow').style.display  = 'none';
+  document.getElementById('discEmptyState').style.display = 'flex';
+  document.getElementById('remainingCount').textContent   = '0 companies remaining';
+}
+
+function resetDiscoverCards() {
+  discIndex = 0; discConnected = 0; discPassed = 0;
+  document.getElementById('discMatchCard').style.display  = '';
+  document.getElementById('discCardGhost').style.display  = '';
+  document.getElementById('discActionRow').style.display  = 'flex';
+  document.getElementById('discEmptyState').style.display = 'none';
+  discRenderCard();
+}
+
+document.getElementById('discBtnPass')?.addEventListener('click', () => {
+  if (discIndex >= discCompanies.length) return;
+  discPassed++; discSwipe('left'); showUserToast('Passed');
+});
+document.getElementById('discBtnConnect')?.addEventListener('click', () => {
+  if (discIndex >= discCompanies.length) return;
+  const name = discCompanies[discIndex].name;
+  discConnected++; discSwipe('right'); showUserToast('Connected with ' + name + '!');
+});
+document.getElementById('discBtnProfile')?.addEventListener('click', () => {
+  if (discIndex >= discCompanies.length) return;
+  showUserToast('Viewing: ' + discCompanies[discIndex].name);
+});
+
+// Keyboard support for discover page
+document.addEventListener('keydown', (e) => {
+  const discPage = document.getElementById('page-discover');
+  if (!discPage?.classList.contains('active')) return;
+  if (e.key === 'ArrowLeft')  document.getElementById('discBtnPass')?.click();
+  if (e.key === 'ArrowRight') document.getElementById('discBtnConnect')?.click();
+  if (e.key === 'ArrowUp')    document.getElementById('discBtnProfile')?.click();
+});
+
+// Init on page load
+discRenderCard();

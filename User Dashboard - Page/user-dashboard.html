@@ -26,6 +26,8 @@
       <a href="#" class="nav-item" data-page="matches"><i class="ri-exchange-line"></i> Matches<span class="nav-badge">3</span></a>
       <a href="#" class="nav-item" data-page="messages"><i class="ri-message-3-line"></i> Messages<span class="nav-badge">5</span></a>
       <a href="#" class="nav-item" data-page="discover"><i class="ri-search-eye-line"></i> Discover</a>
+      <a href="#" class="nav-item" data-page="speed-matches"><i class="ri-flashlight-line"></i> Speed Matches</a>
+      
       <div class="nav-section-label" style="margin-top:16px;">Account</div>
       <a href="#" class="nav-item" data-page="profile"><i class="ri-building-line"></i> Business Profile</a>
       <a href="#" class="nav-item" data-page="verification"><i class="ri-shield-check-line"></i> Verification<span class="nav-badge pending">!</span></a>
@@ -127,11 +129,7 @@
             <p>Here's what's happening with your trade activity today.</p>
           </div>
           <a href="#" class="btn-discover" data-page="discover"><i class="ri-search-eye-line"></i> Discover Partners</a>
-          <button class="btn-speed-connections" id="speedConnectionsBtn">
-            <span class="speed-btn-icon" id="speedBtnIcon"><i class="ri-flashlight-line"></i></span>
-            Speed Connections
-            <span class="speed-pulse-ring" id="speedPulseRing"></span>
-          </button>
+          
         </div>
         <div class="kpi-grid">
           <div class="kpi-card"><div class="kpi-icon teal"><i class="ri-exchange-line"></i></div><div class="kpi-info"><span class="kpi-label">Active Matches</span><h2 class="kpi-value">14</h2><p class="kpi-change up"><i class="ri-arrow-up-line"></i> +3 this week</p></div></div>
@@ -217,22 +215,265 @@
     </main>
 
     <!-- PAGE: DISCOVER -->
+    <!-- PAGE: DISCOVER -->
     <main class="page" id="page-discover">
-      <div class="page-inner">
-        <div class="page-title-row"><h2>Discover Partners</h2><p>Find your next trading connection</p></div>
-        <div class="discover-filters">
-          <select class="disc-select"><option>All Industries</option><option>Electronics</option><option>Agriculture</option><option>Manufacturing</option></select>
-          <select class="disc-select"><option>All Countries</option><option>Japan</option><option>Germany</option><option>UAE</option><option>Brazil</option></select>
-          <select class="disc-select"><option>All Types</option><option>Importer</option><option>Exporter</option></select>
-          <button class="disc-search-btn"><i class="ri-search-line"></i> Search</button>
+    
+      <!-- Hexagon background -->
+      <div id="discHexBg"
+        style="position:fixed;inset:0;pointer-events:none;z-index:0;opacity:0.04;background-color:transparent;"></div>
+    
+      <div class="page-inner" style="position:relative;z-index:1;">
+    
+        <div class="page-title-row">
+          <h2>Discover Partners</h2>
+          <p id="remainingCount">10 companies remaining</p>
         </div>
-        <div class="placeholder-grid">
-          <div class="placeholder-card"><div class="ph-avatar">TC</div><h4>Tech Import Corp</h4><p>USA &bull; Technology &bull; Importer</p><div class="ph-score">71% match</div><div class="ph-actions"><button class="btn-ph-primary"><i class="ri-add-line"></i> Connect</button><button class="btn-ph-secondary"><i class="ri-user-line"></i> Profile</button></div></div>
-          <div class="placeholder-card"><div class="ph-avatar">GP</div><h4>Global Trade Partners</h4><p>Canada &bull; Commodities &bull; Both</p><div class="ph-score">68% match</div><div class="ph-actions"><button class="btn-ph-primary"><i class="ri-add-line"></i> Connect</button><button class="btn-ph-secondary"><i class="ri-user-line"></i> Profile</button></div></div>
-          <div class="placeholder-card"><div class="ph-avatar">IE</div><h4>International Exports Inc</h4><p>Australia &bull; Agriculture &bull; Exporter</p><div class="ph-score">65% match</div><div class="ph-actions"><button class="btn-ph-primary"><i class="ri-add-line"></i> Connect</button><button class="btn-ph-secondary"><i class="ri-user-line"></i> Profile</button></div></div>
+    
+        <!-- Three column layout -->
+        <div style="display:grid;grid-template-columns:220px 1fr 220px;gap:24px;align-items:start;width:100%;">
+    
+          <!-- LEFT PANEL -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h3>Your Session</h3>
+              </div>
+              <div
+                style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;">
+                <span style="color:var(--text-muted);">Viewed</span><span style="font-weight:700;" id="statViewed">0</span>
+              </div>
+              <div
+                style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;">
+                <span style="color:var(--text-muted);">Connected</span><span style="font-weight:700;color:#16a34a;"
+                  id="statConnected">0</span></div>
+              <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px;"><span
+                  style="color:var(--text-muted);">Passed</span><span style="font-weight:700;color:#dc2626;"
+                  id="statPassed">0</span></div>
+              <div style="margin-top:14px;">
+                <div style="height:6px;background:var(--accent-light);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+                  <div id="sessionProgress"
+                    style="height:100%;background:linear-gradient(90deg,var(--accent),#B5EAF0);border-radius:3px;width:0%;transition:width 0.4s;">
+                  </div>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted);" id="progressLabel">0% complete</span>
+              </div>
+            </div>
+    
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h3>Shortcuts</h3>
+              </div>
+              <div
+                style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border);">
+                <kbd
+                  style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;padding:0 6px;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;font-size:11px;font-weight:700;">←</kbd><span>Pass</span>
+              </div>
+              <div
+                style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border);">
+                <kbd
+                  style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;padding:0 6px;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;font-size:11px;font-weight:700;">→</kbd><span>Connect</span>
+              </div>
+              <div
+                style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;color:var(--text-secondary);">
+                <kbd
+                  style="display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;padding:0 6px;background:var(--bg);border:1px solid var(--border-strong);border-radius:6px;font-size:11px;font-weight:700;">↑</kbd><span>View
+                  Profile</span></div>
+            </div>
+    
+            <div class="dash-card"
+              style="background:linear-gradient(135deg,rgba(15,163,177,0.06),rgba(181,234,240,0.08));border-color:rgba(15,163,177,0.2);">
+              <div class="dash-card-header">
+                <h3>Tip</h3>
+              </div>
+              <p style="font-size:12px;color:var(--text-secondary);line-height:1.65;" id="tipText">Companies with a match
+                score above 75% are 3× more likely to respond.</p>
+            </div>
+          </div>
+    
+          <!-- CENTRE -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+            <div style="position:relative;width:100%;display:flex;justify-content:center;min-height:420px;">
+              <div
+                style="position:absolute;width:calc(100% - 40px);height:calc(100% - 10px);background:var(--white);border:1px solid var(--border);border-radius:20px;top:10px;transform:scale(0.97);opacity:0.5;z-index:1;pointer-events:none;"
+                id="discCardGhost"></div>
+              <div id="discMatchCard"
+                style="width:100%;background:var(--white);border:1px solid var(--border);border-radius:20px;box-shadow:0 8px 32px rgba(13,59,59,0.12);overflow:hidden;position:relative;z-index:2;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1),opacity 0.3s;">
+                <div
+                  style="background:linear-gradient(135deg,#0D3B3B,#0f5050);padding:32px 28px 24px;display:flex;align-items:flex-end;justify-content:space-between;">
+                  <div id="discCardAvatar"
+                    style="width:72px;height:72px;border-radius:18px;background:rgba(181,234,240,0.2);border:2px solid rgba(181,234,240,0.35);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;color:#B5EAF0;letter-spacing:-0.5px;">
+                    TC</div>
+                  <div id="discCardScore"
+                    style="display:inline-flex;align-items:center;padding:6px 16px;border-radius:20px;background:rgba(15,163,177,0.25);color:#B5EAF0;border:1px solid rgba(181,234,240,0.3);font-size:13px;font-weight:700;">
+                    71% match</div>
+                </div>
+                <div style="padding:24px 28px 28px;">
+                  <h2 id="discCardName"
+                    style="font-size:1.45rem;font-weight:800;color:var(--primary);letter-spacing:-0.3px;margin-bottom:5px;">
+                    Tech Import Corp</h2>
+                  <p id="discCardSub" style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">USA &bull;
+                    Technology &bull; Importer</p>
+                  <div id="discCardTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;"></div>
+                  <div
+                    style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding-top:18px;border-top:1px solid var(--border);">
+                    <div style="display:flex;flex-direction:column;gap:4px;"><span
+                        style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Trade
+                        Volume</span><span id="discCardVolume"
+                        style="font-size:13px;font-weight:600;color:var(--primary);">$2M–$10M</span></div>
+                    <div style="display:flex;flex-direction:column;gap:4px;"><span
+                        style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Established</span><span
+                        id="discCardEst" style="font-size:13px;font-weight:600;color:var(--primary);">2015</span></div>
+                    <div style="display:flex;flex-direction:column;gap:4px;"><span
+                        style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Key
+                        Markets</span><span id="discCardMarkets"
+                        style="font-size:13px;font-weight:600;color:var(--primary);">North America, Asia</span></div>
+                    <div style="display:flex;flex-direction:column;gap:4px;"><span
+                        style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;">Products</span><span
+                        id="discCardProducts" style="font-size:13px;font-weight:600;color:var(--primary);">Electronics,
+                        Components</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+    
+            <!-- Buttons -->
+            <div id="discActionRow" style="display:flex;align-items:center;justify-content:center;gap:20px;">
+              <button id="discBtnPass"
+                style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(220,38,38,0.25);background:var(--white);color:#dc2626;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:24px;"
+                title="Pass"><i class="ri-close-line"></i></button>
+              <button id="discBtnProfile"
+                style="width:46px;height:46px;border-radius:50%;border:2px solid var(--border-strong);background:var(--white);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:18px;"
+                title="View Profile"><i class="ri-user-line"></i></button>
+              <button id="discBtnConnect"
+                style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(22,163,74,0.25);background:var(--white);color:#16a34a;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:24px;"
+                title="Connect"><i class="ri-team-line"></i></button>
+            </div>
+    
+            <div style="display:flex;gap:24px;font-size:12px;font-weight:600;">
+              <span style="display:flex;align-items:center;gap:5px;color:#dc2626;"><i class="ri-close-circle-line"></i>
+                Pass</span>
+              <span style="display:flex;align-items:center;gap:5px;color:#16a34a;"><i class="ri-team-line"></i>
+                Connect</span>
+            </div>
+    
+            <!-- Empty state -->
+            <div id="discEmptyState"
+              style="display:none;text-align:center;padding:48px 20px;width:100%;flex-direction:column;align-items:center;">
+              <i class="ri-check-double-line"
+                style="font-size:52px;color:var(--accent);margin-bottom:16px;display:block;"></i>
+              <h3 style="font-size:20px;font-weight:800;color:var(--primary);margin-bottom:8px;">You've reviewed all
+                partners!</h3>
+              <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">Check your Matches page to see who
+                connected back.</p>
+              <div style="display:flex;gap:12px;justify-content:center;">
+                <button onclick="resetDiscoverCards()"
+                  style="display:inline-flex;align-items:center;gap:7px;padding:12px 22px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer;"><i
+                    class="ri-refresh-line"></i> Start Over</button>
+              </div>
+            </div>
+          </div>
+    
+          <!-- RIGHT PANEL -->
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h3>Top Matches Today</h3>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+                <div
+                  style="width:34px;height:34px;border-radius:50%;background:var(--primary);color:#B5EAF0;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">
+                  JP</div>
+                <div style="flex:1;">
+                  <p style="font-size:12px;font-weight:600;color:var(--primary);">Nippon Imports KK</p><span
+                    style="font-size:10px;color:var(--text-muted);">Japan · Electronics</span>
+                </div><span
+                  style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);padding:2px 8px;border-radius:20px;">88%</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+                <div
+                  style="width:34px;height:34px;border-radius:50%;background:var(--primary);color:#B5EAF0;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">
+                  EU</div>
+                <div style="flex:1;">
+                  <p style="font-size:12px;font-weight:600;color:var(--primary);">EuroGoods BV</p><span
+                    style="font-size:10px;color:var(--text-muted);">Netherlands · Manufacturing</span>
+                </div><span
+                  style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);padding:2px 8px;border-radius:20px;">82%</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;">
+                <div
+                  style="width:34px;height:34px;border-radius:50%;background:var(--primary);color:#B5EAF0;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">
+                  AS</div>
+                <div style="flex:1;">
+                  <p style="font-size:12px;font-weight:600;color:var(--primary);">AsiaSource Ltd</p><span
+                    style="font-size:10px;color:var(--text-muted);">Singapore · Electronics</span>
+                </div><span
+                  style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);padding:2px 8px;border-radius:20px;">79%</span>
+              </div>
+            </div>
+    
+            <div class="dash-card">
+              <div class="dash-card-header">
+                <h3>Active Regions</h3>
+              </div>
+              <div
+                style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border);">
+                <span
+                  style="width:8px;height:8px;border-radius:50%;background:#0FA3B1;flex-shrink:0;display:inline-block;"></span><span>Asia-Pacific</span><span
+                  style="margin-left:auto;font-weight:700;color:var(--primary);">4</span></div>
+              <div
+                style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border);">
+                <span
+                  style="width:8px;height:8px;border-radius:50%;background:#16a34a;flex-shrink:0;display:inline-block;"></span><span>Europe</span><span
+                  style="margin-left:auto;font-weight:700;color:var(--primary);">2</span></div>
+              <div
+                style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:12px;color:var(--text-secondary);border-bottom:1px solid var(--border);">
+                <span
+                  style="width:8px;height:8px;border-radius:50%;background:#b45309;flex-shrink:0;display:inline-block;"></span><span>Africa</span><span
+                  style="margin-left:auto;font-weight:700;color:var(--primary);">2</span></div>
+              <div
+                style="display:flex;align-items:center;gap:8px;padding:7px 0;font-size:12px;color:var(--text-secondary);">
+                <span
+                  style="width:8px;height:8px;border-radius:50%;background:#7c3aed;flex-shrink:0;display:inline-block;"></span><span>Americas</span><span
+                  style="margin-left:auto;font-weight:700;color:var(--primary);">2</span></div>
+            </div>
+    
+            <div class="dash-card"
+              style="background:linear-gradient(135deg,#0D3B3B,#0f5050);border-color:transparent;text-align:center;">
+              <i class="ri-shield-check-line" style="font-size:28px;color:#B5EAF0;margin-bottom:10px;display:block;"></i>
+              <p style="font-size:12px;color:rgba(181,234,240,0.8);line-height:1.6;margin-bottom:14px;">Complete your
+                verification to unlock priority matching.</p>
+              <a href="#" data-page="verification"
+                style="display:inline-flex;align-items:center;justify-content:center;padding:9px 20px;background:rgba(181,234,240,0.15);border:1px solid rgba(181,234,240,0.3);border-radius:12px;color:#B5EAF0;font-size:12px;font-weight:700;text-decoration:none;">Verify
+                Now</a>
+            </div>
+          </div>
+    
         </div>
       </div>
     </main>
+
+    <!-- PAGE: SPEED MATCHES -->
+    <main class="page" id="page-speed-matches">
+      <div class="page-inner">
+        <div class="page-title-row">
+          <h2>Speed Matches</h2>
+          <p>Fast-track live connections with top trading partners</p>
+        </div>
+        <div class="welcome-banner" style="margin-bottom: 0;">
+          <div class="welcome-text">
+            <h1>Ready to connect fast?</h1>
+            <p>Join a live speed trading session and meet verified partners in 10-minute rounds.</p>
+          </div>
+          <button class="btn-speed-connections" id="speedMatchesLaunchBtn">
+            <span class="speed-btn-icon"><i class="ri-flashlight-line"></i></span>
+            Start Session
+            <span class="speed-pulse-ring"></span>
+          </button>
+        </div>
+      </div>
+    </main>
+
+
 
     <!-- PAGE: PROFILE -->
     <main class="page" id="page-profile">
