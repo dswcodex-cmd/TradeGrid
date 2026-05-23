@@ -446,8 +446,12 @@ export const assignSupportTicket = async (req, res) => {
       ? String(assigned_role).trim().toLowerCase()
       : ticket.assigned_role;
 
-    if ((req.admin.role === "employee" || req.admin.role === "admin") && nextAssignedRole !== req.admin.role) {
-      return res.status(403).json({ error: "You can only assign tickets within your own role queue" });
+    if (!["employee", "admin", "superadmin"].includes(nextAssignedRole)) {
+      return res.status(400).json({ error: "assigned_role must be employee, admin, or superadmin" });
+    }
+
+    if ((req.admin.role === "employee" || req.admin.role === "admin") && !["employee", "admin"].includes(nextAssignedRole)) {
+      return res.status(403).json({ error: "You can only route tickets between the employee and admin queues" });
     }
 
     const numericAssignedAdminId = assigned_admin_id === null || assigned_admin_id === undefined
@@ -458,7 +462,7 @@ export const assignSupportTicket = async (req, res) => {
       return res.status(400).json({ error: "assigned_admin_id must be a valid number" });
     }
 
-    if (req.admin.role !== "superadmin" && numericAssignedAdminId !== Number(req.admin.admin_id)) {
+    if (req.admin.role !== "superadmin" && numericAssignedAdminId !== null && numericAssignedAdminId !== Number(req.admin.admin_id)) {
       return res.status(403).json({ error: "You can only assign tickets to yourself" });
     }
 
@@ -472,8 +476,8 @@ export const assignSupportTicket = async (req, res) => {
         return res.status(404).json({ error: "Assigned staff member was not found or is inactive" });
       }
 
-      if (req.admin.role !== "superadmin" && targetAdmin.role !== req.admin.role) {
-        return res.status(403).json({ error: "You can only assign tickets to staff in your own role" });
+      if (req.admin.role !== "superadmin" && targetAdmin.role !== nextAssignedRole) {
+        return res.status(403).json({ error: "Assigned staff must belong to the selected queue" });
       }
     }
 

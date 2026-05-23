@@ -30,6 +30,8 @@ const state = {
   token: "",
   eventId: "",
   socket: null,
+  localStream: null,
+  twilioRoom: null,
   sessionLeft: 3600,
   matchLeft: 600,
   currentIdx: 0,
@@ -40,7 +42,8 @@ const state = {
   matches: demoMatches,
   currentMatchId: null,
   currentRoomName: null,
-  currentTwilioToken: null
+  currentTwilioToken: null,
+  remoteParticipantName: ""
 };
 
 function getStoredToken() {
@@ -68,6 +71,96 @@ function getApiBase() {
 
 function getEventIdFromUrl() {
   return new URL(window.location.href).searchParams.get("eventId") || "";
+}
+
+function getSpeedDateApi() {
+   if (!window.speedDateApi) {
+    throw new Error(
+      "speedDateApi is not loaded. Make sure fetches.js is included before this script."
+    );
+  }
+
+  return window.speedDateApi;
+  // return window.speedDateApi || {
+  //   getStoredToken,
+  //   getApiBase,
+  //   async request(path, options = {}) {
+  //     const response = await fetch(`${getApiBase()}${path}`, {
+  //       ...options,
+  //       headers: {
+  //         ...(options.headers || {}),
+  //         ...(state.token ? { Authorization: `Bearer ${state.token}` } : {})
+  //       }
+  //     });
+
+  //     let payload = {};
+  //     try {
+  //       payload = await response.json();
+  //     } catch {
+  //       payload = {};
+  //     }
+
+  //     if (!response.ok) {
+  //       throw new Error(payload.error || `Request failed: ${response.status}`);
+  //     }
+
+  //     return payload;
+  //   },
+  //   submitMatchOutcome(matchId, decision) {
+  //     return this.request(`/events/matches/${matchId}/outcome`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${state.token}`
+  //       },
+  //       body: JSON.stringify({ decision })
+  //     });
+  //   },
+  //   getCurrentPulseSession() {
+  //     return this.request("/events/pulse/current");
+  //   },
+  //   joinCurrentPulseSession(body = { target_markets: [] }) {
+  //     return this.request("/events/pulse/join", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json"
+  //       },
+  //       body: JSON.stringify(body)
+  //     });
+  //   },
+  //   getEvent(eventId) {
+  //     return this.request(`/events/${eventId}`);
+  //   },
+  //   registerForEvent(eventId, body = { target_markets: [] }) {
+  //     return this.request(`/events/${eventId}/register`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json"
+  //       },
+  //       body: JSON.stringify(body)
+  //     });
+  //   }
+  // };
+}
+
+function updateVideoStatus(message) {
+  const statusEl = document.getElementById("videoStatus");
+  if (statusEl) {
+    statusEl.textContent = message;
+  }
+}
+
+function showRemoteFallback(showFallback = true) {
+  const remoteVideo = document.getElementById("remoteVideo");
+  const remoteFallback = document.getElementById("remoteFallback");
+
+  if (remoteVideo) {
+    remoteVideo.style.display = showFallback ? "none" : "block";
+  }
+
+  if (remoteFallback) {
+    remoteFallback.style.display = showFallback ? "flex" : "none";
+  }
 }
 
 function formatTime(totalSeconds) {
@@ -105,6 +198,7 @@ function normalizeMatch(match) {
 }
 
 function showWaitingState(messageText = "Finding your next pulse connection...") {
+  detachCurrentRoom();
   state.matches = [{
     id: "waiting-state",
     companyName: messageText,
@@ -120,6 +214,7 @@ function showWaitingState(messageText = "Finding your next pulse connection...")
   state.matchLeft = 600;
   renderMatch();
   updateMatchUI();
+  updateVideoStatus(messageText);
 }
 
 function renderMessages() {
@@ -193,6 +288,7 @@ function renderMatch() {
 
   renderMessages();
   renderUpcoming();
+  updateVideoStatus(state.currentTwilioToken ? `Match found: ${match.companyName}. Joining video room...` : `Match found: ${match.companyName}. Waiting for video room credentials...`);
 }
 
 function updateSessionUI() {
@@ -219,6 +315,144 @@ function updateMatchUI() {
   progressBar.className = `match-progress-fill${urgent ? " urgent" : ""}`;
 }
 
+async function startLocalPreview() {
+  const localVideo = document.getElementById("localVideo");
+
+  if (!navigator.mediaDevices?.getUserMedia || !localVideo) {
+    updateVideoStatus("Camera preview is not supported in this browser.");
+    return;
+  }
+
+  if (state.localStream) {
+    localVideo.srcObject = state.localStream;
+    return;
+  }
+
+  try {
+    state.localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true
+    });
+    localVideo.srcObject = state.localStream;
+    applyTrackState();
+    updateVideoStatus("Camera preview ready. Waiting for a live match...");
+  } catch (error) {
+    console.warn("Unable to access camera/microphone:", error);
+    updateVideoStatus("Camera or microphone access was denied.");
+  }
+}
+
+function applyTrackState() {
+  if (!state.localStream) {
+    return;
+  }
+
+  state.localStream.getAudioTracks().forEach((track) => {
+    track.enabled = !state.muted;
+  });
+
+  state.localStream.getVideoTracks().forEach((track) => {
+    track.enabled = !state.vidOff;
+  });
+}
+
+function detachCurrentRoom() {
+  if (state.twilioRoom) {
+    state.twilioRoom.disconnect();
+    state.twilioRoom = null;
+  }
+
+  const remoteVideo = document.getElementById("remoteVideo");
+  if (remoteVideo) {
+    remoteVideo.srcObject = null;
+  }
+
+  showRemoteFallback(true);
+}
+
+async function loadTwilioVideo() {
+  if (window.Twilio?.Video) {
+    return window.Twilio.Video;
+  }
+
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://sdk.twilio.com/js/video/releases/2.29.0/twilio-video.min.js";
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+
+  return window.Twilio?.Video;
+}
+
+async function connectToVideoRoom() {
+  if (!state.currentTwilioToken || !state.currentRoomName || !state.localStream) {
+    updateVideoStatus("Match found. Waiting for video room credentials...");
+    return;
+  }
+
+  try {
+    detachCurrentRoom();
+    const TwilioVideo = await loadTwilioVideo();
+    if (!TwilioVideo?.connect) {
+      updateVideoStatus("Twilio Video SDK could not be loaded.");
+      return;
+    }
+
+    state.twilioRoom = await TwilioVideo.connect(state.currentTwilioToken, {
+      name: state.currentRoomName,
+      tracks: state.localStream.getTracks()
+    });
+
+    updateVideoStatus(`Connected to ${state.currentRoomName}`);
+
+    const attachParticipant = (participant) => {
+      participant.tracks.forEach((publication) => {
+        if (publication.isSubscribed) {
+          attachRemoteTrack(publication.track);
+        }
+      });
+
+      participant.on("trackSubscribed", attachRemoteTrack);
+      participant.on("trackUnsubscribed", detachRemoteTrack);
+    };
+
+    state.twilioRoom.participants.forEach(attachParticipant);
+    state.twilioRoom.on("participantConnected", attachParticipant);
+    state.twilioRoom.on("participantDisconnected", () => {
+      showRemoteFallback(true);
+      updateVideoStatus("Your match left the room. Waiting for the next connection...");
+    });
+  } catch (error) {
+    console.warn("Twilio room connection failed:", error);
+    updateVideoStatus("Video room connection failed. Chat and queue will still work.");
+  }
+}
+
+function attachRemoteTrack(track) {
+  if (track.kind !== "video") {
+    return;
+  }
+
+  const remoteVideo = document.getElementById("remoteVideo");
+  if (!remoteVideo) {
+    return;
+  }
+
+  const mediaStream = new MediaStream([track.mediaStreamTrack]);
+  remoteVideo.srcObject = mediaStream;
+  showRemoteFallback(false);
+}
+
+function detachRemoteTrack() {
+  const remoteVideo = document.getElementById("remoteVideo");
+  if (remoteVideo) {
+    remoteVideo.srcObject = null;
+  }
+  showRemoteFallback(true);
+}
+
 function setMode(mode) {
   document.getElementById("videoView").style.display = mode === "video" ? "" : "none";
   document.getElementById("msgView").style.display = mode === "message" ? "flex" : "none";
@@ -231,16 +465,33 @@ async function submitOutcome(decision) {
     return;
   }
 
-  await fetch(`${state.apiBase}/events/matches/${state.currentMatchId}/outcome`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${state.token}`
-    },
-    body: JSON.stringify({ decision })
-  });
+  const api = getSpeedDateApi();
+  await api.submitMatchOutcome(state.currentMatchId, decision);
 }
 
+async function submitOutcome(decision) {
+  if (
+    !state.token ||
+    !state.currentMatchId ||
+    state.currentMatchId.startsWith("demo-")
+  ) {
+    return;
+  }
+
+  try {
+    const api = getSpeedDateApi();
+
+    await api.submitMatchOutcome(
+      state.currentMatchId,
+      decision
+    );
+
+    console.log("Outcome submitted");
+
+  } catch (error) {
+    console.error("Failed to submit outcome:", error);
+  }
+}
 async function toggleSave() {
   state.saved = !state.saved;
 
@@ -262,6 +513,7 @@ async function toggleSave() {
 async function nextMatch() {
   if (state.socket && state.currentMatchId && !String(state.currentMatchId).startsWith("demo-")) {
     await submitOutcome("NO");
+    detachCurrentRoom();
     state.socket.emit("skip_match", { matchId: state.currentMatchId });
     showWaitingState();
     return;
@@ -278,11 +530,13 @@ async function nextMatch() {
 function toggleMic() {
   state.muted = !state.muted;
   document.getElementById("micBtn").className = `ctrl-btn${state.muted ? " muted" : ""}`;
+  applyTrackState();
 }
 
 function toggleVid() {
   state.vidOff = !state.vidOff;
   document.getElementById("vidBtn").className = `ctrl-btn${state.vidOff ? " vid-off" : ""}`;
+  applyTrackState();
 }
 
 function sendMessage() {
@@ -304,19 +558,8 @@ function sendMessage() {
 }
 
 async function apiFetch(path, options = {}) {
-  const response = await fetch(`${state.apiBase}${path}`, {
-    ...options,
-    headers: {
-      ...(options.headers || {}),
-      ...(state.token ? { Authorization: `Bearer ${state.token}` } : {})
-    }
-  });
-
-  if (!response.ok) {
-    throw new Error(`Request failed: ${response.status}`);
-  }
-
-  return response.json();
+  const api = getSpeedDateApi();
+  return api.request(path, options);
 }
 
 async function loadSocketClient() {
@@ -354,6 +597,7 @@ function bindSocketHandlers(socket) {
 
     renderMatch();
     updateMatchUI();
+    void connectToVideoRoom();
 
     if (socket && matchId) {
       socket.emit("meeting_started", { matchId });
@@ -393,10 +637,11 @@ function bindSocketHandlers(socket) {
 
 async function initialiseBackendSession() {
   try {
+    const api = getSpeedDateApi();
     let selectedEventId = state.eventId;
 
     if (!selectedEventId) {
-      const pulseResponse = await apiFetch("/events/pulse/current");
+      const pulseResponse = await api.getCurrentPulseSession();
 
       if (!pulseResponse.open_now) {
         throw new Error("Pulse networking is not open right now");
@@ -414,39 +659,28 @@ async function initialiseBackendSession() {
     let eventPayload;
 
     if (getEventIdFromUrl()) {
-      eventPayload = await apiFetch(`/events/${selectedEventId}`);
+      eventPayload = await api.getEvent(selectedEventId);
     } else {
-      await apiFetch("/events/pulse/join", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          target_markets: []
-        })
+      await api.joinCurrentPulseSession({
+        target_markets: []
       });
 
-      eventPayload = await apiFetch(`/events/${selectedEventId}`);
+      eventPayload = await api.getEvent(selectedEventId);
     }
 
     if (!eventPayload.registration && getEventIdFromUrl()) {
-      await apiFetch(`/events/${selectedEventId}/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          target_markets: []
-        })
+      await api.registerForEvent(selectedEventId, {
+        target_markets: []
       });
 
-      eventPayload = await apiFetch(`/events/${selectedEventId}`);
+      eventPayload = await api.getEvent(selectedEventId);
     }
 
     if (Array.isArray(eventPayload.scheduled_matches) && eventPayload.scheduled_matches.length > 0) {
       state.matches = eventPayload.scheduled_matches.map(normalizeMatch);
       state.currentIdx = 0;
       renderMatch();
+      await connectToVideoRoom();
     }
 
     if (eventPayload.event?.round_duration_secs) {
@@ -509,23 +743,32 @@ window.toggleVid = toggleVid;
 window.sendMessage = sendMessage;
 
 async function initialisePage() {
-  state.apiBase = getApiBase();
-  state.token = getStoredToken();
+  const api = getSpeedDateApi();
+  state.apiBase = api.getApiBase ? api.getApiBase() : getApiBase();
+  state.token = api.getStoredToken ? api.getStoredToken() : getStoredToken();
   state.eventId = getEventIdFromUrl();
 
   renderMatch();
   updateSessionUI();
   updateMatchUI();
+  showRemoteFallback(true);
+  await startLocalPreview();
   startTimers();
 
   if (state.token) {
     await initialiseBackendSession();
+  } else {
+    updateVideoStatus("Demo mode active. Add a token in localStorage to join Pulse.");
   }
 
   window.addEventListener("beforeunload", () => {
     if (state.socket) {
       state.socket.emit("leave_queue");
       state.socket.disconnect();
+    }
+    detachCurrentRoom();
+    if (state.localStream) {
+      state.localStream.getTracks().forEach((track) => track.stop());
     }
   });
 }

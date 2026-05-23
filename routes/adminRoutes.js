@@ -30,9 +30,7 @@ const router = express.Router();
 
 router.post("/bootstrap", bootstrapAdmin);
 router.post("/login", adminLogin);
-
 router.use(adminMiddleware);
-
 router.get("/me", getMyAdminProfile);
 router.get("/staff", requireAdminRole("superadmin"), getAdminStaff);
 router.post("/staff", requireAdminRole("superadmin"), createAdminStaff);
