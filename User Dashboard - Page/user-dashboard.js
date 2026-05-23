@@ -6,6 +6,79 @@
 const navItems = document.querySelectorAll('.nav-item[data-page]');
 const pages    = document.querySelectorAll('.page');
 
+// ── Badge state ──
+// Matches: 3 new unread matches
+// Messages: 5 unread messages (tracked per-conversation)
+// Verification: show "!" if has pending/missing docs AND page not yet visited
+
+const badgeState = {
+  matches: {
+    count: 3,           // number of unseen new matches
+    seen: false,
+  },
+  messages: {
+    // Per-conversation unread counts — keys match conversation initials
+    unread: { AT: 2, EI: 3, TG: 0, ME: 0 },
+    seen: false,
+  },
+  verification: {
+    hasIssue: false,    // false = all docs verified, no action needed
+    seen: false,
+  },
+};
+
+function getTotalUnreadMessages() {
+  return Object.values(badgeState.messages.unread).reduce((a, b) => a + b, 0);
+}
+
+function updateNavBadge(pageId) {
+  const navEl = document.querySelector('.nav-item[data-page="' + pageId + '"]');
+  if (!navEl) return;
+  // Remove any existing badge
+  const existing = navEl.querySelector('.nav-badge');
+  if (existing) existing.remove();
+
+  if (pageId === 'matches') {
+    const count = badgeState.matches.seen ? 0 : badgeState.matches.count;
+    if (count > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'nav-badge';
+      badge.textContent = count;
+      navEl.appendChild(badge);
+    }
+  } else if (pageId === 'messages') {
+    const count = getTotalUnreadMessages();
+    if (count > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'nav-badge';
+      badge.textContent = count;
+      navEl.appendChild(badge);
+    }
+  } else if (pageId === 'verification') {
+    if (badgeState.verification.hasIssue && !badgeState.verification.seen) {
+      const badge = document.createElement('span');
+      badge.className = 'nav-badge pending';
+      badge.textContent = '!';
+      navEl.appendChild(badge);
+    }
+  }
+}
+
+function refreshAllNavBadges() {
+  updateNavBadge('matches');
+  updateNavBadge('messages');
+  updateNavBadge('verification');
+}
+
+// Also update the topbar notification bell count
+function updateTopbarNotifCount() {
+  const el = document.getElementById('notifCount');
+  if (!el) return;
+  const count = document.querySelectorAll('.notif-item.unread').length;
+  el.textContent = count;
+  el.style.display = count === 0 ? 'none' : 'flex';
+}
+
 function navigateTo(pageId) {
   pages.forEach(p => p.classList.remove('active'));
   navItems.forEach(n => n.classList.remove('active'));
@@ -13,6 +86,23 @@ function navigateTo(pageId) {
   const targetNav  = document.querySelector('.nav-item[data-page="' + pageId + '"]');
   if (targetPage) targetPage.classList.add('active');
   if (targetNav)  targetNav.classList.add('active');
+
+  // ── Clear badge when entering the relevant page ──
+  if (pageId === 'matches') {
+    badgeState.matches.seen = true;
+    updateNavBadge('matches');
+  } else if (pageId === 'messages') {
+    badgeState.messages.seen = true;
+    // Clear ALL unread counts when messages page is opened
+    Object.keys(badgeState.messages.unread).forEach(k => { badgeState.messages.unread[k] = 0; });
+    updateNavBadge('messages');
+    // Also clear unread badges in the message list sidebar
+    document.querySelectorAll('.msg-list-item .ml-unread').forEach(b => b.remove());
+  } else if (pageId === 'verification') {
+    badgeState.verification.seen = true;
+    updateNavBadge('verification');
+  }
+
   closeSidebar();
 }
 
@@ -23,6 +113,9 @@ document.querySelectorAll('[data-page]').forEach(el => {
   if (el.classList.contains('nav-item')) return;
   el.addEventListener('click', (e) => { e.preventDefault(); navigateTo(el.dataset.page); });
 });
+
+// Initialise badges from state on load
+document.addEventListener('DOMContentLoaded', () => { refreshAllNavBadges(); });
 
 // ── Sidebar ──
 const sidebar        = document.getElementById('sidebar');
@@ -361,33 +454,22 @@ notifMarkAll.addEventListener('click', () => {
   document.querySelectorAll('.notif-item.unread').forEach(n => n.classList.remove('unread'));
   if (notifCountEl) { notifCountEl.textContent = '0'; notifCountEl.style.display = 'none'; }
   showUserToast('All notifications marked as read');
+  updateTopbarNotifCount();
 });
 
 document.querySelectorAll('.notif-item').forEach((item, index) => {
   item.style.cursor = 'pointer';
   item.addEventListener('click', () => {
-    // Mark as read
     item.classList.remove('unread');
+    updateTopbarNotifCount();
 
-    // Update badge count
-    const unreadCount = document.querySelectorAll('.notif-item.unread').length;
-    if (notifCountEl) {
-      notifCountEl.textContent = unreadCount;
-      notifCountEl.style.display = unreadCount === 0 ? 'none' : 'flex';
-    }
-
-    // Close panel
-    notifPanel.classList.add('hidden');
-
-    // Navigate
     const action = notifActions[index];
     if (action) {
+      notifPanel.classList.add('hidden');
       if (action.conversation) {
         navigateTo(action.page);
-        // Load conversation after page switch
         setTimeout(() => {
           loadConversation(action.conversation);
-          // Set active item in list
           document.querySelectorAll('.msg-list-item').forEach(li => {
             li.classList.remove('active');
             if (li.querySelector('.ml-avatar')?.textContent?.trim() === action.conversation) {
@@ -571,10 +653,154 @@ document.querySelectorAll('.profile-sec-edit').forEach(btn => {
 document.getElementById('editProfileBtn')?.addEventListener('click', () => openEditModal('about'));
 
 // ── Verification ──
-function viewDocument(name)    { showUserToast('Opening ' + name + '...'); }
-function replaceDocument(name) { showUserToast('Select a new file for: ' + name); }
-function uploadSpecific(name)  { showUserToast('Upload dialog for: ' + name); }
-document.getElementById('uploadDocBtn')?.addEventListener('click', () => showUserToast('Choose a document to upload...'));
+// All docs are verified on login. Admins can flag docs needing re-upload.
+// 'recheck' = re-upload required, 'required' = new doc needed, 'verified' = all good
+const verifDocs = [
+  { id:'brc', name:'Business Registration Certificate', sub:'CIPC registration document',    submitted:'2026-03-15', status:'verified' },
+  { id:'id',  name:'Identity Document (Director)',       sub:'SA ID or Passport',              submitted:'2026-03-16', status:'verified' },
+  { id:'bl',  name:'Business License',                  sub:'Municipal or sector-specific license', submitted:'2026-03-20', status:'verified' },
+  { id:'tc',  name:'Tax Clearance Certificate',         sub:'SARS tax clearance',             submitted:'2026-04-01', status:'verified' },
+];
+
+const verifStatusConfig = {
+  verified: { label:'Verified',           cls:'verified', icon:'ri-checkbox-circle-fill' },
+  recheck:  { label:'Re-upload Required', cls:'pending',  icon:'ri-refresh-line'         },
+  required: { label:'Action Required',    cls:'missing',  icon:'ri-error-warning-line'   },
+};
+
+function renderVerifTable() {
+  const tbody = document.querySelector('.verif-table tbody');
+  if (!tbody) return;
+  tbody.innerHTML = verifDocs.map(doc => {
+    const cfg = verifStatusConfig[doc.status];
+    const actions = doc.status === 'verified'
+      ? `<button class="verif-action-btn" onclick="viewDocument('${doc.name}')"><i class="ri-eye-line"></i> View</button>`
+      : doc.status === 'recheck'
+      ? `<button class="verif-action-btn" onclick="viewDocument('${doc.name}')"><i class="ri-eye-line"></i> View</button>
+         <button class="verif-action-btn replace" onclick="reuploadDocument('${doc.id}')"><i class="ri-upload-cloud-line"></i> Re-upload</button>`
+      : `<button class="verif-action-btn primary" onclick="reuploadDocument('${doc.id}')"><i class="ri-upload-cloud-line"></i> Upload</button>`;
+    return `<tr>
+      <td><div class="verif-doc-name"><i class="ri-file-text-line"></i> ${doc.name}</div><small>${doc.sub}</small></td>
+      <td>${doc.submitted}</td>
+      <td><span class="verif-status ${cfg.cls}"><i class="${cfg.icon}"></i> ${cfg.label}</span></td>
+      <td>${actions}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderVerifBanner() {
+  const banner = document.querySelector('.verif-banner');
+  if (!banner) return;
+  const issues = verifDocs.filter(d => d.status !== 'verified');
+  if (issues.length === 0) {
+    banner.className = 'verif-banner';
+    banner.style.cssText = 'background:var(--green-bg);border:1px solid rgba(22,163,74,.2);border-radius:var(--radius-xl);padding:22px 28px;display:flex;align-items:center;gap:16px;';
+    banner.innerHTML = `
+      <div class="verif-banner-icon" style="color:var(--green);font-size:28px;flex-shrink:0;"><i class="ri-shield-check-line"></i></div>
+      <div><h3 style="color:var(--green)">Fully Verified</h3><p>All ${verifDocs.length} documents verified — your account is in good standing.</p></div>
+      <span class="verif-banner-badge" style="background:var(--green-bg);color:var(--green);border:1px solid rgba(22,163,74,.2);margin-left:auto;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0;">Verified</span>`;
+  } else {
+    banner.className = 'verif-banner pending-banner';
+    banner.style.cssText = '';
+    banner.innerHTML = `
+      <div class="verif-banner-icon"><i class="ri-shield-half-line"></i></div>
+      <div><h3>Action Required</h3><p>${issues.length} document${issues.length > 1 ? 's' : ''} need${issues.length === 1 ? 's' : ''} your attention</p></div>
+      <span class="verif-banner-badge">Needs Attention</span>`;
+  }
+}
+
+function renderOverviewVerifCard() {
+  const items = document.querySelectorAll('#page-overview .verif-item');
+  const iconMap = {
+    verified: { cls:'done',    icon:'ri-checkbox-circle-fill' },
+    recheck:  { cls:'pending', icon:'ri-time-line'            },
+    required: { cls:'missing', icon:'ri-error-warning-line'   },
+  };
+  verifDocs.forEach((doc, i) => {
+    if (!items[i]) return;
+    const cfg = iconMap[doc.status];
+    items[i].className = 'verif-item ' + cfg.cls;
+    const iconEl = items[i].querySelector('i');
+    if (iconEl) iconEl.className = cfg.icon;
+    const span = items[i].querySelector('span');
+    if (span) span.textContent = doc.status === 'verified'
+      ? 'Verified ' + doc.submitted
+      : doc.status === 'recheck' ? 'Re-upload required'
+      : 'Not submitted yet';
+  });
+}
+
+function viewDocument(name) { showUserToast('Opening ' + name + '...'); }
+
+// Initial render
+renderVerifTable();
+renderVerifBanner();
+renderOverviewVerifCard();
+
+// ── Verification — file upload triggers ──
+// Hidden file input reused for all upload actions
+function createVerifFileInput() {
+  let input = document.getElementById('verifFileInput');
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.id = 'verifFileInput';
+    input.accept = '.pdf,.jpg,.jpeg,.png,.webp';
+    input.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none;';
+    document.body.appendChild(input);
+  }
+  return input;
+}
+
+let pendingUploadDocId = null;
+
+function reuploadDocument(docId) {
+  const doc = verifDocs.find(d => d.id === docId);
+  if (!doc) return;
+  pendingUploadDocId = docId;
+  const input = createVerifFileInput();
+  // Reset so same file can be re-selected
+  input.value = '';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    handleVerifUpload(pendingUploadDocId, file.name);
+  };
+  input.click();
+}
+
+function handleVerifUpload(docId, fileName) {
+  const doc = verifDocs.find(d => d.id === docId);
+  if (!doc) return;
+  doc.status = 'verified';
+  doc.submitted = new Date().toISOString().slice(0, 10);
+  renderVerifTable();
+  renderVerifBanner();
+  renderOverviewVerifCard();
+  const stillHasIssue = verifDocs.some(d => d.status !== 'verified');
+  badgeState.verification.hasIssue = stillHasIssue;
+  if (!stillHasIssue) badgeState.verification.seen = true;
+  updateNavBadge('verification');
+  showUserToast(doc.name + ' uploaded successfully!');
+}
+
+document.getElementById('uploadDocBtn')?.addEventListener('click', () => {
+  pendingUploadDocId = null;
+  const input = createVerifFileInput();
+  input.value = '';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) showUserToast('Document "' + file.name + '" ready for submission.');
+  };
+  input.click();
+});
+
+// Overview — "Update Documents" button navigates to Verification
+const btnVerif = document.querySelector('.btn-verif');
+if (btnVerif) {
+  btnVerif.innerHTML = '<i class="ri-upload-cloud-line"></i> Update Documents';
+  btnVerif.addEventListener('click', () => navigateTo('verification'));
+}
 
 // ── Analytics ──
 document.querySelectorAll('.period-tab').forEach(tab => {
@@ -645,6 +871,12 @@ function loadConversation(initials) {
   const data = conversationData[initials];
   if (!data) return;
 
+  // Clear this conversation's unread count and refresh nav badge
+  if (badgeState.messages.unread[initials] !== undefined) {
+    badgeState.messages.unread[initials] = 0;
+  }
+  updateNavBadge('messages');
+
   const chatHeader = document.querySelector('.msg-chat-header');
   if (chatHeader) {
     chatHeader.innerHTML = `
@@ -676,7 +908,14 @@ document.querySelectorAll('.msg-list-item').forEach(item => {
     const unread = item.querySelector('.ml-unread');
     if (unread) unread.remove();
     const initials = item.querySelector('.ml-avatar')?.textContent?.trim();
-    if (initials) loadConversation(initials);
+    if (initials) {
+      // Clear that conversation's unread count
+      if (badgeState.messages.unread[initials] !== undefined) {
+        badgeState.messages.unread[initials] = 0;
+      }
+      updateNavBadge('messages');
+      loadConversation(initials);
+    }
   });
 });
 
@@ -736,6 +975,97 @@ document.querySelectorAll('#page-overview .msg-preview').forEach(preview => {
     }, 50);
   });
 });
+
+// ============================================================
+//   DISCOVER PARTNERS — filter search
+// ============================================================
+const discoverPartners = [
+  { init:'TC', name:'Tech Import Corp',         meta:'USA · Technology · Importer',       industry:'Electronics',    country:'USA',     type:'Importer', score:71 },
+  { init:'GP', name:'Global Trade Partners',    meta:'Canada · Commodities · Both',       industry:'Agriculture',    country:'Canada',  type:'Both',     score:68 },
+  { init:'IE', name:'International Exports Inc',meta:'Australia · Agriculture · Exporter',industry:'Agriculture',    country:'Australia',type:'Exporter', score:65 },
+  { init:'AT', name:'Asian Trade Co',           meta:'Japan · Electronics · Importer',    industry:'Electronics',    country:'Japan',   type:'Importer', score:94 },
+  { init:'EI', name:'Euro Import Solutions',    meta:'Germany · Manufacturing · Importer',industry:'Manufacturing',  country:'Germany', type:'Importer', score:88 },
+  { init:'ME', name:'Middle East Trading',      meta:'UAE · Commodities · Importer',      industry:'Agriculture',    country:'UAE',     type:'Importer', score:81 },
+  { init:'LA', name:'Latin America Exports',    meta:'Brazil · Agriculture · Exporter',   industry:'Agriculture',    country:'Brazil',  type:'Exporter', score:76 },
+  { init:'SA', name:'SolarAfrica Supplies',     meta:'South Africa · Energy · Exporter',  industry:'Manufacturing',  country:'South Africa',type:'Exporter',score:83 },
+  { init:'KT', name:'Korea Tech Partners',      meta:'South Korea · Electronics · Both',  industry:'Electronics',    country:'Japan',   type:'Both',     score:79 },
+];
+
+function renderDiscoverCards(partners) {
+  const grid = document.querySelector('#page-discover .placeholder-grid');
+  if (!grid) return;
+
+  if (partners.length === 0) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 0;color:var(--text-muted);font-size:14px;">
+      <i class="ri-search-eye-line" style="font-size:32px;display:block;margin-bottom:10px;opacity:.4;"></i>
+      No partners found matching your filters. Try broadening your search.
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = partners.map(p => `
+    <div class="placeholder-card">
+      <div class="ph-avatar">${p.init}</div>
+      <h4>${p.name}</h4>
+      <p>${p.meta}</p>
+      <div class="ph-score">${p.score}% match</div>
+      <div class="ph-actions">
+        <button class="btn-ph-primary disc-connect-btn"><i class="ri-add-line"></i> Connect</button>
+        <button class="btn-ph-secondary"><i class="ri-user-line"></i> Profile</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Re-attach connect button listeners
+  grid.querySelectorAll('.disc-connect-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const company = btn.closest('.placeholder-card')?.querySelector('h4')?.textContent || 'company';
+      showUserToast('Connection request sent to ' + company);
+      btn.innerHTML = '<i class="ri-check-line"></i> Requested';
+      btn.disabled = true; btn.style.opacity = '0.7';
+    });
+  });
+}
+
+// Wire up the Search button
+const discSearchBtn = document.querySelector('#page-discover .disc-search-btn');
+const discSelects   = document.querySelectorAll('#page-discover .disc-select');
+
+if (discSearchBtn) {
+  discSearchBtn.addEventListener('click', () => {
+    const [industryEl, countryEl, typeEl] = discSelects;
+    const industry = industryEl?.value || 'All Industries';
+    const country  = countryEl?.value  || 'All Countries';
+    const type     = typeEl?.value     || 'All Types';
+
+    const filtered = discoverPartners.filter(p => {
+      const matchIndustry = industry === 'All Industries' || p.industry === industry;
+      const matchCountry  = country  === 'All Countries'  || p.country  === country;
+      const matchType     = type     === 'All Types'      ||
+                            p.type   === type             ||
+                            p.type   === 'Both';
+      return matchIndustry && matchCountry && matchType;
+    });
+
+    renderDiscoverCards(filtered);
+
+    const total = filtered.length;
+    showUserToast(total > 0 ? `Found ${total} partner${total !== 1 ? 's' : ''}` : 'No partners found');
+  });
+}
+
+
+/* ============================================================
+   BADGE BOOTSTRAP — strip HTML-hardcoded badges, render from state
+   ============================================================ */
+(function () {
+  // Strip all hardcoded nav-badge spans so we start clean
+  document.querySelectorAll('.nav-item .nav-badge').forEach(b => b.remove());
+  // Render from badgeState
+  refreshAllNavBadges();
+  // Set topbar notif count from actual unread notification items
+  updateTopbarNotifCount();
+})();
 
 /* ============================================================
    DARK MODE PATCH (inline — mirrors user-dashboard-darkmode-patch.js)
