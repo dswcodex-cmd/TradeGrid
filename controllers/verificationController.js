@@ -14,6 +14,11 @@ const serializeVerificationDocument = (document) => ({
   updated_at: document.updated_at
 });
 
+const isPdfFile = (fileName = "", fileUrl = "") => {
+  const source = `${fileName || ""} ${fileUrl || ""}`.toLowerCase();
+  return source.includes(".pdf");
+};
+
 export const getMyVerificationDocuments = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
@@ -77,6 +82,10 @@ export const uploadVerificationDocument = async (req, res) => {
       return res.status(400).json({ error: "document_type is required" });
     }
 
+    if (!isPdfFile(file_name, file_url)) {
+      return res.status(400).json({ error: "Verification documents must be PDF files" });
+    }
+
     const document = await prisma.verificationDocument.create({
       data: {
         company_id: current_company_id,
@@ -118,6 +127,10 @@ export const replaceVerificationDocument = async (req, res) => {
 
     if (Number.isNaN(verification_document_id)) {
       return res.status(400).json({ error: "documentId must be a valid number" });
+    }
+
+    if ((file_name || file_url) && !isPdfFile(file_name, file_url)) {
+      return res.status(400).json({ error: "Verification documents must be PDF files" });
     }
 
     const existingDocument = await prisma.verificationDocument.findFirst({

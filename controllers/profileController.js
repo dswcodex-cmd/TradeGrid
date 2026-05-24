@@ -204,6 +204,7 @@ export const updateMyProfile = async (req, res) => {
     const current_company_id = Number(req.company.company_id);
     const {
       company_name,
+      email,
       business_type,
       phone,
       website,
@@ -221,6 +222,7 @@ export const updateMyProfile = async (req, res) => {
       where: { company_id: current_company_id },
       data: {
         ...(company_name !== undefined ? { company_name } : {}),
+        ...(email !== undefined ? { email } : {}),
         ...(business_type !== undefined ? { business_type } : {}),
         ...(phone !== undefined ? { phone } : {}),
         ...(website !== undefined ? { website } : {}),
@@ -350,6 +352,71 @@ export const deleteMyProfile = async (req, res) => {
   }
 };
 
+export const getMyProfileViewStats = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - 7);
+    const previousWeekStart = new Date(now);
+    previousWeekStart.setDate(now.getDate() - 14);
+
+    const [
+      total,
+      thisWeek,
+      previousWeek,
+      recentViews
+    ] = await Promise.all([
+      prisma.profileView.count({
+        where: { viewed_company_id: current_company_id }
+      }),
+      prisma.profileView.count({
+        where: {
+          viewed_company_id: current_company_id,
+          viewed_at: { gte: weekStart }
+        }
+      }),
+      prisma.profileView.count({
+        where: {
+          viewed_company_id: current_company_id,
+          viewed_at: {
+            gte: previousWeekStart,
+            lt: weekStart
+          }
+        }
+      }),
+      prisma.profileView.findMany({
+        where: { viewed_company_id: current_company_id },
+        orderBy: { viewed_at: "desc" },
+        take: 10,
+        include: {
+          viewer_company: {
+            select: {
+              company_id: true,
+              company_name: true,
+              business_type: true
+            }
+          }
+        }
+      })
+    ]);
+
+    return res.status(200).json({
+      total,
+      this_week: thisWeek,
+      previous_week: previousWeek,
+      change_this_week: thisWeek - previousWeek,
+      recent_views: recentViews.map((view) => ({
+        profile_view_id: view.profile_view_id,
+        viewed_at: view.viewed_at,
+        viewer_company: view.viewer_company
+      }))
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 export const completeOnboardingProfile = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
@@ -410,31 +477,39 @@ export const completeOnboardingProfile = async (req, res) => {
     await prisma.company.update({
       where: { company_id: current_company_id },
       data: {
-        phone: phone || null,
-        website: website || null,
-        address: address || null,
-        annual_trade_volume: annual_trade_volume || null,
-        number_of_employees: resolveEmployeeCount(number_of_employees),
-        year_established: resolveYearEstablished(year_established),
-        company_description: company_description || null,
-        looking_for_description: looking_for_description || null,
-        industry_id,
-        location_id
+        ...(phone !== undefined ? { phone: phone || null } : {}),
+        ...(website !== undefined ? { website: website || null } : {}),
+        ...(address !== undefined ? { address: address || null } : {}),
+        ...(annual_trade_volume !== undefined ? { annual_trade_volume: annual_trade_volume || null } : {}),
+        ...(number_of_employees !== undefined ? { number_of_employees: resolveEmployeeCount(number_of_employees) } : {}),
+        ...(year_established !== undefined ? { year_established: resolveYearEstablished(year_established) } : {}),
+        ...(company_description !== undefined ? { company_description: company_description || null } : {}),
+        ...(looking_for_description !== undefined ? { looking_for_description: looking_for_description || null } : {}),
+        ...(industry_name !== undefined ? { industry_id } : {}),
+        ...(country !== undefined ? { location_id } : {})
       }
     });
 
     if (normalizedUpdateMode === "replace") {
-      await prisma.$transaction([
-        prisma.companyProducts.deleteMany({
+      const deleteOperations = [];
+      if (products !== undefined) {
+        deleteOperations.push(prisma.companyProducts.deleteMany({
           where: { company_id: current_company_id }
-        }),
-        prisma.companyDesiredProducts.deleteMany({
+        }));
+      }
+      if (desired_products !== undefined) {
+        deleteOperations.push(prisma.companyDesiredProducts.deleteMany({
           where: { company_id: current_company_id }
-        }),
-        prisma.companyRegions.deleteMany({
+        }));
+      }
+      if (regions !== undefined) {
+        deleteOperations.push(prisma.companyRegions.deleteMany({
           where: { company_id: current_company_id }
-        })
-      ]);
+        }));
+      }
+      if (deleteOperations.length) {
+        await prisma.$transaction(deleteOperations);
+      }
     }
 
     if (offeredProducts.length) {

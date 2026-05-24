@@ -37,6 +37,17 @@ export const createOrGetConversation = async (req, res) => {
     }
 
     const pair = normalizeConversationPair(current_company_id, numericOtherCompanyId);
+    const acceptedMatch = await prisma.companyMatches.findUnique({
+      where: {
+        company1_id_company2_id: pair
+      }
+    });
+
+    if (!acceptedMatch) {
+      return res.status(403).json({
+        error: "You can only message companies after the match request has been accepted"
+      });
+    }
 
     let conversation = await prisma.conversation.findUnique({
       where: {
@@ -132,7 +143,24 @@ export const getMyConversations = async (req, res) => {
       ]
     });
 
-    return res.status(200).json({ conversations });
+    const conversationsWithUnreadCounts = await Promise.all(
+      conversations.map(async (conversation) => {
+        const unread_count = await prisma.message.count({
+          where: {
+            conversation_id: conversation.conversation_id,
+            receiver_company_id: current_company_id,
+            is_read: false
+          }
+        });
+
+        return {
+          ...conversation,
+          unread_count
+        };
+      })
+    );
+
+    return res.status(200).json({ conversations: conversationsWithUnreadCounts });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

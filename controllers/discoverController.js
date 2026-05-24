@@ -2,8 +2,9 @@ import fs from "fs";
 import Groq from "groq-sdk";
 import prisma from "../prismaClient.js";
 
-const groqProductIdentifier = process.env.GROQ_API_KEY_PI
-  ? new Groq({ apiKey: process.env.GROQ_API_KEY_PI })
+const productIdentifierKey = process.env.GROQ_API_KEY_PI || process.env.GROQ_API_KEY;
+const groqProductIdentifier = productIdentifierKey
+  ? new Groq({ apiKey: productIdentifierKey })
   : null;
 
 const serializePublicCompany = (company) => ({
@@ -66,6 +67,148 @@ const loadImageBase64 = (image_base64, image_path) => {
   return null;
 };
 
+const RELATED_SEARCH_TERMS = [
+  {
+    match: ["banana", "bananas", "fruit", "fruits", "citrus", "apple", "apples", "orange", "oranges", "mango", "mangoes", "grape", "grapes", "berries"],
+    terms: ["banana", "fruit", "fruits", "fresh produce", "produce", "food", "agriculture", "agricultural", "grocery", "farm"]
+  },
+  {
+    match: ["maize", "corn", "wheat", "grain", "grains", "rice", "soy", "soybean", "soybeans"],
+    terms: ["grain", "grains", "food", "agriculture", "agricultural", "commodities", "farm", "produce"]
+  },
+  {
+    match: ["milk", "cheese", "yogurt", "dairy"],
+    terms: ["dairy", "food", "beverage", "agriculture", "farm", "grocery"]
+  },
+  {
+    match: ["shirt", "clothes", "clothing", "fabric", "textile", "textiles", "garment", "garments"],
+    terms: ["textile", "textiles", "fabric", "garments", "clothing", "apparel", "manufacturing"]
+  },
+  {
+    match: ["phone", "laptop", "computer", "camera", "electronics", "electronic"],
+    terms: ["electronics", "technology", "components", "devices", "manufacturing"]
+  },
+  {
+    match: ["solar", "panel", "battery", "inverter", "energy"],
+    terms: ["solar", "energy", "renewable", "electronics", "equipment", "manufacturing"]
+  }
+];
+
+const expandSearchTerms = (value) => {
+  const source = String(value || "").toLowerCase();
+  const directTerms = source
+    .split(/[^a-z0-9]+/i)
+    .map((term) => term.trim())
+    .filter((term) => term.length > 1);
+
+  const related = RELATED_SEARCH_TERMS
+    .filter((group) => group.match.some((term) => source.includes(term)))
+    .flatMap((group) => group.terms);
+
+  return [...new Set([...directTerms, ...related])];
+};
+
+const buildCompanySearchOr = (terms) => terms.flatMap((term) => [
+  {
+    company_name: {
+      contains: term,
+      mode: "insensitive"
+    }
+  },
+  {
+    company_description: {
+      contains: term,
+      mode: "insensitive"
+    }
+  },
+  {
+    business_type: {
+      contains: term,
+      mode: "insensitive"
+    }
+  },
+  {
+    products: {
+      some: {
+        product: {
+          product_name: {
+            contains: term,
+            mode: "insensitive"
+          }
+        }
+      }
+    }
+  },
+  {
+    industry: {
+      industry_name: {
+        contains: term,
+        mode: "insensitive"
+      }
+    }
+  },
+  {
+    location: {
+      country: {
+        contains: term,
+        mode: "insensitive"
+      }
+    }
+  },
+  {
+    regions: {
+      some: {
+        region: {
+          region_name: {
+            contains: term,
+            mode: "insensitive"
+          }
+        }
+      }
+    }
+  }
+]);
+
+const getUnavailableDiscoverCompanyIds = async (current_company_id) => {
+  const [matches, requests] = await Promise.all([
+    prisma.companyMatches.findMany({
+      where: {
+        OR: [
+          { company1_id: current_company_id },
+          { company2_id: current_company_id }
+        ]
+      },
+      select: {
+        company1_id: true,
+        company2_id: true
+      }
+    }),
+    prisma.companyTargets.findMany({
+      where: {
+        OR: [
+          { source_company_id: current_company_id },
+          { target_company_id: current_company_id }
+        ],
+        status: {
+          in: ["pending", "accepted"]
+        }
+      },
+      select: {
+        source_company_id: true,
+        target_company_id: true
+      }
+    })
+  ]);
+
+  return [
+    ...new Set([
+      current_company_id,
+      ...matches.flatMap((match) => [match.company1_id, match.company2_id]),
+      ...requests.flatMap((request) => [request.source_company_id, request.target_company_id])
+    ])
+  ];
+};
+
 export const discoverCompanies = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
@@ -78,11 +221,13 @@ export const discoverCompanies = async (req, res) => {
       desired_product,
       region
     } = req.query;
+    const unavailableCompanyIds = await getUnavailableDiscoverCompanyIds(current_company_id);
+    const searchTerms = expandSearchTerms(search);
 
     const companies = await prisma.company.findMany({
       where: {
         company_id: {
-          not: current_company_id
+          notIn: unavailableCompanyIds
         },
         account_status: "active",
         profile_visibility: true,
@@ -107,34 +252,9 @@ export const discoverCompanies = async (req, res) => {
               }
             }
           : {}),
-        ...(search
+        ...(searchTerms.length
           ? {
-              OR: [
-                {
-                  company_name: {
-                    contains: String(search),
-                    mode: "insensitive"
-                  }
-                },
-                {
-                  company_description: {
-                    contains: String(search),
-                    mode: "insensitive"
-                  }
-                },
-                {
-                  products: {
-                    some: {
-                      product: {
-                        product_name: {
-                          contains: String(search),
-                          mode: "insensitive"
-                        }
-                      }
-                    }
-                  }
-                }
-              ]
+              OR: buildCompanySearchOr(searchTerms)
             }
           : {}),
         ...(supplied_product
@@ -256,6 +376,15 @@ export const getPublicCompanyProfile = async (req, res) => {
       return res.status(404).json({ error: "Company profile not found" });
     }
 
+    await prisma.profileView.create({
+      data: {
+        viewed_company_id: company_id,
+        viewer_company_id: current_company_id,
+        viewer_ip: req.ip || null,
+        user_agent: req.get("user-agent") || null
+      }
+    });
+
     return res.status(200).json({
       company: serializePublicCompany(company)
     });
@@ -268,7 +397,7 @@ export const discoverCompaniesByImage = async (req, res) => {
   try {
     if (!groqProductIdentifier) {
       return res.status(500).json({
-        error: "GROQ_API_KEY_PI is not configured"
+        error: "GROQ_API_KEY_PI or GROQ_API_KEY is not configured"
       });
     }
 
@@ -364,35 +493,37 @@ If none are related return an empty array: []`
 
     const allMatchedNames = [...new Set([...aiMatchedNames, ...exactMatches])];
 
-    if (allMatchedNames.length === 0) {
-      return res.status(200).json({
-        product_name: productName,
-        matched_products: [],
-        companies: []
-      });
-    }
-
     const matchedProducts = allProducts.filter((product) =>
       allMatchedNames.some(
         (name) => name.toLowerCase() === product.product_name.toLowerCase()
       )
     );
     const matchedProductIds = matchedProducts.map((product) => product.product_id);
+    const unavailableCompanyIds = await getUnavailableDiscoverCompanyIds(current_company_id);
+    const relatedTerms = expandSearchTerms([productName, ...allMatchedNames].join(" "));
+    const relatedSearchOr = buildCompanySearchOr(relatedTerms);
 
     const companies = await prisma.company.findMany({
       where: {
         company_id: {
-          not: current_company_id
+          notIn: unavailableCompanyIds
         },
         account_status: "active",
         profile_visibility: true,
-        products: {
-          some: {
-            product_id: {
-              in: matchedProductIds
-            }
-          }
-        }
+        OR: [
+          ...(matchedProductIds.length
+            ? [{
+                products: {
+                  some: {
+                    product_id: {
+                      in: matchedProductIds
+                    }
+                  }
+                }
+              }]
+            : []),
+          ...relatedSearchOr
+        ]
       },
       include: {
         industry: true,
@@ -422,7 +553,8 @@ If none are related return an empty array: []`
       const companyMatchedProducts = company.products
         .map((item) => item.product.product_name)
         .filter((name) =>
-          allMatchedNames.some((matched) => matched.toLowerCase() === name.toLowerCase())
+          allMatchedNames.some((matched) => matched.toLowerCase() === name.toLowerCase()) ||
+          relatedTerms.some((term) => name.toLowerCase().includes(term.toLowerCase()))
         );
 
       return {

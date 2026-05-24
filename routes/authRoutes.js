@@ -4,6 +4,7 @@ import {
   acceptConnectionRequest,
   rejectConnectionRequest,
   getPendingRequests,
+  getSentPendingRequests,
   getMyConnections,
   getMyNotifications,
   getUnreadNotificationCount,
@@ -28,6 +29,7 @@ router.post("/request", authMiddleware, sendConnectionRequest);
 router.post("/accept", authMiddleware, acceptConnectionRequest);
 router.post("/reject", authMiddleware, rejectConnectionRequest);
 router.get("/pending", authMiddleware, getPendingRequests);
+router.get("/pending-sent", authMiddleware, getSentPendingRequests);
 router.get("/", authMiddleware, getMyConnections);
 router.get("/notifications", authMiddleware, getMyNotifications);
 router.get("/notifications/unread-count", authMiddleware, getUnreadNotificationCount);

@@ -22,11 +22,13 @@ WHO IS IT FOR:
 - Importers looking for reliable suppliers or manufacturers
 
 NAVIGATION GUIDE:
-- If a user wants to sign up, direct them to the registration page
-- If a user wants to find trade partners, direct them to the matching/discovery page
-- If a user is having trouble with their profile, direct them to the profile settings page
-- If a user wants to message a match, direct them to their connections/messages page
-- If a user is lost, direct them to the home page
+- If a user asks where to see matches: tell them to open User Dashboard > Business Matches from the left sidebar, or click the "View all" link on the Recent Matches card.
+- If a user wants to find new partners: tell them to open Discover Partners from the dashboard or the Discover section.
+- If a user wants to message an accepted match: tell them to open Business Matches, click Message on a connected partner, and the app will open that conversation in Messages.
+- If a user is having trouble with their profile: tell them to open Account > Business Profile from the left sidebar.
+- If a user wants verification help: tell them to open Account > Verification from the left sidebar.
+- If the user says "yes", "please", or asks you to guide them, continue from the previous Tradegrid topic and give specific page names and button names.
+- Give short, direct steps. Do not ask "how can I help?" when the user has already asked for guidance.
 
 WHAT YOU CAN HELP WITH:
 - Explaining how Tradegrid works
@@ -51,16 +53,28 @@ WHAT YOU CANNOT HELP WITH:
 - Legal or financial advice
 - Guaranteeing the legitimacy of any trade partner
 
-If a user asks anything outside of Tradegrid or trade related topics, politely let them know you can only assist with Tradegrid related questions and guide them back on topic. but when greeting the use be short`;
+If a user asks anything outside of Tradegrid or trade related topics, politely let them know you can only assist with Tradegrid related questions and guide them back on topic. If the user asks for violence, self-harm, illegal activity, or wrongdoing, refuse briefly and redirect to Tradegrid help. When greeting the user, be short.`;
 const router= express.Router();
 
 router.post("/api", async (req, res) => {
   try {
+    const history = Array.isArray(req.body.history) ? req.body.history : [];
+    const safeHistory = history
+      .filter((message) => ["user", "assistant"].includes(message.role) && typeof message.content === "string")
+      .slice(-10)
+      .map((message) => ({
+        role: message.role,
+        content: message.content.slice(0, 1200)
+      }));
+
     const result = await client.chat.completions.create({
       model: "llama-3.3-70b-versatile",
       
-      messages: [{ role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: req.body.userMessage }],
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...safeHistory,
+        { role: "user", content: String(req.body.userMessage || "").slice(0, 1200) }
+      ],
     });
     res.json({ reply: result.choices[0].message.content });
   } catch (err) {

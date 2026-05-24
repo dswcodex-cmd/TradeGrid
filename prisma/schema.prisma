@@ -83,6 +83,8 @@ model Company {
   support_tickets         SupportTicket[]
   support_ticket_messages SupportTicketMessage[]
   verification_documents  VerificationDocument[]
+  profile_views_received  ProfileView[]            @relation("ViewedCompanyProfileViews")
+  profile_views_made      ProfileView[]            @relation("ViewerCompanyProfileViews")
 }
 
 enum TradeType {
@@ -370,6 +372,20 @@ model VerificationDocument {
   reviewed_by_admin_id     Int?
   company                  Company   @relation(fields: [company_id], references: [company_id])
   reviewed_by_admin        Admin?    @relation("VerificationReviewedBy", fields: [reviewed_by_admin_id], references: [admin_id])
+}
+
+model ProfileView {
+  profile_view_id  Int      @id @default(autoincrement())
+  viewed_company_id Int
+  viewer_company_id Int?
+  viewed_at        DateTime @default(now())
+  viewer_ip        String?
+  user_agent       String?
+  viewed_company   Company  @relation("ViewedCompanyProfileViews", fields: [viewed_company_id], references: [company_id])
+  viewer_company   Company? @relation("ViewerCompanyProfileViews", fields: [viewer_company_id], references: [company_id])
+
+  @@index([viewed_company_id, viewed_at])
+  @@index([viewer_company_id, viewed_at])
 }
 
 model SupportTicket {

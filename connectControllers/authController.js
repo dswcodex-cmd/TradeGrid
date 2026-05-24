@@ -82,6 +82,15 @@ export const sendConnectionRequest = async (req, res) => {
       }
     });
 
+    await prisma.notification.create({
+      data: {
+        company_id: source_company_id,
+        type: "connection_request_sent",
+        message: `Connection request sent to ${targetCompany.company_name}`,
+        related_company_id: Number(target_company_id)
+      }
+    });
+
     return res.status(201).json({
       message: "Connection request sent successfully",
       request
@@ -133,8 +142,17 @@ export const acceptConnectionRequest = async (req, res) => {
     const company1_id = Math.min(Number(source_company_id), current_company_id);
     const company2_id = Math.max(Number(source_company_id), current_company_id);
 
-    await prisma.companyMatches.create({
-      data: {
+    await prisma.companyMatches.upsert({
+      where: {
+        company1_id_company2_id: {
+          company1_id,
+          company2_id
+        }
+      },
+      update: {
+        match_type: "connection"
+      },
+      create: {
         company1_id,
         company2_id,
         match_type: "connection"
@@ -217,6 +235,26 @@ export const getPendingRequests = async (req, res) => {
       },
       include: {
         source: true
+      }
+    });
+
+    return res.status(200).json({ requests });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const getSentPendingRequests = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+
+    const requests = await prisma.companyTargets.findMany({
+      where: {
+        source_company_id: current_company_id,
+        status: "pending"
+      },
+      include: {
+        target: true
       }
     });
 

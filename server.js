@@ -29,7 +29,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
-app.use(express.static(path.join(__dirname, "Front-end", "Login - Page")))
+app.use(express.static(path.join(__dirname, "Front-end")));
+app.use(express.static(path.join(__dirname, "Front-end", "Login - Page")));
 
 app.get("/", (req, res)=>{
   res.sendFile(path.join(__dirname, "Front-end", "Login - Page", "login.html"))
@@ -45,7 +46,7 @@ const io = new Server(server, {
 
 const limiter = rateLimit({
   windowMs:         15 * 60 * 1000,  // 15 minutes
-  max:              200,              // requests per window
+  max:              2000,             // dashboard pages make many authenticated API calls
   standardHeaders:  true,
   legacyHeaders:    false,
   message: {
@@ -62,7 +63,7 @@ app.use((req, _res, next) => {
 });
 app.use(limiter);
 app.post("/payments/webhook", express.raw({ type: "application/json" }), paystackWebhook);
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "12mb" }));
 app.use("/speed-dating", express.static(path.join(__dirname, "Front-end", "Speed-dating-page")));
 
 app.use("/auth", authRoutes);

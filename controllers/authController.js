@@ -12,6 +12,7 @@ export const signup = async (req, res) => {
     console.log("Signup");
   try {
     const { company_name, registration_number, email, Password, business_type } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
     console.log("prisma models:", prisma);
     console.log("company model:", prisma.company);
@@ -20,7 +21,7 @@ export const signup = async (req, res) => {
       where: {
         OR: [
           { registration_number },
-          { email }
+          { email: normalizedEmail }
         ]
       }
     });
@@ -32,7 +33,7 @@ export const signup = async (req, res) => {
     const RegExEmail= /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const RegExPassword= /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
-    if (!RegExEmail.test(email) || !RegExPassword.test(Password)) {
+    if (!RegExEmail.test(normalizedEmail) || !RegExPassword.test(Password)) {
       return res.status(400).json({
         error: "Invalid email or password format"
       });
@@ -43,7 +44,7 @@ export const signup = async (req, res) => {
     const user = await prisma.company.create({
     data: {
       registration_number,
-      email,
+      email: normalizedEmail,
       is_email_verified: false,
       Password: hashedPassword,
       company_name,
@@ -69,9 +70,10 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
   try {
     const { email, Password } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
     const user = await prisma.company.findUnique({
-      where: { email }
+      where: { email: normalizedEmail }
     });
 
     if (!user) {

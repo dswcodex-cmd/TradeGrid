@@ -176,14 +176,11 @@ body.dark-mode .page-wrapper {
   border-color: rgba(181,234,240,0.35);
   color: rgba(181,234,240,1);
 }
-
 .filter-btn.active {
   background: rgba(15,163,177,0.2);
   border-color: rgba(15,163,177,0.5);
   color: var(--light);
 }
-.filter-chip i { font-size: 13px; vertical-align: -2px; margin-right: 4px; }
-
 /* ============================================================
    PREVIEW LABEL
    ============================================================ */
