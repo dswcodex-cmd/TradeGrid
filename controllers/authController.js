@@ -8,11 +8,27 @@ const twilioClient = twilio(
   process.env.TWILIO_AUTH_TOKEN
 );
 
+const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function ensureTwilioVerifyConfigured() {
+  if (
+    !process.env.TWILIO_ASID ||
+    !process.env.TWILIO_AUTH_TOKEN ||
+    !process.env.TWILIO_VERIFY_SERVICE_SID
+  ) {
+    throw new Error("Twilio email verification is not configured");
+  }
+}
+
 export const signup = async (req, res) => {
     console.log("Signup");
   try {
     const { company_name, registration_number, email, Password, business_type } = req.body;
-    const normalizedEmail = email?.trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
 
     console.log("prisma models:", prisma);
     console.log("company model:", prisma.company);
@@ -31,7 +47,7 @@ export const signup = async (req, res) => {
     }
     
     const RegExEmail= /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const RegExPassword= /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    const RegExPassword= passwordPattern;
 
     if (!RegExEmail.test(normalizedEmail) || !RegExPassword.test(Password)) {
       return res.status(400).json({
@@ -69,75 +85,143 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, Password } = req.body;
-    const normalizedEmail = email?.trim().toLowerCase();
+    const { email, Password, password } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+    const rawPassword = Password || password;
+
+    if (!normalizedEmail || !rawPassword) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
 
     const user = await prisma.company.findUnique({
       where: { email: normalizedEmail }
     });
 
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
+    if (user) {
+      const isMatch = await bcrypt.compare(rawPassword, user.Password);
 
-    if (!user.is_email_verified) {
-      return res.status(403).json({ message: "Verify your email before logging in" });
-    }
+      if (!isMatch) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
 
-    if (user.account_status === "suspended") {
-      return res.status(403).json({
-        message: user.suspension_reason
-          ? `Account suspended: ${user.suspension_reason}`
-          : "Your account is suspended"
+      if (!user.is_email_verified) {
+        return res.status(403).json({ message: "Verify your email before logging in" });
+      }
+
+      if (user.account_status === "pending") {
+        return res.status(403).json({
+          message: "Your account is pending approval. You will receive an email once your account is activated."
+        });
+      }
+
+      if (user.account_status !== "active") {
+        return res.status(403).json({
+          message: user.suspension_reason
+            ? `Account ${user.account_status}: ${user.suspension_reason}`
+            : `Your account is ${user.account_status}`
+        });
+      }
+
+      const token = jwt.sign(
+        {
+          company_id: user.company_id,
+          email: user.email,
+          account_type: "company"
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+
+      return res.status(200).json({
+        token,
+        account_type: "company",
+        redirect_to: "../User Dashboard - Page/user-dashboard.html",
+        user: {
+          company_id: user.company_id,
+          company_name: user.company_name,
+          email: user.email,
+          account_status: user.account_status
+        }
       });
     }
 
-    const isMatch = await bcrypt.compare(Password, user.Password);
-
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid Email or password" });
-    }
-
-    const token = jwt.sign(
-      { company_id: user.company_id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
-    );
-
-    res.json({
-      token,
-      user: {
-        company_id: user.company_id,
-        company_name: user.company_name,
-        email: user.email
-      }
+    const admin = await prisma.admin.findUnique({
+      where: { email: normalizedEmail }
     });
 
+    if (admin) {
+      const isAdminPasswordValid = await bcrypt.compare(rawPassword, admin.password_hash);
+
+      if (!isAdminPasswordValid) {
+        return res.status(400).json({ message: "Invalid email or password" });
+      }
+
+      if (!admin.is_active) {
+        return res.status(403).json({ message: "Your admin account is inactive" });
+      }
+
+      const normalizedRole = String(admin.role || "").toLowerCase();
+      const adminRedirects = {
+        superadmin: "../Admin - Page/admin.html",
+        super_admin: "../Admin - Page/admin.html",
+        admin: "../Admin - Page/admin.html",
+        employee: "../Employee - Page/employee.html",
+        verifier: "../Employee - Page/employee.html"
+      };
+      const redirectTo = adminRedirects[normalizedRole] || "../Admin - Page/admin.html";
+
+      const token = jwt.sign(
+        {
+          admin_id: admin.admin_id,
+          email: admin.email,
+          role: normalizedRole,
+          account_type: "admin"
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "8h" }
+      );
+
+      await prisma.admin.update({
+        where: { admin_id: admin.admin_id },
+        data: { last_login_at: new Date() }
+      });
+
+      return res.status(200).json({
+        token,
+        account_type: "admin",
+        redirect_to: redirectTo,
+        admin: {
+          admin_id: admin.admin_id,
+          full_name: admin.full_name,
+          email: admin.email,
+          role: normalizedRole,
+          is_active: admin.is_active
+        }
+      });
+    }
+
+    return res.status(400).json({ message: "Invalid email or password" });
+
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 };
 
 export const sendEmailVerification = async (req, res) => {
   try {
     const { email } = req.body;
+    const normalizedEmail = normalizeEmail(email);
 
-    if (!email) {
+    if (!normalizedEmail) {
       return res.status(400).json({ error: "email is required" });
     }
 
-    if (
-      !process.env.TWILIO_ASID ||
-      !process.env.TWILIO_AUTH_TOKEN ||
-      !process.env.TWILIO_VERIFY_SERVICE_SID
-    ) {
-      return res.status(500).json({ error: "Twilio email verification is not configured" });
-    }
+    ensureTwilioVerifyConfigured();
 
     const verification = await twilioClient.verify.v2
       .services(process.env.TWILIO_VERIFY_SERVICE_SID)
       .verifications.create({
-        to: email,
+        to: normalizedEmail,
         channel: "email"
       });
 
@@ -153,15 +237,18 @@ export const sendEmailVerification = async (req, res) => {
 export const verifyEmailCode = async (req, res) => {
   try {
     const { email, code } = req.body;
+    const normalizedEmail = normalizeEmail(email);
 
-    if (!email || !code) {
+    if (!normalizedEmail || !code) {
       return res.status(400).json({ error: "email and code are required" });
     }
+
+    ensureTwilioVerifyConfigured();
 
     const verificationCheck = await twilioClient.verify.v2
       .services(process.env.TWILIO_VERIFY_SERVICE_SID)
       .verificationChecks.create({
-        to: email,
+        to: normalizedEmail,
         code
       });
 
@@ -173,7 +260,7 @@ export const verifyEmailCode = async (req, res) => {
     }
 
     const user = await prisma.company.findUnique({
-      where: { email }
+      where: { email: normalizedEmail }
     });
 
     if (!user) {
@@ -181,7 +268,7 @@ export const verifyEmailCode = async (req, res) => {
     }
 
     await prisma.company.update({
-      where: { email },
+      where: { email: normalizedEmail },
       data: {
         is_email_verified: true,
         email_verified_at: new Date()
@@ -191,6 +278,94 @@ export const verifyEmailCode = async (req, res) => {
     return res.status(200).json({
       message: "Email verified successfully",
       status: verificationCheck.status
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const sendPasswordResetCode = async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body.email);
+
+    if (!normalizedEmail) {
+      return res.status(400).json({ error: "email is required" });
+    }
+
+    const user = await prisma.company.findUnique({
+      where: { email: normalizedEmail }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "No company account found for this email" });
+    }
+
+    ensureTwilioVerifyConfigured();
+
+    const verification = await twilioClient.verify.v2
+      .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+      .verifications.create({
+        to: normalizedEmail,
+        channel: "email"
+      });
+
+    return res.status(200).json({
+      message: "Password reset code sent",
+      status: verification.status
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const resetPasswordWithCode = async (req, res) => {
+  try {
+    const normalizedEmail = normalizeEmail(req.body.email);
+    const { code, newPassword } = req.body;
+
+    if (!normalizedEmail || !code || !newPassword) {
+      return res.status(400).json({ error: "email, code, and newPassword are required" });
+    }
+
+    if (!passwordPattern.test(newPassword)) {
+      return res.status(400).json({
+        error: "Password must be at least 8 characters and include uppercase, lowercase, number, and special character"
+      });
+    }
+
+    const user = await prisma.company.findUnique({
+      where: { email: normalizedEmail }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "No company account found for this email" });
+    }
+
+    ensureTwilioVerifyConfigured();
+
+    const verificationCheck = await twilioClient.verify.v2
+      .services(process.env.TWILIO_VERIFY_SERVICE_SID)
+      .verificationChecks.create({
+        to: normalizedEmail,
+        code
+      });
+
+    if (verificationCheck.status !== "approved") {
+      return res.status(400).json({
+        message: "Invalid or expired reset code",
+        status: verificationCheck.status
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.company.update({
+      where: { email: normalizedEmail },
+      data: { Password: hashedPassword }
+    });
+
+    return res.status(200).json({
+      message: "Password reset successfully"
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

@@ -13,6 +13,9 @@
   <!-- Header -->
   <div class="header">
     <div>
+      <button class="back-dashboard-btn" id="backDashboardBtn" type="button">
+        Back to Dashboard
+      </button>
       <div class="header-label">SPEED TRADING SESSION</div>
       <div class="header-title">Live Connections</div>
     </div>
@@ -80,14 +83,14 @@
       <div id="productTags"></div>
 
       <!-- Actions -->
-      <button class="btn btn-primary" id="saveBtn" onclick="toggleSave()">
+      <button class="btn btn-primary" id="saveBtn" type="button">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M20 6L9 17l-5-5"/>
         </svg>
         Save This Connection
       </button>
 
-      <button class="btn btn-outline" onclick="nextMatch()">
+      <button class="btn btn-outline" id="skipMatchBtn" type="button">
         Skip to Next Match
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 18l6-6-6-6"/>
@@ -100,13 +103,13 @@
 
       <!-- Mode toggle -->
       <div class="mode-bar">
-        <button class="mode-btn active" id="videoBtnTab" onclick="setMode('video')">
+        <button class="mode-btn active" id="videoBtnTab" type="button">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
           </svg>
           Video Call
         </button>
-        <button class="mode-btn" id="msgBtnTab" onclick="setMode('message')">
+        <button class="mode-btn" id="msgBtnTab" type="button">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"/>
           </svg>
@@ -128,22 +131,22 @@
           <div id="videoStatus" style="font-size:12px;color:rgba(190,195,175,0.85);margin-top:6px;text-align:center;">Preparing camera preview...</div>
 
           <div class="video-controls">
-            <div class="ctrl-btn" id="micBtn" onclick="toggleMic()" title="Toggle mute">
+            <button class="ctrl-btn" id="micBtn" type="button" title="Toggle mute">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
                 <path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
               </svg>
-            </div>
-            <div class="ctrl-btn" id="vidBtn" onclick="toggleVid()" title="Toggle video">
+            </button>
+            <button class="ctrl-btn" id="vidBtn" type="button" title="Toggle video">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14M3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
               </svg>
-            </div>
-            <div class="ctrl-btn hangup" title="End call">
+            </button>
+            <button class="ctrl-btn hangup" id="hangupBtn" type="button" title="End call">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45c1.12.45 2.3.78 3.53.98a2 2 0 011.7 1.98V20a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.07 8.63 2 2 0 015 6.46h2.5a2 2 0 011.98 1.7c.2 1.22.54 2.41.98 3.53a2 2 0 01-.45 2.11l-1.27 1.27"/>
               </svg>
-            </div>
+            </button>
           </div>
 
           <!-- Self preview -->
@@ -167,9 +170,8 @@
             id="msgInput"
             type="text"
             placeholder="Type your message..."
-            onkeydown="if(event.key==='Enter') sendMessage()"
           />
-          <button class="send-btn" onclick="sendMessage()">
+          <button class="send-btn" type="button">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="22" y1="2" x2="11" y2="13"/>
               <polygon points="22 2 15 22 11 13 2 9 22 2"/>

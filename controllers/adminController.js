@@ -482,10 +482,10 @@ export const updateAdminCompany = async (req, res) => {
     }
 
     const normalizedStatus = account_status ? String(account_status).trim().toLowerCase() : undefined;
-    const allowedStatuses = new Set(["active", "suspended", "under_review"]);
+    const allowedStatuses = new Set(["active", "pending", "suspended", "under_review"]);
 
     if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
-      return res.status(400).json({ error: "account_status must be active, suspended, or under_review" });
+      return res.status(400).json({ error: "account_status must be active, pending, suspended, or under_review" });
     }
 
     const updatedCompany = await prisma.company.update({
@@ -529,12 +529,14 @@ export const updateAdminCompany = async (req, res) => {
       });
     }
 
-    if (normalizedStatus === "active" && existingCompany.account_status === "suspended") {
+    if (normalizedStatus === "active" && existingCompany.account_status !== "active") {
       await prisma.notification.create({
         data: {
           company_id,
-          type: "account_reinstated",
-          message: "Your account has been reinstated by an admin"
+          type: existingCompany.account_status === "suspended" ? "account_reinstated" : "account_activated",
+          message: existingCompany.account_status === "suspended"
+            ? "Your account has been reinstated by an admin"
+            : "Your account has been activated. You can now sign in."
         }
       });
     }

@@ -16,7 +16,9 @@ import {
   signup,
   login,
   sendEmailVerification,
-  verifyEmailCode
+  verifyEmailCode,
+  sendPasswordResetCode,
+  resetPasswordWithCode
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -25,6 +27,8 @@ router.post("/signup", signup);
 router.post("/login", login);
 router.post("/send-email-verification", sendEmailVerification);
 router.post("/verify-email-code", verifyEmailCode);
+router.post("/forgot-password/send-code", sendPasswordResetCode);
+router.post("/forgot-password/reset", resetPasswordWithCode);
 router.post("/request", authMiddleware, sendConnectionRequest);
 router.post("/accept", authMiddleware, acceptConnectionRequest);
 router.post("/reject", authMiddleware, rejectConnectionRequest);

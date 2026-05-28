@@ -55,7 +55,60 @@ const limiter = rateLimit({
   },
 });
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "https://sdk.twilio.com"
+      ],
+      scriptSrcElem: [
+        "'self'",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "https://sdk.twilio.com"
+      ],
+      connectSrc: [
+        "'self'",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "ws://localhost:5000",
+        "ws://127.0.0.1:5000",
+        "wss://*.twilio.com",
+        "https://*.twilio.com"
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "blob:"
+      ],
+      mediaSrc: [
+        "'self'",
+        "blob:",
+        "mediastream:"
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com",
+        "https://cdnjs.cloudflare.com"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://cdnjs.cloudflare.com",
+        "data:"
+      ],
+      workerSrc: [
+        "'self'",
+        "blob:"
+      ]
+    }
+  }
+}));
 app.use(cors());
 app.use((req, _res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method.padEnd(6)} ${req.url}`);
@@ -116,6 +169,6 @@ app.use((err, _req, res, _next) => {
 const PORT = process.env.PORT || 5000;
 registerEventSocket(io);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port http://localhost:${PORT}`);
 });

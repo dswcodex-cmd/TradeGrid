@@ -4,18 +4,22 @@ const { AccessToken } = twilio.jwt;
 const { VideoGrant } = AccessToken;
 
 export const createRoomToken = (identity, roomName) => {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID || process.env.TWILIO_ASID;
+  const apiKey = process.env.TWILIO_API_KEY || process.env.TWILIO_API_KEY_SID;
+  const apiSecret = process.env.TWILIO_API_SECRET;
+
   if (
-    !process.env.TWILIO_ACCOUNT_SID ||
-    !process.env.TWILIO_API_KEY ||
-    !process.env.TWILIO_API_SECRET
+    !accountSid ||
+    !apiKey ||
+    !apiSecret
   ) {
     return null;
   }
 
   const token = new AccessToken(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_API_KEY,
-    process.env.TWILIO_API_SECRET,
+    accountSid,
+    apiKey,
+    apiSecret,
     { identity: String(identity) }
   );
 

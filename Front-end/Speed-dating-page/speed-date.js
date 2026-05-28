@@ -43,7 +43,8 @@ const state = {
   currentMatchId: null,
   currentRoomName: null,
   currentTwilioToken: null,
-  remoteParticipantName: ""
+  remoteParticipantName: "",
+  queueRequested: false
 };
 
 function getStoredToken() {
@@ -343,6 +344,8 @@ async function startLocalPreview() {
 }
 
 function applyTrackState() {
+  document.querySelector(".self-preview")?.classList.toggle("camera-off", state.vidOff);
+
   if (!state.localStream) {
     return;
   }
@@ -354,6 +357,7 @@ function applyTrackState() {
   state.localStream.getVideoTracks().forEach((track) => {
     track.enabled = !state.vidOff;
   });
+
 }
 
 function detachCurrentRoom() {
@@ -368,6 +372,56 @@ function detachCurrentRoom() {
   }
 
   showRemoteFallback(true);
+}
+
+function stopLocalPreview() {
+  if (state.localStream) {
+    state.localStream.getTracks().forEach((track) => track.stop());
+    state.localStream = null;
+  }
+
+  const localVideo = document.getElementById("localVideo");
+  if (localVideo) {
+    localVideo.srcObject = null;
+  }
+}
+
+function leaveLiveSession() {
+  if (state.socket) {
+    state.socket.emit("leave_queue");
+    state.socket.disconnect();
+    state.socket = null;
+  }
+
+  state.queueRequested = false;
+  detachCurrentRoom();
+  stopLocalPreview();
+}
+
+function goToUserDashboard() {
+  window.location.href = "../User Dashboard - Page/user-dashboard.html";
+}
+
+function confirmExitSession() {
+  return window.confirm("Are you sure you want to exit this speed trading session?");
+}
+
+function exitToDashboard() {
+  if (!confirmExitSession()) {
+    return;
+  }
+
+  leaveLiveSession();
+  goToUserDashboard();
+}
+
+function hangUpAndReturn() {
+  if (!confirmExitSession()) {
+    return;
+  }
+
+  leaveLiveSession();
+  goToUserDashboard();
 }
 
 async function loadTwilioVideo() {
@@ -458,16 +512,7 @@ function setMode(mode) {
   document.getElementById("msgView").style.display = mode === "message" ? "flex" : "none";
   document.getElementById("videoBtnTab").className = `mode-btn${mode === "video" ? " active" : ""}`;
   document.getElementById("msgBtnTab").className = `mode-btn${mode === "message" ? " active" : ""}`;
-}
-
-async function submitOutcome(decision) {
-  if (!state.token || !state.currentMatchId || state.currentMatchId.startsWith("demo-")) {
-    return;
-  }
-
-  const api = getSpeedDateApi();
-  await api.submitMatchOutcome(state.currentMatchId, decision);
-}
+};
 
 async function submitOutcome(decision) {
   if (
@@ -531,12 +576,14 @@ function toggleMic() {
   state.muted = !state.muted;
   document.getElementById("micBtn").className = `ctrl-btn${state.muted ? " muted" : ""}`;
   applyTrackState();
+  updateVideoStatus(state.muted ? "Microphone muted." : "Microphone on.");
 }
 
 function toggleVid() {
   state.vidOff = !state.vidOff;
   document.getElementById("vidBtn").className = `ctrl-btn${state.vidOff ? " vid-off" : ""}`;
   applyTrackState();
+  updateVideoStatus(state.vidOff ? "Camera off." : "Camera on.");
 }
 
 function sendMessage() {
@@ -579,8 +626,24 @@ async function loadSocketClient() {
 }
 
 function bindSocketHandlers(socket) {
-  socket.on("status_update", ({ status }) => {
+  socket.on("status_update", ({ status, message }) => {
     console.log("Event status:", status);
+
+    if (status === "connected" && !state.queueRequested) {
+      state.queueRequested = true;
+      socket.emit("enter_queue");
+      updateVideoStatus("Connected to Pulse. Finding your next company...");
+      return;
+    }
+
+    if (status === "waiting") {
+      updateVideoStatus("Waiting for another company to join the queue...");
+      return;
+    }
+
+    if (status === "error") {
+      updateVideoStatus(message || "Speed dating connection error.");
+    }
   });
 
   socket.on("match_found", ({ matchId, partner, roomName, twilioToken, roundDurationSeconds }) => {
@@ -706,11 +769,10 @@ async function initialiseBackendSession() {
       token: state.token,
       eventId: state.eventId
     });
-
-    state.socket.emit("enter_queue");
     return true;
   } catch (error) {
     console.warn("Falling back to demo speed-dating mode:", error.message);
+    updateVideoStatus(`${error.message}. Demo mode is active.`);
     return false;
   }
 }
@@ -735,11 +797,31 @@ function startTimers() {
   }, 1000);
 }
 
+function bindPageControls() {
+  document.getElementById("backDashboardBtn")?.addEventListener("click", exitToDashboard);
+  document.getElementById("micBtn")?.addEventListener("click", toggleMic);
+  document.getElementById("vidBtn")?.addEventListener("click", toggleVid);
+  document.getElementById("hangupBtn")?.addEventListener("click", hangUpAndReturn);
+  document.getElementById("saveBtn")?.addEventListener("click", toggleSave);
+  document.getElementById("skipMatchBtn")?.addEventListener("click", nextMatch);
+  document.getElementById("videoBtnTab")?.addEventListener("click", () => setMode("video"));
+  document.getElementById("msgBtnTab")?.addEventListener("click", () => setMode("message"));
+  document.querySelector(".send-btn")?.addEventListener("click", sendMessage);
+  document.getElementById("msgInput")?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      sendMessage();
+    }
+  });
+}
+
 window.setMode = setMode;
 window.toggleSave = toggleSave;
 window.nextMatch = nextMatch;
 window.toggleMic = toggleMic;
 window.toggleVid = toggleVid;
+window.hangUpAndReturn = hangUpAndReturn;
+window.exitToDashboard = exitToDashboard;
 window.sendMessage = sendMessage;
 
 async function initialisePage() {
@@ -762,15 +844,10 @@ async function initialisePage() {
   }
 
   window.addEventListener("beforeunload", () => {
-    if (state.socket) {
-      state.socket.emit("leave_queue");
-      state.socket.disconnect();
-    }
-    detachCurrentRoom();
-    if (state.localStream) {
-      state.localStream.getTracks().forEach((track) => track.stop());
-    }
+    leaveLiveSession();
   });
+
+  bindPageControls();
 }
 
 initialisePage();

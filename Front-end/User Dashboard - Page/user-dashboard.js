@@ -1879,18 +1879,18 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
-const speedConnectionsBtn = document.getElementById('speedConnectionsBtn');
-const speedBtnIcon        = document.getElementById('speedBtnIcon');
-const speedPulseRing      = document.getElementById('speedPulseRing');
+const speedConnectionsBtn = document.getElementById('speedConnectionsBtn') || document.getElementById('speedMatchesLaunchBtn');
+const speedBtnIcon        = document.getElementById('speedBtnIcon') || speedConnectionsBtn?.querySelector('.speed-btn-icon');
+const speedPulseRing      = document.getElementById('speedPulseRing') || speedConnectionsBtn?.querySelector('.speed-pulse-ring');
 let speedBusy = false;
 
 speedConnectionsBtn?.addEventListener('click', () => {
   if (speedBusy) return;
   speedBusy = true;
-  speedBtnIcon.classList.add('blurred');
-  speedPulseRing.classList.add('animate');
-  setTimeout(() => speedBtnIcon.classList.remove('blurred'), 600);
-  setTimeout(() => { speedPulseRing.classList.remove('animate'); speedBusy = false; }, 750);
+  speedBtnIcon?.classList.add('blurred');
+  speedPulseRing?.classList.add('animate');
+  setTimeout(() => speedBtnIcon?.classList.remove('blurred'), 600);
+  setTimeout(() => { speedPulseRing?.classList.remove('animate'); speedBusy = false; }, 750);
   showUserToast('Finding your best connections...');
   setTimeout(() => { window.location.href = '../Speed-dating-page/speed-date.html'; }, 900);
 });

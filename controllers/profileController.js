@@ -269,6 +269,42 @@ export const updateMyProfile = async (req, res) => {
   }
 };
 
+export const getTopPartnerCountries = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+
+    const payments = await prisma.payment.findMany({
+      where: {
+        payer_company_id: current_company_id,
+        status: "paid"
+      },
+      include: {
+        recipient_company: {
+          include: {
+            location: true
+          }
+        }
+      }
+    });
+
+    const countryCounts = {};
+    for (const payment of payments) {
+      const country = payment.recipient_company?.location?.country;
+      if (country) {
+        countryCounts[country] = (countryCounts[country] || 0) + 1;
+      }
+    }
+
+    const sorted = Object.entries(countryCounts)
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count);
+
+    return res.status(200).json({ top_partner_countries: sorted });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 export const deleteMyProfile = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
