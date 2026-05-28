@@ -12,7 +12,8 @@ import {
   updateAdminCompany,
   deleteAdminCompany,
   getAdminVerificationDocuments,
-  reviewVerificationDocument
+  reviewVerificationDocument,
+  getAdminCompanyMatches
 } from "../controllers/adminController.js";
 import {
   createAdminEvent,
@@ -36,6 +37,7 @@ router.get("/staff", requireAdminRole("superadmin"), getAdminStaff);
 router.post("/staff", requireAdminRole("superadmin"), createAdminStaff);
 router.patch("/staff/:adminId", requireAdminRole("superadmin"), updateAdminStaff);
 router.get("/companies", getAdminCompanies);
+router.get("/company-matches", getAdminCompanyMatches);
 router.get("/companies/:companyId", getAdminCompanyById);
 router.patch("/companies/:companyId", updateAdminCompany);
 router.delete("/companies/:companyId", deleteAdminCompany);

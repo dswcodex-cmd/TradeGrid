@@ -1,4 +1,4 @@
-import {getMyProfile, getCompanies, getCompanyById, updateCompany,deleteCompany, getVerificationDocuments, reviewVerificationDocument, getSupportTickets, getSupportTicketById, assignSupportTicket, updateSupportTicketStatus, replyToSupportTicket} from "./employFetches.js"
+import {getMyProfile, getCompanies, getCompanyById, updateCompany,deleteCompany, getVerificationDocuments, reviewVerificationDocument, getSupportTickets, getSupportTicketById, assignSupportTicket, updateSupportTicketStatus, replyToSupportTicket, getCompanyMatches} from "./employFetches.js"
 // ─── State ───
 let currentView = 'tasks';
 let currentTab  = 'assigned';
@@ -60,11 +60,12 @@ async function loadEmployeeDashboardData() {
   }
 
   try {
-    const [profileResponse, verificationResponse, supportResponse, companiesResponse] = await Promise.all([
+    const [profileResponse, verificationResponse, supportResponse, companiesResponse, matchedCompaniesResponse] = await Promise.all([
       getMyProfile(),
       getVerificationDocuments(),
       getSupportTickets(),
-      getCompanies()
+      getCompanies(),
+      getCompanyMatches()
     ]);
 
     currentStaffProfile = profileResponse.ok ? profileResponse.data?.admin || null : null;
@@ -72,12 +73,13 @@ async function loadEmployeeDashboardData() {
     const verificationDocs = verificationResponse.ok ? (verificationResponse.data?.documents || verificationResponse.data?.verification_documents || []) : [];
     const supportTickets = supportResponse.ok ? (supportResponse.data?.tickets || supportResponse.data?.support_tickets || []) : [];
     const companies = companiesResponse.ok ? (companiesResponse.data?.companies || []) : [];
+    const matchedCompanies = matchedCompaniesResponse.ok? matchedCompaniesResponse.data?.matches || []: [];
 
     const statCards = document.querySelectorAll('.stats .card h1');
     if (statCards.length >= 3) {
       statCards[0].textContent = supportTickets.length;
       statCards[1].textContent = verificationDocs.filter(doc => doc.status === 'approved').length;
-      statCards[2].textContent = verificationDocs.filter(doc => doc.status === 'pending').length;
+      statCards[2].textContent = matchedCompanies.filter(match => match.status === 'active').length;
     }
 
     const unreadBadge = document.querySelector('.unread-badge');

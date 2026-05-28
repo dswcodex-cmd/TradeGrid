@@ -1,92 +1,280 @@
-/**
- * Speed Trading Session — JavaScript
- *
- * Manages: timers, match cycling, video controls,
- * messaging, and all DOM updates.
- */
-
-/* =====================================================
-   Data
-   ===================================================== */
-
-const matches = [
+const demoMatches = [
   {
-    id: 1,
-    companyName: 'Pacific Textiles International',
-    country: 'Vietnam',
-    industry: 'Textiles & Apparel',
-    products: ['Organic Cotton', 'Silk Fabrics', 'Sustainable Denim'],
-    type: 'exporter',
+    id: "demo-1",
+    companyName: "Pacific Textiles International",
+    country: "Vietnam",
+    industry: "Textiles & Apparel",
+    products: ["Organic Cotton", "Silk Fabrics", "Sustainable Denim"],
+    type: "exporter"
   },
   {
-    id: 2,
-    companyName: 'Nordic Manufacturing AB',
-    country: 'Sweden',
-    industry: 'Industrial Equipment',
-    products: ['Precision Tools', 'Machinery Parts', 'Automation Systems'],
-    type: 'importer',
+    id: "demo-2",
+    companyName: "Nordic Manufacturing AB",
+    country: "Sweden",
+    industry: "Industrial Equipment",
+    products: ["Precision Tools", "Machinery Parts", "Automation Systems"],
+    type: "importer"
   },
   {
-    id: 3,
-    companyName: 'Sahara Spice Traders',
-    country: 'Morocco',
-    industry: 'Food & Beverages',
-    products: ['Saffron', 'Argan Oil', 'Dried Fruits'],
-    type: 'exporter',
-  },
+    id: "demo-3",
+    companyName: "Sahara Spice Traders",
+    country: "Morocco",
+    industry: "Food & Beverages",
+    products: ["Saffron", "Argan Oil", "Dried Fruits"],
+    type: "exporter"
+  }
 ];
 
-/* =====================================================
-   State
-   ===================================================== */
+const state = {
+  apiBase: "",
+  token: "",
+  eventId: "",
+  socket: null,
+  localStream: null,
+  twilioRoom: null,
+  sessionLeft: 3600,
+  matchLeft: 600,
+  currentIdx: 0,
+  muted: false,
+  vidOff: false,
+  saved: false,
+  messages: [],
+  matches: demoMatches,
+  currentMatchId: null,
+  currentRoomName: null,
+  currentTwilioToken: null,
+  remoteParticipantName: ""
+};
 
-let sessionLeft   = 3600;   // total session: 60 minutes
-let matchLeft     = 600;    // per-match: 10 minutes
-let currentIdx    = 0;
-let muted         = false;
-let vidOff        = false;
-let saved         = false;
-let messages      = [];
-
-/* =====================================================
-   Helpers
-   ===================================================== */
-
-/**
- * Format seconds to MM:SS string.
- * @param {number} s
- * @returns {string}
- */
-function formatTime(s) {
-  const mins = Math.floor(s / 60);
-  const secs = s % 60;
-  return `${mins}:${String(secs).padStart(2, '0')}`;
+function getStoredToken() {
+  return (
+    window.localStorage.getItem("token")
+    || window.sessionStorage.getItem("token")
+    || ""
+  );
 }
 
-/* =====================================================
-   Render
-   ===================================================== */
+function getApiBase() {
+  const url = new URL(window.location.href);
+  const queryBase = url.searchParams.get("apiBase");
 
-/** Populate all match-related DOM elements from matches[currentIdx]. */
+  if (queryBase) {
+    return queryBase.replace(/\/$/, "");
+  }
+
+  if (window.location.protocol.startsWith("http")) {
+    return window.location.origin.replace(/\/$/, "");
+  }
+
+  return "http://localhost:5000";
+}
+
+function getEventIdFromUrl() {
+  return new URL(window.location.href).searchParams.get("eventId") || "";
+}
+
+function getSpeedDateApi() {
+   if (!window.speedDateApi) {
+    throw new Error(
+      "speedDateApi is not loaded. Make sure fetches.js is included before this script."
+    );
+  }
+
+  return window.speedDateApi;
+  // return window.speedDateApi || {
+  //   getStoredToken,
+  //   getApiBase,
+  //   async request(path, options = {}) {
+  //     const response = await fetch(`${getApiBase()}${path}`, {
+  //       ...options,
+  //       headers: {
+  //         ...(options.headers || {}),
+  //         ...(state.token ? { Authorization: `Bearer ${state.token}` } : {})
+  //       }
+  //     });
+
+  //     let payload = {};
+  //     try {
+  //       payload = await response.json();
+  //     } catch {
+  //       payload = {};
+  //     }
+
+  //     if (!response.ok) {
+  //       throw new Error(payload.error || `Request failed: ${response.status}`);
+  //     }
+
+  //     return payload;
+  //   },
+  //   submitMatchOutcome(matchId, decision) {
+  //     return this.request(`/events/matches/${matchId}/outcome`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${state.token}`
+  //       },
+  //       body: JSON.stringify({ decision })
+  //     });
+  //   },
+  //   getCurrentPulseSession() {
+  //     return this.request("/events/pulse/current");
+  //   },
+  //   joinCurrentPulseSession(body = { target_markets: [] }) {
+  //     return this.request("/events/pulse/join", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json"
+  //       },
+  //       body: JSON.stringify(body)
+  //     });
+  //   },
+  //   getEvent(eventId) {
+  //     return this.request(`/events/${eventId}`);
+  //   },
+  //   registerForEvent(eventId, body = { target_markets: [] }) {
+  //     return this.request(`/events/${eventId}/register`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json"
+  //       },
+  //       body: JSON.stringify(body)
+  //     });
+  //   }
+  // };
+}
+
+function updateVideoStatus(message) {
+  const statusEl = document.getElementById("videoStatus");
+  if (statusEl) {
+    statusEl.textContent = message;
+  }
+}
+
+function showRemoteFallback(showFallback = true) {
+  const remoteVideo = document.getElementById("remoteVideo");
+  const remoteFallback = document.getElementById("remoteFallback");
+
+  if (remoteVideo) {
+    remoteVideo.style.display = showFallback ? "none" : "block";
+  }
+
+  if (remoteFallback) {
+    remoteFallback.style.display = showFallback ? "flex" : "none";
+  }
+}
+
+function formatTime(totalSeconds) {
+  const safeSeconds = Math.max(0, Number(totalSeconds) || 0);
+  const minutes = Math.floor(safeSeconds / 60);
+  const seconds = safeSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function normalizeMatch(match) {
+  if (match.companyName) {
+    return match;
+  }
+
+  const partner = match.partner || {};
+
+  return {
+    id: match.id || partner.company_id || `match-${Date.now()}`,
+    companyName: partner.company_name || "Waiting for next match",
+    country: partner.country || "N/A",
+    industry: partner.industry || "N/A",
+    products: Array.isArray(partner.products) ? partner.products : [],
+    type: partner.business_type || "partner",
+    roomName: match.twilio_room_name || null,
+    twilioToken: match.twilioToken || null
+  };
+}
+
+function showWaitingState(messageText = "Finding your next pulse connection...") {
+  detachCurrentRoom();
+  state.matches = [{
+    id: "waiting-state",
+    companyName: messageText,
+    country: "TradeGrid Pulse",
+    industry: "Random networking",
+    products: [],
+    type: "waiting"
+  }];
+  state.currentIdx = 0;
+  state.currentMatchId = null;
+  state.currentRoomName = null;
+  state.currentTwilioToken = null;
+  state.matchLeft = 600;
+  renderMatch();
+  updateMatchUI();
+  updateVideoStatus(messageText);
+}
+
+function renderMessages() {
+  const list = document.getElementById("msgList");
+
+  list.innerHTML = state.messages
+    .map((message) => `
+      <div class="msg-bubble-wrap ${message.from === "me" ? "me" : ""}">
+        <div class="msg-bubble ${message.from === "me" ? "me" : "them"}">${escapeHtml(message.text)}</div>
+      </div>
+    `)
+    .join("");
+
+  list.scrollTop = list.scrollHeight;
+}
+
+function renderUpcoming() {
+  const upcoming = state.matches.slice(state.currentIdx + 1);
+  const section = document.getElementById("upcomingSection");
+  const list = document.getElementById("upcomingList");
+
+  if (!upcoming.length) {
+    section.style.display = "none";
+    return;
+  }
+
+  section.style.display = "block";
+  list.innerHTML = upcoming
+    .map((match) => `
+      <div class="upcoming-card">
+        <div class="upcoming-icon">B2B</div>
+        <div>
+          <div class="upcoming-name">${escapeHtml(match.companyName)}</div>
+          <div class="upcoming-loc">${escapeHtml(match.country)}</div>
+        </div>
+      </div>
+    `)
+    .join("");
+}
+
 function renderMatch() {
-  const m = matches[currentIdx];
+  const match = normalizeMatch(state.matches[state.currentIdx] || demoMatches[0]);
+  const tags = Array.isArray(match.products) ? match.products : [];
 
-  document.getElementById('companyName').textContent    = m.companyName;
-  document.getElementById('companyType').textContent    = m.type.toUpperCase();
-  document.getElementById('companyCountry').textContent = m.country;
-  document.getElementById('companyIndustry').textContent = m.industry;
-  document.getElementById('videoMatchName').textContent = m.companyName;
+  document.getElementById("companyName").textContent = match.companyName;
+  document.getElementById("companyType").textContent = String(match.type || "partner").toUpperCase();
+  document.getElementById("companyCountry").textContent = match.country;
+  document.getElementById("companyIndustry").textContent = match.industry;
+  document.getElementById("videoMatchName").textContent = match.companyName;
+  document.getElementById("productTags").innerHTML = tags
+    .map((product) => `<span class="product-tag">${escapeHtml(product)}</span>`)
+    .join("");
 
-  // Product tags
-  const tagsEl = document.getElementById('productTags');
-  tagsEl.innerHTML = m.products
-    .map(p => `<span class="product-tag">${p}</span>`)
-    .join('');
+  state.currentMatchId = match.id || null;
+  state.currentRoomName = match.roomName || null;
+  state.currentTwilioToken = match.twilioToken || null;
+  state.saved = false;
 
-  // Reset save state
-  saved = false;
-  const saveBtn = document.getElementById('saveBtn');
-  saveBtn.className = 'btn btn-primary';
+  const saveBtn = document.getElementById("saveBtn");
+  saveBtn.className = "btn btn-primary";
   saveBtn.innerHTML = `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <path d="M20 6L9 17l-5-5"/>
@@ -94,184 +282,495 @@ function renderMatch() {
     Save This Connection
   `;
 
-  // Reset messages for new match
-  messages = [
-    { id: '1', from: 'them', text: 'Hello! Great to connect during this session.' },
+  state.messages = [
+    { id: "intro", from: "them", text: `Hello from ${match.companyName}.` }
   ];
+
   renderMessages();
   renderUpcoming();
+  updateVideoStatus(state.currentTwilioToken ? `Match found: ${match.companyName}. Joining video room...` : `Match found: ${match.companyName}. Waiting for video room credentials...`);
 }
 
-/** Render the upcoming matches queue. */
-function renderUpcoming() {
-  const upcoming    = matches.slice(currentIdx + 1);
-  const section     = document.getElementById('upcomingSection');
-  const list        = document.getElementById('upcomingList');
+function updateSessionUI() {
+  const timerEl = document.getElementById("sessionTimer");
+  timerEl.textContent = formatTime(state.sessionLeft);
+  timerEl.className = `session-timer${state.sessionLeft <= 300 ? " urgent" : ""}`;
 
-  if (!upcoming.length) {
-    section.style.display = 'none';
+  const percentage = ((3600 - state.sessionLeft) / 3600) * 100;
+  document.getElementById("sessionBar").style.width = `${percentage}%`;
+
+  const offset = 157 - (157 * percentage / 100);
+  document.getElementById("sessionArc").setAttribute("stroke-dashoffset", offset);
+}
+
+function updateMatchUI() {
+  const urgent = state.matchLeft <= 60;
+  document.getElementById("matchTimerBox").className = `match-timer-box${urgent ? " urgent" : ""}`;
+  document.getElementById("matchTimer").textContent = formatTime(state.matchLeft);
+  document.getElementById("matchTimer").className = `match-time${urgent ? " urgent" : ""}`;
+
+  const percentage = ((600 - state.matchLeft) / 600) * 100;
+  const progressBar = document.getElementById("matchBar");
+  progressBar.style.width = `${percentage}%`;
+  progressBar.className = `match-progress-fill${urgent ? " urgent" : ""}`;
+}
+
+async function startLocalPreview() {
+  const localVideo = document.getElementById("localVideo");
+
+  if (!navigator.mediaDevices?.getUserMedia || !localVideo) {
+    updateVideoStatus("Camera preview is not supported in this browser.");
     return;
   }
 
-  section.style.display = 'block';
-  list.innerHTML = upcoming
-    .map(m => `
-      <div class="upcoming-card">
-        <div class="upcoming-icon">🏢</div>
-        <div>
-          <div class="upcoming-name">${m.companyName}</div>
-          <div class="upcoming-loc">📍 ${m.country}</div>
-        </div>
-      </div>
-    `)
-    .join('');
+  if (state.localStream) {
+    localVideo.srcObject = state.localStream;
+    return;
+  }
+
+  try {
+    state.localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true
+    });
+    localVideo.srcObject = state.localStream;
+    applyTrackState();
+    updateVideoStatus("Camera preview ready. Waiting for a live match...");
+  } catch (error) {
+    console.warn("Unable to access camera/microphone:", error);
+    updateVideoStatus("Camera or microphone access was denied.");
+  }
 }
 
-/** Render the messages list. */
-function renderMessages() {
-  const list = document.getElementById('msgList');
-  list.innerHTML = messages
-    .map(msg => `
-      <div class="msg-bubble-wrap ${msg.from === 'me' ? 'me' : ''}">
-        <div class="msg-bubble ${msg.from === 'me' ? 'me' : 'them'}">${escapeHtml(msg.text)}</div>
-      </div>
-    `)
-    .join('');
-  list.scrollTop = list.scrollHeight;
+function applyTrackState() {
+  if (!state.localStream) {
+    return;
+  }
+
+  state.localStream.getAudioTracks().forEach((track) => {
+    track.enabled = !state.muted;
+  });
+
+  state.localStream.getVideoTracks().forEach((track) => {
+    track.enabled = !state.vidOff;
+  });
 }
 
-/**
- * Minimal HTML escape to prevent XSS in messages.
- * @param {string} str
- * @returns {string}
- */
-function escapeHtml(str) {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function detachCurrentRoom() {
+  if (state.twilioRoom) {
+    state.twilioRoom.disconnect();
+    state.twilioRoom = null;
+  }
+
+  const remoteVideo = document.getElementById("remoteVideo");
+  if (remoteVideo) {
+    remoteVideo.srcObject = null;
+  }
+
+  showRemoteFallback(true);
 }
 
-/* =====================================================
-   Actions
-   ===================================================== */
+async function loadTwilioVideo() {
+  if (window.Twilio?.Video) {
+    return window.Twilio.Video;
+  }
 
-/** Switch between 'video' and 'message' modes. */
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = "https://sdk.twilio.com/js/video/releases/2.29.0/twilio-video.min.js";
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+
+  return window.Twilio?.Video;
+}
+
+async function connectToVideoRoom() {
+  if (!state.currentTwilioToken || !state.currentRoomName || !state.localStream) {
+    updateVideoStatus("Match found. Waiting for video room credentials...");
+    return;
+  }
+
+  try {
+    detachCurrentRoom();
+    const TwilioVideo = await loadTwilioVideo();
+    if (!TwilioVideo?.connect) {
+      updateVideoStatus("Twilio Video SDK could not be loaded.");
+      return;
+    }
+
+    state.twilioRoom = await TwilioVideo.connect(state.currentTwilioToken, {
+      name: state.currentRoomName,
+      tracks: state.localStream.getTracks()
+    });
+
+    updateVideoStatus(`Connected to ${state.currentRoomName}`);
+
+    const attachParticipant = (participant) => {
+      participant.tracks.forEach((publication) => {
+        if (publication.isSubscribed) {
+          attachRemoteTrack(publication.track);
+        }
+      });
+
+      participant.on("trackSubscribed", attachRemoteTrack);
+      participant.on("trackUnsubscribed", detachRemoteTrack);
+    };
+
+    state.twilioRoom.participants.forEach(attachParticipant);
+    state.twilioRoom.on("participantConnected", attachParticipant);
+    state.twilioRoom.on("participantDisconnected", () => {
+      showRemoteFallback(true);
+      updateVideoStatus("Your match left the room. Waiting for the next connection...");
+    });
+  } catch (error) {
+    console.warn("Twilio room connection failed:", error);
+    updateVideoStatus("Video room connection failed. Chat and queue will still work.");
+  }
+}
+
+function attachRemoteTrack(track) {
+  if (track.kind !== "video") {
+    return;
+  }
+
+  const remoteVideo = document.getElementById("remoteVideo");
+  if (!remoteVideo) {
+    return;
+  }
+
+  const mediaStream = new MediaStream([track.mediaStreamTrack]);
+  remoteVideo.srcObject = mediaStream;
+  showRemoteFallback(false);
+}
+
+function detachRemoteTrack() {
+  const remoteVideo = document.getElementById("remoteVideo");
+  if (remoteVideo) {
+    remoteVideo.srcObject = null;
+  }
+  showRemoteFallback(true);
+}
+
 function setMode(mode) {
-  document.getElementById('videoView').style.display  = mode === 'video'   ? '' : 'none';
-  document.getElementById('msgView').style.display    = mode === 'message' ? 'flex' : 'none';
-  document.getElementById('videoBtnTab').className    = 'mode-btn' + (mode === 'video'   ? ' active' : '');
-  document.getElementById('msgBtnTab').className      = 'mode-btn' + (mode === 'message' ? ' active' : '');
+  document.getElementById("videoView").style.display = mode === "video" ? "" : "none";
+  document.getElementById("msgView").style.display = mode === "message" ? "flex" : "none";
+  document.getElementById("videoBtnTab").className = `mode-btn${mode === "video" ? " active" : ""}`;
+  document.getElementById("msgBtnTab").className = `mode-btn${mode === "message" ? " active" : ""}`;
 }
 
-/** Toggle "Save This Connection" state. */
-function toggleSave() {
-  saved = !saved;
-  const btn = document.getElementById('saveBtn');
-  btn.className = 'btn btn-primary' + (saved ? ' saved' : '');
-  btn.innerHTML = saved
+async function submitOutcome(decision) {
+  if (!state.token || !state.currentMatchId || state.currentMatchId.startsWith("demo-")) {
+    return;
+  }
+
+  const api = getSpeedDateApi();
+  await api.submitMatchOutcome(state.currentMatchId, decision);
+}
+
+async function submitOutcome(decision) {
+  if (
+    !state.token ||
+    !state.currentMatchId ||
+    state.currentMatchId.startsWith("demo-")
+  ) {
+    return;
+  }
+
+  try {
+    const api = getSpeedDateApi();
+
+    await api.submitMatchOutcome(
+      state.currentMatchId,
+      decision
+    );
+
+    console.log("Outcome submitted");
+
+  } catch (error) {
+    console.error("Failed to submit outcome:", error);
+  }
+}
+async function toggleSave() {
+  state.saved = !state.saved;
+
+  const btn = document.getElementById("saveBtn");
+  btn.className = `btn btn-primary${state.saved ? " saved" : ""}`;
+  btn.innerHTML = state.saved
     ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
          <path d="M20 6L9 17l-5-5"/>
        </svg> Connection Saved`
     : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
          <path d="M20 6L9 17l-5-5"/>
        </svg> Save This Connection`;
+
+  if (state.saved) {
+    await submitOutcome("YES");
+  }
 }
 
-/** Advance to the next match (or do nothing if at end). */
-function nextMatch() {
-  if (currentIdx < matches.length - 1) {
-    currentIdx++;
-    matchLeft = 600;
+async function nextMatch() {
+  if (state.socket && state.currentMatchId && !String(state.currentMatchId).startsWith("demo-")) {
+    await submitOutcome("NO");
+    detachCurrentRoom();
+    state.socket.emit("skip_match", { matchId: state.currentMatchId });
+    showWaitingState();
+    return;
+  }
+
+  if (state.currentIdx < state.matches.length - 1) {
+    state.currentIdx += 1;
+    state.matchLeft = 600;
     renderMatch();
     updateMatchUI();
   }
 }
 
-/** Toggle microphone mute state. */
 function toggleMic() {
-  muted = !muted;
-  document.getElementById('micBtn').className = 'ctrl-btn' + (muted ? ' muted' : '');
+  state.muted = !state.muted;
+  document.getElementById("micBtn").className = `ctrl-btn${state.muted ? " muted" : ""}`;
+  applyTrackState();
 }
 
-/** Toggle video on/off state. */
 function toggleVid() {
-  vidOff = !vidOff;
-  document.getElementById('vidBtn').className = 'ctrl-btn' + (vidOff ? ' vid-off' : '');
+  state.vidOff = !state.vidOff;
+  document.getElementById("vidBtn").className = `ctrl-btn${state.vidOff ? " vid-off" : ""}`;
+  applyTrackState();
 }
 
-/** Send a chat message from the input field. */
 function sendMessage() {
-  const input = document.getElementById('msgInput');
-  const text  = input.value.trim();
-  if (!text) return;
+  const input = document.getElementById("msgInput");
+  const text = input.value.trim();
 
-  messages.push({ id: Date.now().toString(), from: 'me', text });
-  input.value = '';
+  if (!text) {
+    return;
+  }
+
+  state.messages.push({
+    id: `${Date.now()}`,
+    from: "me",
+    text
+  });
+
+  input.value = "";
   renderMessages();
 }
 
-/* =====================================================
-   Timer UI Updates
-   ===================================================== */
-
-/** Update all session-timer DOM elements. */
-function updateSessionUI() {
-  const timerEl = document.getElementById('sessionTimer');
-  timerEl.textContent = formatTime(sessionLeft);
-  timerEl.className   = 'session-timer' + (sessionLeft <= 300 ? ' urgent' : '');
-
-  const pct = ((3600 - sessionLeft) / 3600) * 100;
-  document.getElementById('sessionBar').style.width = pct + '%';
-
-  // SVG arc (r=25, circumference = 2π×25 ≈ 157)
-  const offset = 157 - (157 * pct / 100);
-  document.getElementById('sessionArc').setAttribute('stroke-dashoffset', offset);
+async function apiFetch(path, options = {}) {
+  const api = getSpeedDateApi();
+  return api.request(path, options);
 }
 
-/** Update all match-timer DOM elements. */
-function updateMatchUI() {
-  const urgent = matchLeft <= 60;
+async function loadSocketClient() {
+  if (window.io) {
+    return window.io;
+  }
 
-  const box = document.getElementById('matchTimerBox');
-  box.className = 'match-timer-box' + (urgent ? ' urgent' : '');
+  await new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `${state.apiBase}/socket.io/socket.io.js`;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
 
-  const timerEl = document.getElementById('matchTimer');
-  timerEl.textContent = formatTime(matchLeft);
-  timerEl.className   = 'match-time' + (urgent ? ' urgent' : '');
-
-  const pct = ((600 - matchLeft) / 600) * 100;
-  const bar = document.getElementById('matchBar');
-  bar.style.width = pct + '%';
-  bar.className   = 'match-progress-fill' + (urgent ? ' urgent' : '');
+  return window.io;
 }
 
-/* =====================================================
-   Timers
-   ===================================================== */
+function bindSocketHandlers(socket) {
+  socket.on("status_update", ({ status }) => {
+    console.log("Event status:", status);
+  });
 
-// Session countdown — ticks every second
-setInterval(function () {
-  if (sessionLeft > 0) {
-    sessionLeft--;
-    updateSessionUI();
-  }
-}, 1000);
+  socket.on("match_found", ({ matchId, partner, roomName, twilioToken, roundDurationSeconds }) => {
+    const liveMatch = normalizeMatch({
+      id: matchId,
+      partner,
+      twilio_room_name: roomName,
+      twilioToken
+    });
 
-// Match countdown — ticks every second
-setInterval(function () {
-  if (matchLeft > 0) {
-    matchLeft--;
-  } else {
-    nextMatch();
-    matchLeft = 600;
+    state.matches = [liveMatch, ...state.matches.filter((item) => !String(item.id).startsWith("demo-"))];
+    state.currentIdx = 0;
+    state.matchLeft = Number(roundDurationSeconds || 600);
+
+    renderMatch();
+    updateMatchUI();
+    void connectToVideoRoom();
+
+    if (socket && matchId) {
+      socket.emit("meeting_started", { matchId });
+    }
+  });
+
+  socket.on("round_tick", ({ remaining }) => {
+    state.matchLeft = Number(remaining || 0);
+    updateMatchUI();
+  });
+
+  socket.on("round_over", ({ matchId }) => {
+    if (String(matchId) === String(state.currentMatchId)) {
+      state.messages.push({
+        id: `system-${Date.now()}`,
+        from: "them",
+        text: "This round has ended. Please record your outcome."
+      });
+      renderMessages();
+    }
+  });
+
+  socket.on("match_skipped", ({ matchId }) => {
+    if (String(matchId) !== String(state.currentMatchId)) {
+      return;
+    }
+
+    state.messages.push({
+      id: `skip-${Date.now()}`,
+      from: "them",
+      text: "This match was skipped. Searching for the next company..."
+    });
+    renderMessages();
+    showWaitingState();
+  });
+}
+
+async function initialiseBackendSession() {
+  try {
+    const api = getSpeedDateApi();
+    let selectedEventId = state.eventId;
+
+    if (!selectedEventId) {
+      const pulseResponse = await api.getCurrentPulseSession();
+
+      if (!pulseResponse.open_now) {
+        throw new Error("Pulse networking is not open right now");
+      }
+
+      selectedEventId = pulseResponse.pulse_session?.id || "";
+    }
+
+    if (!selectedEventId) {
+      return false;
+    }
+
+    state.eventId = selectedEventId;
+
+    let eventPayload;
+
+    if (getEventIdFromUrl()) {
+      eventPayload = await api.getEvent(selectedEventId);
+    } else {
+      await api.joinCurrentPulseSession({
+        target_markets: []
+      });
+
+      eventPayload = await api.getEvent(selectedEventId);
+    }
+
+    if (!eventPayload.registration && getEventIdFromUrl()) {
+      await api.registerForEvent(selectedEventId, {
+        target_markets: []
+      });
+
+      eventPayload = await api.getEvent(selectedEventId);
+    }
+
+    if (Array.isArray(eventPayload.scheduled_matches) && eventPayload.scheduled_matches.length > 0) {
+      state.matches = eventPayload.scheduled_matches.map(normalizeMatch);
+      state.currentIdx = 0;
+      renderMatch();
+      await connectToVideoRoom();
+    }
+
+    if (eventPayload.event?.round_duration_secs) {
+      state.matchLeft = Number(eventPayload.event.round_duration_secs);
+      updateMatchUI();
+    }
+
+    if (eventPayload.event?.title) {
+      const titleEl = document.querySelector(".header-title");
+      if (titleEl) {
+        titleEl.textContent = eventPayload.event.title;
+      }
+    }
+
+    const socketFactory = await loadSocketClient();
+    state.socket = socketFactory(state.apiBase, {
+      transports: ["websocket", "polling"]
+    });
+
+    bindSocketHandlers(state.socket);
+
+    state.socket.emit("register_user", {
+      token: state.token,
+      eventId: state.eventId
+    });
+
+    state.socket.emit("enter_queue");
+    return true;
+  } catch (error) {
+    console.warn("Falling back to demo speed-dating mode:", error.message);
+    return false;
   }
+}
+
+function startTimers() {
+  setInterval(() => {
+    if (state.sessionLeft > 0) {
+      state.sessionLeft -= 1;
+      updateSessionUI();
+    }
+  }, 1000);
+
+  setInterval(() => {
+    if (state.matchLeft > 0) {
+      state.matchLeft -= 1;
+    } else if (state.matches.length > 1) {
+      nextMatch();
+      state.matchLeft = 600;
+    }
+
+    updateMatchUI();
+  }, 1000);
+}
+
+window.setMode = setMode;
+window.toggleSave = toggleSave;
+window.nextMatch = nextMatch;
+window.toggleMic = toggleMic;
+window.toggleVid = toggleVid;
+window.sendMessage = sendMessage;
+
+async function initialisePage() {
+  const api = getSpeedDateApi();
+  state.apiBase = api.getApiBase ? api.getApiBase() : getApiBase();
+  state.token = api.getStoredToken ? api.getStoredToken() : getStoredToken();
+  state.eventId = getEventIdFromUrl();
+
+  renderMatch();
+  updateSessionUI();
   updateMatchUI();
-}, 1000);
+  showRemoteFallback(true);
+  await startLocalPreview();
+  startTimers();
 
-/* =====================================================
-   Initialise
-   ===================================================== */
+  if (state.token) {
+    await initialiseBackendSession();
+  } else {
+    updateVideoStatus("Demo mode active. Add a token in localStorage to join Pulse.");
+  }
 
-renderMatch();
+  window.addEventListener("beforeunload", () => {
+    if (state.socket) {
+      state.socket.emit("leave_queue");
+      state.socket.disconnect();
+    }
+    detachCurrentRoom();
+    if (state.localStream) {
+      state.localStream.getTracks().forEach((track) => track.stop());
+    }
+  });
+}
+
+initialisePage();

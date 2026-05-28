@@ -750,3 +750,42 @@ export const reviewVerificationDocument = async (req, res) => {
     return res.status(500).json({ error: error.message });
   }
 };
+
+export const getAdminCompanyMatches = async (req, res) => {
+  try {
+    const { status, company_id } = req.query;
+
+    const numericCompanyId = company_id ? Number(company_id) : undefined;
+
+    if (company_id && Number.isNaN(numericCompanyId)) {
+      return res.status(400).json({ error: "company_id must be a valid number" });
+    }
+
+    const matches = await prisma.CompanyMatches.findMany({
+      where: {
+        ...(status ? { status } : {}),
+        ...(numericCompanyId
+          ? {
+              OR: [
+                { company1_id: numericCompanyId },
+                { company2_id: numericCompanyId }
+              ]
+            }
+          : {})
+      },
+      include: {
+        company1: true,
+        company2: true
+      },
+      orderBy: {
+        created_at: "desc"
+      }
+    });
+
+    return res.status(200).json({
+      matches
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};

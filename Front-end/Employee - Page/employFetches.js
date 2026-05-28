@@ -51,6 +51,9 @@ export async function getMyProfile() {
 export async function getCompanies() {
     return await apiRequest("/companies");
 }
+export async function getCompanyMatches() {
+    return await apiRequest("/company-matches");
+}
 
 export async function getCompanyById(companyId) {
     return await apiRequest(`/companies/${companyId}`);
