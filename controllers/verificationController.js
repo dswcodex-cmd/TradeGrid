@@ -19,6 +19,78 @@ const isPdfFile = (fileName = "", fileUrl = "") => {
   return source.includes(".pdf");
 };
 
+export const getVerificationStatuses = async (req, res) => {
+  try {
+    if (!req.company?.company_id) {
+      return res.status(401).json({
+        error: "Unauthorized"
+      });
+    }
+
+    const current_company_id = Number(req.company.company_id);
+
+    
+    const requiredDocuments = [
+      "Business Registration Certificate",
+      "Identity Document",
+      "Business License",
+      "Tax Clearance Certificate"
+    ];
+
+    
+    const uploadedDocuments = await prisma.verificationDocument.findMany({
+      where: {
+        company_id: current_company_id
+      },
+      orderBy: {
+        submitted_at: "desc"
+      }
+    });
+
+    
+    const documentStatuses = requiredDocuments.map((documentType) => {
+
+      
+      const foundDocument = uploadedDocuments
+        .filter(doc => doc.document_type === documentType)
+        .sort(
+          (a, b) =>
+            new Date(b.submitted_at) - new Date(a.submitted_at)
+        )[0];
+
+     
+      if (!foundDocument) {
+        return {
+          document_type: documentType,
+          uploaded: false,
+          status: "missing",
+          file_name: null,
+          submitted_at: null,
+          reviewed_at: null
+        };
+      }
+
+      return {
+        document_type: documentType,
+        uploaded: true,
+        status: foundDocument.status,
+        file_name: foundDocument.file_name,
+        submitted_at: foundDocument.submitted_at,
+        reviewed_at: foundDocument.reviewed_at
+      };
+    });
+
+    return res.status(200).json({
+      documents: documentStatuses
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+};
+
 export const getMyVerificationDocuments = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);

@@ -352,6 +352,77 @@ export const deleteMyProfile = async (req, res) => {
   }
 };
 
+export const getMyMatchActivityStats = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+
+    const now = new Date();
+
+    const weekStart = new Date();
+    weekStart.setDate(now.getDate() - 7);
+
+    
+    const totalActiveMatches = await prisma.companyMatches.count({
+      where: {
+        OR: [
+          { company1_id: current_company_id },
+          { company2_id: current_company_id }
+        ],
+        status: {
+          in: ["active", "in_progress"]
+        }
+      }
+    });
+
+    // MATCHES CREATED THIS WEEK
+    const weeklyMatches = await prisma.companyMatches.count({
+      where: {
+        OR: [
+          { company1_id: current_company_id },
+          { company2_id: current_company_id }
+        ],
+        matched_at: {
+          gte: weekStart
+        }
+      }
+    });
+
+    // DEALS IN PROGRESS
+    const dealsInProgress = await prisma.companyMatches.count({
+      where: {
+        OR: [
+          { company1_id: current_company_id },
+          { company2_id: current_company_id }
+        ],
+        status: "in_progress"
+      }
+    });
+
+    // COMPLETED DEALS
+    const completedDeals = await prisma.companyMatches.count({
+      where: {
+        OR: [
+          { company1_id: current_company_id },
+          { company2_id: current_company_id }
+        ],
+        status: "completed"
+      }
+    });
+
+    return res.status(200).json({
+      total_active_matches: totalActiveMatches,
+      matches_this_week: weeklyMatches,
+      deals_in_progress: dealsInProgress,
+      completed_deals: completedDeals
+    });
+
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message
+    });
+  }
+};
+
 export const getMyProfileViewStats = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);

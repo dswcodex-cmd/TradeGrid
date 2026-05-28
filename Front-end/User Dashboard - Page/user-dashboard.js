@@ -2883,7 +2883,107 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp')    document.getElementById('discBtnProfile')?.click();
 });
 
+async function loadMatchStats() {
+  try {
+    const response = await fetch(
+      "http://localhost:5000/profile/matches/stats",
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(getDashboardToken()
+            ? { Authorization: `Bearer ${getDashboardToken()}` }
+            : {})
+        }
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not load match stats");
+    }
+
+    document.getElementById("totalMatches").textContent =
+      data.total_active_matches;
+
+    document.getElementById("weeklyMatches").textContent =
+      data.matches_this_week;
+
+    document.getElementById("dealsProgress").textContent =
+      data.deals_in_progress;
+
+    document.getElementById("completedDeals").textContent =
+      data.completed_deals;
+
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+async function loadTopPartnerCountries() {
+  const container = document.getElementById("topPartnerCountries");
+  if (!container) return;
+
+  try {
+    const rawToken = getDashboardToken();
+
+    if (!rawToken) {
+      throw new Error("No login token found. Please sign in again.");
+    }
+
+    const token = rawToken.replace(/^Bearer\s+/i, "");
+
+    const response = await fetch(
+      "http://localhost:5000/profile/matches/top-countries",
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || "Could not load countries");
+    }
+
+    const countries = data.countries || [];
+
+    if (!countries.length) {
+      container.innerHTML = `
+        <div class="country-empty">
+          No international partners yet
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = countries.map((country) => `
+      <div class="country-row">
+        <span class="c-name">${country.country}</span>
+        <span class="c-count">
+          ${country.matches} ${country.matches === 1 ? "partner" : "partners"}
+        </span>
+      </div>
+    `).join("");
+
+  } catch (error) {
+    console.error("TOP COUNTRIES ERROR:", error);
+
+    container.innerHTML = `
+      <div class="country-empty">
+        ${error.message === "Invalid token"
+          ? "Your login session expired. Please sign in again."
+          : "Failed to load partner countries"}
+      </div>
+    `;
+  }
+};
 // Init on page load with every backend-visible company. Search/image search
 // will replace this deck with filtered results.
 renderDiscoverInsights();
 loadAllDiscoverCompanies();
+loadMatchStats();
+loadTopPartnerCountries();

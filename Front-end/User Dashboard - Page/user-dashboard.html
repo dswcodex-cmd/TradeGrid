@@ -292,7 +292,7 @@
                 <div style="padding:24px 28px 28px;">
                   <h2 id="discCardName"
                     style="font-size:1.45rem;font-weight:800;color:var(--primary);letter-spacing:-0.3px;margin-bottom:5px;">
-                    Loading backend companies...</h2>
+                    Loading companies...</h2>
                   <p id="discCardSub" style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Please wait while Discover loads.</p>
                   <div id="discCardTags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;"></div>
                   <div
@@ -508,9 +508,26 @@
     <main class="page" id="page-analytics">
       <div class="page-inner">
         <div class="page-title-row"><h2>Trade Analytics</h2><p>Your business performance on Trade Grid</p></div>
-        <div class="analytics-controls"><div class="period-tabs"><button class="period-tab active">7 Days</button><button class="period-tab">30 Days</button><button class="period-tab">90 Days</button></div><button class="btn-export-report"><i class="ri-download-line"></i> Export Report</button></div>
+          <div class="analytics-controls">
+
+            <div class="period-tabs">
+                  <button class="period-tab active" data-days="7">7 Days</button>
+                  <button class="period-tab" data-days="30">30 Days</button>
+                  <button class="period-tab" data-days="90">90 Days</button>
+            </div>
+
+                <button class="btn-export-report">
+                  <i class="ri-download-line"></i> Export Report
+                </button> 
+              </div>
         <div class="analytics-kpi-grid">
-          <div class="analytics-kpi"><span class="akpi-label">Profile Views</span><h2 class="akpi-value">128</h2><p class="akpi-change up"><i class="ri-arrow-up-line"></i> +22% vs last period</p></div>
+          <div class="analytics-kpi">
+  <span class="akpi-label">Profile Views</span>
+  <h2 class="akpi-value" id="analyticsProfileViews">0</h2>
+  <p class="akpi-change neutral" id="analyticsProfileViewsChange">
+    <i class="ri-subtract-line"></i> Loading
+  </p>
+</div>
           <div class="analytics-kpi"><span class="akpi-label">Match Rate</span><h2 class="akpi-value">67%</h2><p class="akpi-change up"><i class="ri-arrow-up-line"></i> +5% vs last period</p></div>
           <div class="analytics-kpi"><span class="akpi-label">Response Rate</span><h2 class="akpi-value">84%</h2><p class="akpi-change down"><i class="ri-arrow-down-line"></i> -2% vs last period</p></div>
           <div class="analytics-kpi"><span class="akpi-label">Active Deals</span><h2 class="akpi-value">3</h2><p class="akpi-change neutral"><i class="ri-subtract-line"></i> No change</p></div>
@@ -518,8 +535,42 @@
         <div class="analytics-grid">
           <div class="analytics-card"><h3>Profile Views — Last 7 Days</h3><div class="bar-chart-wrap"><div class="bar-chart"><div class="bar-col"><div class="bar" style="height:55%"></div><span>Mon</span></div><div class="bar-col"><div class="bar" style="height:78%"></div><span>Tue</span></div><div class="bar-col"><div class="bar" style="height:45%"></div><span>Wed</span></div><div class="bar-col"><div class="bar" style="height:90%"></div><span>Thu</span></div><div class="bar-col"><div class="bar" style="height:70%"></div><span>Fri</span></div><div class="bar-col"><div class="bar" style="height:38%"></div><span>Sat</span></div><div class="bar-col"><div class="bar" style="height:28%"></div><span>Sun</span></div></div></div></div>
           <div class="analytics-card"><h3>Top Matching Industries</h3><div class="industry-breakdown"><div class="ind-row"><span>Electronics</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:72%"></div></div><span class="ind-pct">72%</span></div><div class="ind-row"><span>Manufacturing</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:58%"></div></div><span class="ind-pct">58%</span></div><div class="ind-row"><span>Agriculture</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:44%"></div></div><span class="ind-pct">44%</span></div><div class="ind-row"><span>Commodities</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:33%"></div></div><span class="ind-pct">33%</span></div><div class="ind-row"><span>Logistics</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:21%"></div></div><span class="ind-pct">21%</span></div></div></div>
-          <div class="analytics-card"><h3>Match Activity</h3><div class="activity-stats"><div class="act-stat"><h4>14</h4><span>Total Active Matches</span></div><div class="act-stat"><h4>6</h4><span>Matches This Week</span></div><div class="act-stat"><h4>3</h4><span>Deals In Progress</span></div><div class="act-stat"><h4>1</h4><span>Deals Completed</span></div></div></div>
-          <div class="analytics-card"><h3>Top Partner Countries</h3><div class="country-list"><div class="country-row"><span class="flag">🇯🇵</span><span class="c-name">Japan</span><span class="c-count">4 partners</span></div><div class="country-row"><span class="flag">🇩🇪</span><span class="c-name">Germany</span><span class="c-count">3 partners</span></div><div class="country-row"><span class="flag">🇦🇪</span><span class="c-name">UAE</span><span class="c-count">3 partners</span></div><div class="country-row"><span class="flag">🇧🇷</span><span class="c-name">Brazil</span><span class="c-count">2 partners</span></div><div class="country-row"><span class="flag">🇺🇸</span><span class="c-name">USA</span><span class="c-count">2 partners</span></div></div></div>
+          <div class="analytics-card">
+  <h3>Match Activity</h3>
+
+  <div class="activity-stats">
+
+    <div class="act-stat">
+      <h4 id="analyticsTotalMatches">0</h4>
+      <span>Total Active Matches</span>
+    </div>
+
+    <div class="act-stat">
+      <h4 id="analyticsWeeklyMatches">0</h4>
+      <span>Matches This Week</span>
+    </div>
+
+    <div class="act-stat">
+      <h4 id="analyticsDealsProgress">0</h4>
+      <span>Deals In Progress</span>
+    </div>
+
+    <div class="act-stat">
+      <h4 id="analyticsCompletedDeals">0</h4>
+      <span>Deals Completed</span>
+    </div>
+
+  </div>
+</div>
+          <div class="analytics-card">
+  <h3>Top Partner Countries</h3>
+
+  <div class="country-list" id="topPartnerCountries">
+    <div class="country-empty">
+      Loading partner countries...
+    </div>
+  </div>
+</div>
         </div>
       </div>
     </main>
