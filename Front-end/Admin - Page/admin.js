@@ -1,9 +1,20 @@
-/* ============================================================
-   TRADE GRID ADMIN — admin.js
-   All interactivity: tabs, filter, actions, modals, logout, Masha AI
-   ============================================================ */
+let adminApiPromise = null;
+let currentAdminProfile = null;
 
-// ── Tab switching ──
+function loadAdminApi() {
+  if (!adminApiPromise) {
+    adminApiPromise = import("./adminFetches.js");
+  }
+
+  return adminApiPromise;
+}
+
+/* 
+TRADE GRID ADMIN — admin.js
+All interactivity: tabs, filter, actions, modals, logout, Masha AI
+*/
+
+//Tab switching
 function switchTab(btn, tabId) {
   document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -14,10 +25,37 @@ function switchTab(btn, tabId) {
   el.style.gap = '16px';
 }
 
-// ── Init on DOM ready ──
+function prepareAdminLoadingState() {
+  const statCards = document.querySelectorAll('.stats .card h1');
+  statCards.forEach((card) => {
+    card.textContent = '...';
+  });
+
+  const tbody = document.querySelector('#user-management tbody');
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#7a9a9a;">Loading companies...</td></tr>';
+  }
+
+  const requestsTab = document.getElementById('employee-requests');
+  if (requestsTab) {
+    requestsTab.querySelectorAll('.request-card').forEach((card) => card.remove());
+    const loadingCard = document.createElement('div');
+    loadingCard.className = 'request-card';
+    loadingCard.innerHTML = '<p class="request-body">Loading employee requests...</p>';
+    requestsTab.appendChild(loadingCard);
+  }
+
+  const requestBadge = document.querySelector('.tabs .badge');
+  if (requestBadge) {
+    requestBadge.textContent = '...';
+  }
+}
+
+//Init on DOM ready
 document.addEventListener('DOMContentLoaded', () => {
   const um = document.getElementById('user-management');
   if (um) { um.style.display = 'flex'; um.style.flexDirection = 'column'; um.style.gap = '16px'; }
+  prepareAdminLoadingState();
   initFilter();
   initUserActions();
   initRequestButtons();
@@ -27,14 +65,75 @@ document.addEventListener('DOMContentLoaded', () => {
   initMasha();
   initAdminSettings();
   injectLogoutIcon();
+  loadAdminDashboardData();
 });
 
-/* ============================================================
-   INJECT LOGOUT ICON INTO BUTTON
-   The HTML has a standalone <i class="ri-logout-box-r-line"> and
-   a separate <button class="logout">Logout</button>.
-   We hide the icon via CSS and prepend it inside the button here.
-   ============================================================ */
+async function loadAdminDashboardData() {
+  const token = localStorage.getItem('adminToken');
+  if (!token) {
+    console.warn('No admin token found. Admin dashboard data load skipped.');
+    return;
+  }
+
+  try {
+    const {
+      getMyProfile,
+      getCompanies,
+      getVerificationDocuments,
+      getSupportTickets
+    } = await loadAdminApi();
+
+    const [profileResponse, companiesResponse, verificationResponse, supportResponse] = await Promise.all([
+      getMyProfile(),
+      getCompanies(),
+      getVerificationDocuments(),
+      getSupportTickets()
+    ]);
+
+    if (profileResponse.ok && profileResponse.data?.admin?.full_name) {
+      currentAdminProfile = profileResponse.data.admin;
+      const title = document.querySelector('.logo h2');
+      if (title) {
+        title.textContent = `Trade Grid Admin - ${profileResponse.data.admin.full_name}`;
+      }
+    }
+
+    const statCards = document.querySelectorAll('.stats .card h1');
+    if (statCards.length >= 4) {
+      const companies = companiesResponse.ok ? (companiesResponse.data?.companies || []) : [];
+      const verificationDocs = verificationResponse.ok ? (verificationResponse.data?.documents || verificationResponse.data?.verification_documents || []) : [];
+      const supportTickets = supportResponse.ok ? (supportResponse.data?.tickets || supportResponse.data?.support_tickets || []) : [];
+      const openSupportTickets = supportTickets.filter(ticket => ticket.status !== 'closed' && ticket.status !== 'resolved');
+      const pendingVerificationCount = verificationDocs.filter(doc => doc.status === 'pending').length;
+
+      statCards[0].textContent = companies.length;
+      statCards[1].textContent = companies.filter(company => company.account_status === 'active').length;
+      statCards[2].textContent = pendingVerificationCount;
+      statCards[3].textContent = supportTickets.length;
+      renderAdminCompanies(companies);
+      renderAdminEmployeeRequests(supportTickets);
+      initUserActions();
+      initRequestButtons();
+
+      const requestBadge = document.querySelector('.tabs .badge');
+      if (requestBadge) {
+        requestBadge.textContent = openSupportTickets.length;
+      }
+    }
+
+    showToast('Admin data synced from backend');
+  } catch (error) {
+    console.error('Failed to load admin dashboard data:', error);
+    showToast('Failed to load admin backend data', 'ri-error-warning-line');
+  }
+}
+
+/*
+INJECT LOGOUT ICON INTO BUTTON
+The HTML has a standalone <i class="ri-logout-box-r-line"> and
+a separate <button class="logout">Logout</button>.
+We hide the icon via CSS and prepend it inside the button here.
+*/
 function injectLogoutIcon() {
   const btn = document.querySelector('.logout');
   if (!btn) return;
@@ -44,6 +143,77 @@ function injectLogoutIcon() {
     icon.className = 'ri-logout-box-r-line';
     btn.insertBefore(icon, btn.firstChild);
   }
+}
+
+function formatDate(value) {
+  if (!value) return 'N/A';
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function renderAdminCompanies(companies) {
+  const tbody = document.querySelector('#user-management tbody');
+  if (!tbody) return;
+
+  if (!companies.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#7a9a9a;">No companies found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = companies.map((company) => `
+    <tr data-company-id="${company.company_id}">
+      <td>${company.company_name}<small>${company.email || 'No email'}</small></td>
+      <td>${company.location?.country || 'N/A'}</td>
+      <td><span class="status ${(company.account_status || 'active').toLowerCase()}">${company.account_status || 'active'}</span></td>
+      <td>${formatDate(company.created_at)}</td>
+      <td>⋮</td>
+    </tr>
+  `).join('');
+}
+
+function renderAdminEmployeeRequests(tickets) {
+  const requestsTab = document.getElementById('employee-requests');
+  if (!requestsTab) return;
+
+  requestsTab.querySelectorAll('.request-card').forEach((card) => card.remove());
+
+  if (!tickets.length) {
+    const empty = document.createElement('div');
+    empty.className = 'request-card';
+    empty.innerHTML = '<p class="request-body">No support tickets available right now.</p>';
+    requestsTab.appendChild(empty);
+    return;
+  }
+
+  tickets.forEach((ticket) => {
+    const priority = String(ticket.priority || 'medium').toLowerCase();
+    const status = ticket.status === 'open' ? 'Unread' : 'Read';
+    const companyName = ticket.company?.company_name || 'Unknown Company';
+
+    const card = document.createElement('div');
+    card.className = 'request-card';
+    card.dataset.ticketId = ticket.support_ticket_id;
+    card.dataset.assignedRole = ticket.assigned_role || '';
+    card.dataset.assignedAdminId = ticket.assigned_admin_id ?? '';
+    card.dataset.priority = priority.charAt(0).toUpperCase() + priority.slice(1);
+    card.dataset.status = status;
+    card.innerHTML = `
+      <div class="request-header">
+        <div class="request-title-row">
+          <h4>${ticket.title}${status === 'Unread' ? ' <span class="unread-dot"></span>' : ''}</h4>
+          <span class="priority ${priority}">${priority.charAt(0).toUpperCase() + priority.slice(1)} Priority</span>
+        </div>
+        <p class="request-meta"><strong>${companyName}</strong> &bull; ${ticket.category} &bull; ${formatDate(ticket.created_at)}</p>
+      </div>
+      <p class="request-body">${ticket.description}</p>
+      <div class="request-actions">
+        <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply</button>
+        <button class="btn-secondary">Mark as Read</button>
+        <button class="btn-secondary">View Details</button>
+      </div>
+    `;
+
+    requestsTab.appendChild(card);
+  });
 }
 
 /* ============================================================
@@ -174,11 +344,90 @@ function confirmDelete(company) {
   closeModal(); showToast(`${company} has been permanently deleted`, 'ri-delete-bin-line');
 }
 
+async function ensureTicketClaimedForAdmin(card) {
+  const ticketId = Number(card?.dataset.ticketId);
+  const assignedAdminId = card?.dataset.assignedAdminId ? Number(card.dataset.assignedAdminId) : null;
+
+  if (!ticketId || !currentAdminProfile?.admin_id || !currentAdminProfile?.role) {
+    showToast('Missing ticket or admin profile', 'ri-error-warning-line');
+    return false;
+  }
+
+  if (assignedAdminId === Number(currentAdminProfile.admin_id)) {
+    return true;
+  }
+
+  const { assignSupportTicket } = await loadAdminApi();
+  const claimResponse = await assignSupportTicket(ticketId, {
+    assigned_role: currentAdminProfile.role,
+    assigned_admin_id: currentAdminProfile.admin_id
+  });
+
+  if (!claimResponse.ok) {
+    showToast(claimResponse.data?.error || claimResponse.error || 'Unable to claim this ticket', 'ri-error-warning-line');
+    return false;
+  }
+
+  card.dataset.assignedAdminId = String(currentAdminProfile.admin_id);
+  card.dataset.assignedRole = currentAdminProfile.role;
+  return true;
+}
+
+async function replyToTicketCard(card, message) {
+  const ticketId = Number(card?.dataset.ticketId);
+  if (!ticketId) {
+    showToast('This request is missing its ticket id', 'ri-error-warning-line');
+    return false;
+  }
+
+  const claimed = await ensureTicketClaimedForAdmin(card);
+  if (!claimed) {
+    return false;
+  }
+
+  const { replyToSupportTicket } = await loadAdminApi();
+  const replyResponse = await replyToSupportTicket(ticketId, { message });
+
+  if (!replyResponse.ok) {
+    showToast(replyResponse.data?.error || replyResponse.error || 'Reply failed to send', 'ri-error-warning-line');
+    return false;
+  }
+
+  return true;
+}
+
+async function routePendingTicketToEmployee() {
+  const card = window._pendingCard;
+  const ticketId = Number(card?.dataset.ticketId);
+  if (!ticketId) {
+    showToast('No ticket selected', 'ri-error-warning-line');
+    return;
+  }
+
+  const { assignSupportTicket } = await loadAdminApi();
+  const routeResponse = await assignSupportTicket(ticketId, {
+    assigned_role: 'employee',
+    assigned_admin_id: null
+  });
+
+  if (!routeResponse.ok) {
+    showToast(routeResponse.data?.error || routeResponse.error || 'Unable to route ticket to employee queue', 'ri-error-warning-line');
+    return;
+  }
+
+  card.dataset.assignedRole = 'employee';
+  card.dataset.assignedAdminId = '';
+  closeModal();
+  showToast('Ticket routed to employee queue', 'ri-route-line');
+}
+
 /* ============================================================
    EMPLOYEE REQUESTS: REPLY / MARK AS READ / VIEW DETAILS
    ============================================================ */
 function initRequestButtons() {
   document.querySelectorAll('.btn-reply').forEach(btn => {
+    if (btn.dataset.bound === 'true') return;
+    btn.dataset.bound = 'true';
     btn.addEventListener('click', () => {
       const card  = btn.closest('.request-card');
       const title = card?.querySelector('h4')?.textContent?.replace(/●/,'').trim() || 'Request';
@@ -190,6 +439,8 @@ function initRequestButtons() {
   });
   document.querySelectorAll('.btn-secondary').forEach(btn => {
     if (btn.textContent.trim() === 'Mark as Read') {
+      if (btn.dataset.bound === 'true') return;
+      btn.dataset.bound = 'true';
       btn.addEventListener('click', () => {
         const card = btn.closest('.request-card');
         const dot  = card?.querySelector('.unread-dot'); if (dot) dot.remove();
@@ -198,6 +449,8 @@ function initRequestButtons() {
       });
     }
     if (btn.textContent.trim() === 'View Details') {
+      if (btn.dataset.bound === 'true') return;
+      btn.dataset.bound = 'true';
       btn.addEventListener('click', () => {
         const card     = btn.closest('.request-card');
         const title    = card?.querySelector('h4')?.childNodes[0]?.textContent?.trim() || 'Request';
@@ -206,16 +459,24 @@ function initRequestButtons() {
         const priority = card?.querySelector('.priority')?.textContent?.trim() || '';
         const pColor   = priority.includes('High')?'#dc2626':'#b45309';
         createModal('Request Details', `<div style="display:flex;flex-direction:column;gap:12px;"><div style="background:#F0FAFB;border-radius:10px;padding:16px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"><p style="font-size:14px;font-weight:700;color:#0D3B3B;">${title}</p><span style="padding:4px 12px;border-radius:20px;background:${pColor}18;color:${pColor};font-size:11px;font-weight:700;">${priority}</span></div><p style="font-size:12px;color:#7a9a9a;">${meta}</p></div><div style="background:#F0FAFB;border-radius:10px;padding:16px;"><p style="font-size:11px;color:#7a9a9a;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Message</p><p style="font-size:13px;color:#4a6464;line-height:1.65;">${body}</p></div></div>`,
-          [{ label:'Close', fn:'closeModal()' }, { label:'Reply', fn:"closeModal();document.querySelector('.btn-reply').click()", primary:true }]);
+          [{ label:'Close', fn:'closeModal()' }, { label:'Route to Employee Queue', fn:'routePendingTicketToEmployee()' }, { label:'Reply', fn:"closeModal();document.querySelector('.btn-reply').click()", primary:true }]);
+        window._pendingCard = card;
       });
     }
   });
 }
-function sendReply() {
+async function sendReply() {
   const text = document.getElementById('replyText')?.value?.trim();
   if (!text) { showToast('Please type a reply first', 'ri-error-warning-line'); return; }
   const card = window._pendingCard;
-  if (card) { const dot = card?.querySelector('.unread-dot'); if (dot) dot.remove(); card.style.opacity='0.7'; }
+  if (!card) { showToast('No ticket selected', 'ri-error-warning-line'); return; }
+  const success = await replyToTicketCard(card, text);
+  if (!success) return;
+  const dot = card?.querySelector('.unread-dot'); if (dot) dot.remove();
+  card.style.opacity='0.7';
+  card.dataset.status = 'Read';
+  const markBtn = Array.from(card.querySelectorAll('.btn-secondary')).find((button) => button.textContent.trim() === 'Mark as Read');
+  if (markBtn) { markBtn.textContent = 'Read'; markBtn.disabled = true; }
   closeModal(); showToast('Reply sent successfully', 'ri-send-plane-line');
 }
 
@@ -272,6 +533,20 @@ function initLogout() {
   if (logoutBtn) { logoutBtn.addEventListener('click', () => { createModal('Log Out', `<p style="font-size:13px;color:#4a6464;line-height:1.6;">Are you sure you want to log out of the Admin Panel?</p>`, [{ label:'Cancel', fn:'closeModal()' }, { label:'Log Out', fn:'confirmLogout()', primary:true }]); }); }
 }
 function confirmLogout() { closeModal(); showToast('Logging out...','ri-logout-box-r-line'); setTimeout(()=>{window.location.href='../Login - Page/login.html';},1000); }
+
+window.switchTab = switchTab;
+window.closeModal = closeModal;
+window.editUser = editUser;
+window.saveUserEdit = saveUserEdit;
+window.suspendUser = suspendUser;
+window.confirmSuspend = confirmSuspend;
+window.reinstateUser = reinstateUser;
+window.confirmReinstate = confirmReinstate;
+window.deleteUser = deleteUser;
+window.confirmDelete = confirmDelete;
+window.sendReply = sendReply;
+window.routePendingTicketToEmployee = routePendingTicketToEmployee;
+window.confirmLogout = confirmLogout;
 
 /* ============================================================
    ADMIN SETTINGS MODAL

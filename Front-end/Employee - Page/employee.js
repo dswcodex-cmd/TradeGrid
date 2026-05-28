@@ -1,9 +1,11 @@
+import {getMyProfile, getCompanies, getCompanyById, updateCompany,deleteCompany, getVerificationDocuments, reviewVerificationDocument, getSupportTickets, getSupportTicketById, assignSupportTicket, updateSupportTicketStatus, replyToSupportTicket} from "./employFetches.js"
 // ─── State ───
 let currentView = 'tasks';
 let currentTab  = 'assigned';
 let pushedToAdmin    = new Set();
 let selectedPriorities = new Set();
 let selectedStatuses   = new Set();
+let currentStaffProfile = null;
 
 // ─── DOM References ───
 const viewBtns          = document.querySelectorAll('.view-btn');
@@ -20,8 +22,316 @@ const closeFilter       = document.getElementById('closeFilter');
 const clearFiltersBtn   = document.getElementById('clearFilters');
 const priorityCheckboxes = document.querySelectorAll('.priority-filter');
 const statusCheckboxes   = document.querySelectorAll('.status-filter');
-const msgCards          = document.querySelectorAll('.msg-card');
 const logoutBtn         = document.getElementById('logoutBtn');
+
+function prepareEmployeeLoadingState() {
+  const statCards = document.querySelectorAll('.stats .card h1');
+  statCards.forEach((card) => {
+    card.textContent = '...';
+  });
+
+  const unreadBadge = document.querySelector('.unread-badge');
+  if (unreadBadge) {
+    unreadBadge.textContent = '...';
+    unreadBadge.style.display = '';
+  }
+
+  const tasksBody = document.getElementById('tasksBody');
+  if (tasksBody) {
+    tasksBody.innerHTML = '<div class="empty-tab" data-tab-content="assigned"><p class="empty-state">Loading tasks...</p></div>';
+  }
+
+  const messagesBody = document.getElementById('messagesBody');
+  if (messagesBody) {
+    messagesBody.innerHTML = '<p class="empty-state">Loading user messages...</p>';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  prepareEmployeeLoadingState();
+  loadEmployeeDashboardData();
+});
+
+async function loadEmployeeDashboardData() {
+  const token = localStorage.getItem('adminToken');
+  if (!token) {
+    console.warn('No employee/admin token found. Employee dashboard data load skipped.');
+    return;
+  }
+
+  try {
+    const [profileResponse, verificationResponse, supportResponse, companiesResponse] = await Promise.all([
+      getMyProfile(),
+      getVerificationDocuments(),
+      getSupportTickets(),
+      getCompanies()
+    ]);
+
+    currentStaffProfile = profileResponse.ok ? profileResponse.data?.admin || null : null;
+
+    const verificationDocs = verificationResponse.ok ? (verificationResponse.data?.documents || verificationResponse.data?.verification_documents || []) : [];
+    const supportTickets = supportResponse.ok ? (supportResponse.data?.tickets || supportResponse.data?.support_tickets || []) : [];
+    const companies = companiesResponse.ok ? (companiesResponse.data?.companies || []) : [];
+
+    const statCards = document.querySelectorAll('.stats .card h1');
+    if (statCards.length >= 3) {
+      statCards[0].textContent = supportTickets.length;
+      statCards[1].textContent = verificationDocs.filter(doc => doc.status === 'approved').length;
+      statCards[2].textContent = verificationDocs.filter(doc => doc.status === 'pending').length;
+    }
+
+    const unreadBadge = document.querySelector('.unread-badge');
+    if (unreadBadge) {
+      unreadBadge.textContent = supportTickets.filter(ticket => ticket.status === 'open').length;
+    }
+
+    renderEmployeeTasks(verificationDocs);
+    renderEmployeeMessages(supportTickets);
+    bindEmployeeMessageActions();
+
+    console.log('Employee dashboard synced', {
+      verificationDocs: verificationDocs.length,
+      supportTickets: supportTickets.length,
+      companies: companies.length
+    });
+  } catch (error) {
+    console.error('Failed to load employee dashboard data:', error);
+  }
+}
+
+function formatDate(value) {
+  if (!value) return 'N/A';
+  return new Date(value).toISOString().slice(0, 10);
+}
+
+function renderEmployeeTasks(verificationDocs) {
+  const tasksBody = document.getElementById('tasksBody');
+  if (!tasksBody) return;
+
+  const assignedDocs = verificationDocs.filter((doc) => doc.status === 'pending');
+  const completedDocs = verificationDocs.filter((doc) => doc.status === 'approved');
+
+  const assignedMarkup = assignedDocs.map((doc) => `
+    <div class="task-card" data-tab-content="assigned">
+      <div class="task-header">
+        <div class="task-info">
+          <h4>${doc.document_type} - ${doc.company?.company_name || 'Unknown Company'}</h4>
+          <p class="task-meta"><i class="ri-building-2-line"></i> ${doc.company?.company_name || 'Unknown Company'} &bull; <i class="ri-file-text-line"></i> Verification Review</p>
+        </div>
+        <i class="ri-arrow-right-s-line task-arrow"></i>
+      </div>
+      <div class="task-footer">
+        <div class="task-badges">
+          <span class="status high">High Priority</span>
+          <span class="status inprogress">In Progress</span>
+        </div>
+        <span class="task-due"><i class="ri-time-line"></i> Submitted ${formatDate(doc.submitted_at)}</span>
+      </div>
+    </div>
+  `).join('');
+
+  const completedMarkup = completedDocs.length
+    ? completedDocs.map((doc) => `
+      <div class="task-card" data-tab-content="completed" style="display:none;">
+        <div class="task-header">
+          <div class="task-info">
+            <h4>${doc.document_type} - ${doc.company?.company_name || 'Unknown Company'}</h4>
+            <p class="task-meta"><i class="ri-building-2-line"></i> ${doc.company?.company_name || 'Unknown Company'} &bull; <i class="ri-checkbox-circle-line"></i> Approved</p>
+          </div>
+          <i class="ri-arrow-right-s-line task-arrow"></i>
+        </div>
+        <div class="task-footer">
+          <div class="task-badges">
+            <span class="status low">Completed</span>
+          </div>
+          <span class="task-due"><i class="ri-time-line"></i> Reviewed ${formatDate(doc.reviewed_at || doc.updated_at)}</span>
+        </div>
+      </div>
+    `).join('')
+    : '<div class="empty-tab" data-tab-content="completed" style="display:none;"><p class="empty-state">No completed tasks.</p></div>';
+
+  const pendingMarkup = '<div class="empty-tab" data-tab-content="pending" style="display:none;"><p class="empty-state">No pending tasks.</p></div>';
+
+  tasksBody.innerHTML = `${assignedMarkup || '<div class="empty-tab" data-tab-content="assigned"><p class="empty-state">No assigned tasks.</p></div>'}${pendingMarkup}${completedMarkup}`;
+}
+
+function renderEmployeeMessages(supportTickets) {
+  const messagesBody = document.getElementById('messagesBody');
+  if (!messagesBody) return;
+
+  if (!supportTickets.length) {
+    messagesBody.innerHTML = '<p class="empty-state">No user messages right now.</p>';
+    return;
+  }
+
+  messagesBody.innerHTML = supportTickets.map((ticket, index) => {
+    const priority = String(ticket.priority || 'medium');
+    const status = ticket.status === 'open' ? 'Unread' : 'Read';
+    const companyName = ticket.company?.company_name || 'Unknown Company';
+    const companyEmail = ticket.company?.email || 'No email';
+
+    return `
+      <div class="msg-card ${status === 'Unread' ? 'unread' : ''}" data-ticket-id="${ticket.support_ticket_id}" data-assigned-role="${ticket.assigned_role || ''}" data-assigned-admin-id="${ticket.assigned_admin_id ?? ''}" data-priority="${priority.charAt(0).toUpperCase() + priority.slice(1)}" data-status="${status}" data-user="${companyName}" data-subject="${ticket.title}" data-text="${ticket.description}">
+        <div class="request-header">
+          <div class="request-title-row">
+            <h4>${ticket.title}${status === 'Unread' ? ' <span class="unread-dot"></span>' : ''}</h4>
+            <span class="priority ${priority}">${priority.charAt(0).toUpperCase() + priority.slice(1)} Priority</span>
+          </div>
+          <p class="request-meta"><i class="ri-mail-line"></i> <strong>${companyName}</strong> &bull; ${companyEmail} &bull; ${formatDate(ticket.created_at)}</p>
+        </div>
+        <p class="request-body">${ticket.description}</p>
+        <div class="request-actions">
+          <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply to User</button>
+          <button class="btn-secondary">Assign to Task</button>
+          <button class="btn-push" data-id="${ticket.support_ticket_id || index}"><i class="ri-arrow-up-circle-line"></i> Push to Admin</button>
+          ${status === 'Unread' ? '<button class="btn-secondary btn-mark-read">Mark as Read</button>' : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function bindEmployeeMessageActions() {
+  const messagesBody = document.getElementById('messagesBody');
+  if (!messagesBody || messagesBody.dataset.bound === 'true') {
+    return;
+  }
+
+  messagesBody.dataset.bound = 'true';
+
+  messagesBody.addEventListener('click', (e) => {
+    const pushBtn = e.target.closest('.btn-push');
+    if (pushBtn) {
+      e.stopPropagation();
+      const id = pushBtn.dataset.id;
+      routeTicketToAdmin(id, pushBtn);
+      return;
+    }
+
+    const markReadBtn = e.target.closest('.btn-mark-read');
+    if (markReadBtn) {
+      e.stopPropagation();
+      const card = markReadBtn.closest('.msg-card');
+      card.classList.remove('unread');
+      card.dataset.status = 'Read';
+      const dot = card.querySelector('.unread-dot');
+      if (dot) dot.remove();
+      markReadBtn.remove();
+      updateUnreadBadge();
+      return;
+    }
+
+    const replyBtn = e.target.closest('.btn-reply');
+    if (replyBtn) {
+      e.stopPropagation();
+      const card = replyBtn.closest('.msg-card');
+      const user = card.dataset.user || 'User';
+      const reply = window.prompt(`Reply to ${user}:`);
+
+      if (reply && reply.trim()) {
+        submitEmployeeReply(card, reply.trim(), user);
+      }
+    }
+  });
+}
+
+async function ensureTicketClaimed(card) {
+  const ticketId = Number(card.dataset.ticketId);
+  const assignedAdminId = card.dataset.assignedAdminId ? Number(card.dataset.assignedAdminId) : null;
+
+  if (!ticketId || !currentStaffProfile?.admin_id || !currentStaffProfile?.role) {
+    return { ok: false, error: 'Missing ticket or staff profile' };
+  }
+
+  if (assignedAdminId === Number(currentStaffProfile.admin_id)) {
+    return { ok: true };
+  }
+
+  const claimResponse = await assignSupportTicket(ticketId, {
+    assigned_role: currentStaffProfile.role,
+    assigned_admin_id: currentStaffProfile.admin_id
+  });
+
+  if (claimResponse.ok) {
+    card.dataset.assignedAdminId = String(currentStaffProfile.admin_id);
+    card.dataset.assignedRole = currentStaffProfile.role;
+  }
+
+  return claimResponse;
+}
+
+async function submitEmployeeReply(card, message, user) {
+  const ticketId = Number(card.dataset.ticketId);
+  if (!ticketId) {
+    window.alert('This ticket is missing its database id.');
+    return;
+  }
+
+  const claimResponse = await ensureTicketClaimed(card);
+  if (!claimResponse.ok) {
+    window.alert(claimResponse.data?.error || claimResponse.error || 'Unable to claim this ticket before replying.');
+    return;
+  }
+
+  const replyResponse = await replyToSupportTicket(ticketId, { message });
+  if (!replyResponse.ok) {
+    window.alert(replyResponse.data?.error || replyResponse.error || 'Reply failed to send.');
+    return;
+  }
+
+  const existingPanel = card.querySelector('.reply-panel');
+  if (existingPanel) existingPanel.remove();
+  const confirmation = document.createElement('div');
+  confirmation.className = 'reply-panel';
+  confirmation.innerHTML = `
+    <div class="reply-sent-confirm">
+      <i class="ri-checkbox-circle-fill"></i>
+      <div>
+        <p>Reply sent to <strong>${user}</strong></p>
+        <span>Your response was saved to the support ticket thread.</span>
+      </div>
+    </div>
+  `;
+  card.appendChild(confirmation);
+  if (card.classList.contains('unread')) {
+    card.classList.remove('unread');
+    card.dataset.status = 'Read';
+    const dot = card.querySelector('.unread-dot');
+    if (dot) dot.remove();
+    const btn = card.querySelector('.btn-mark-read');
+    if (btn) btn.remove();
+    updateUnreadBadge();
+  }
+  setTimeout(() => {
+    if (confirmation.parentNode) confirmation.remove();
+  }, 3000);
+}
+
+async function routeTicketToAdmin(ticketId, pushBtn) {
+  if (pushedToAdmin.has(ticketId)) {
+    return;
+  }
+
+  const response = await assignSupportTicket(Number(ticketId), {
+    assigned_role: 'admin',
+    assigned_admin_id: null
+  });
+
+  if (!response.ok) {
+    window.alert(response.data?.error || response.error || 'Unable to push this ticket to admin.');
+    return;
+  }
+
+  pushedToAdmin.add(ticketId);
+  const card = pushBtn.closest('.msg-card');
+  if (card) {
+    card.dataset.assignedRole = 'admin';
+    card.dataset.assignedAdminId = '';
+  }
+  pushBtn.classList.add('pushed');
+  pushBtn.innerHTML = '<i class="ri-check-line"></i> Pushed to Admin';
+  pushBtn.disabled = true;
+}
 
 // ─── View Toggle (My Tasks ↔ User Messages) ───
 viewBtns.forEach(btn => {
@@ -129,7 +439,7 @@ function updateFilterBtnState() {
 
 function filterMessages() {
   const query = msgSearchInput.value.toLowerCase().trim();
-  msgCards.forEach(card => {
+  document.querySelectorAll('.msg-card').forEach(card => {
     const priority = card.dataset.priority;
     const status   = card.dataset.status;
     const user     = card.dataset.user.toLowerCase();
