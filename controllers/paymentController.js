@@ -3,6 +3,14 @@ import prisma from "../prismaClient.js";
 
 const generateReference = () => `pay_${Date.now()}_${crypto.randomBytes(6).toString("hex")}`;
 
+const getPaystackChannels = (currency) => {
+  if (currency === "ZAR") {
+    return ["card", "bank", "eft", "capitec_pay"];
+  }
+
+  return ["card", "bank", "bank_transfer"];
+};
+
 const syncPaymentStatus = async (payment, transactionStatus) => {
   let updatedPayment;
 
@@ -94,6 +102,8 @@ export const initializePayment = async (req, res) => {
     const { recipient_company_id, amount, description, currency = "ZAR" } = req.body;
     const numericRecipientCompanyId = Number(recipient_company_id);
     const numericAmount = Number(amount);
+    const normalizedCurrency = String(currency || "ZAR").trim().toUpperCase();
+    const amountMinorUnits = Math.round(numericAmount * 100);
 
     if (!payer_company_id) {
       return res.status(401).json({ error: "Authenticated company id missing" });
@@ -103,8 +113,8 @@ export const initializePayment = async (req, res) => {
       return res.status(400).json({ error: "recipient_company_id must be a valid number" });
     }
 
-    if (!amount || Number.isNaN(numericAmount) || !Number.isInteger(numericAmount) || numericAmount <= 0) {
-      return res.status(400).json({ error: "amount must be a positive integer in Rands" });
+    if (!amount || Number.isNaN(numericAmount) || numericAmount <= 0 || amountMinorUnits <= 0) {
+      return res.status(400).json({ error: "amount must be a positive number" });
     }
 
     if (payer_company_id === numericRecipientCompanyId) {
@@ -151,8 +161,8 @@ export const initializePayment = async (req, res) => {
       data: {
         payer_company_id,
         recipient_company_id: numericRecipientCompanyId,
-        amount: numericAmount,
-        currency,
+        amount: amountMinorUnits,
+        currency: normalizedCurrency,
         status: "pending",
         description,
         paystack_reference: reference
@@ -167,16 +177,18 @@ export const initializePayment = async (req, res) => {
       },
       body: JSON.stringify({
         email: payerCompany.email,
-        amount: String(numericAmount),
-        currency,
+        amount: String(amountMinorUnits),
+        currency: normalizedCurrency,
         reference,
         callback_url: process.env.PAYSTACK_CALLBACK_URL,
+        channels: getPaystackChannels(normalizedCurrency),
         metadata: {
           payment_id: payment.payment_id,
           payer_company_id,
           recipient_company_id: numericRecipientCompanyId,
           payer_company_name: payerCompany.company_name,
           recipient_company_name: recipientCompany.company_name,
+          amount_major: numericAmount,
           description: description ?? null
         }
       })
@@ -205,7 +217,10 @@ export const initializePayment = async (req, res) => {
 
     return res.status(201).json({
       message: "Payment initialized successfully",
-      payment: updatedPayment,
+      payment: {
+        ...updatedPayment,
+        amount_major: updatedPayment.amount / 100
+      },
       authorization_url: paystackData.data.authorization_url,
       access_code: paystackData.data.access_code,
       reference: paystackData.data.reference

@@ -213,13 +213,15 @@ const msgPayBtn            = document.getElementById('msgPayBtn');
 const payCurrency          = document.getElementById('payCurrency');
 const payAmount            = document.getElementById('payAmount');
 const payReference         = document.getElementById('payReference');
+let pendingPaystackReference = null;
 
 const currencySymbols = {
   ZAR: 'R', USD: '$', EUR: '€', GBP: '£', JPY: '¥', AED: 'د.إ'
 };
 
 function openPaymentModal() {
-  if (!activeConversationId) {
+  const activeConversation = conversationData[String(activeConversationId)];
+  if (!activeConversationId || !activeConversation?.partnerId) {
     showUserToast('Select a backend conversation first.');
     return;
   }
@@ -235,29 +237,130 @@ paymentModalClose.addEventListener('click', closePaymentModal);
 btnPaymentCancel.addEventListener('click', closePaymentModal);
 paymentModalBackdrop.addEventListener('click', (e) => { if (e.target === paymentModalBackdrop) closePaymentModal(); });
 
-btnPaymentSend.addEventListener('click', () => {
+btnPaymentSend.addEventListener('click', async () => {
   const amount   = parseFloat(payAmount.value);
   const ref      = payReference.value.trim();
   const currency = payCurrency.value;
   const symbol   = currencySymbols[currency] || currency;
+  const activeConversation = conversationData[String(activeConversationId)];
+
+  [payAmount, payReference, payCurrency].forEach(field => {
+    field.style.borderColor = '';
+  });
+
   if (!amount || amount <= 0) {
     payAmount.focus(); payAmount.style.borderColor = '#dc2626';
     setTimeout(() => { payAmount.style.borderColor = ''; }, 1500);
     return;
   }
+
+  if (!currency) {
+    payCurrency.focus(); payCurrency.style.borderColor = '#dc2626';
+    setTimeout(() => { payCurrency.style.borderColor = ''; }, 1500);
+    showUserToast('Choose a payment currency.');
+    return;
+  }
+
+  if (!ref) {
+    payReference.focus(); payReference.style.borderColor = '#dc2626';
+    setTimeout(() => { payReference.style.borderColor = ''; }, 1500);
+    showUserToast('Enter a payment reference before continuing.');
+    return;
+  }
+
   const amountDisplay = `${currency} ${symbol}${amount.toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   const refDisplay    = ref ? ` · ${ref}` : '';
   const bubbleText    = `Payment of ${amountDisplay} sent${refDisplay}`;
-  const chatBody = document.querySelector('.msg-chat-body');
-  if (chatBody) {
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble payment-bubble';
-    bubble.innerHTML = `<i class="ri-money-dollar-circle-line"></i>${bubbleText}`;
-    chatBody.appendChild(bubble);
-    chatBody.scrollTop = chatBody.scrollHeight;
+  if (!activeConversation?.partnerId) {
+    showUserToast('Could not identify the payment recipient.');
+    return;
   }
-  closePaymentModal();
-  showUserToast('Payment sent successfully!');
+
+  if (typeof PaystackPop === 'undefined') {
+    showUserToast('Paystack checkout could not load. Check your internet connection.');
+    return;
+  }
+
+  btnPaymentSend.disabled = true;
+  btnPaymentSend.innerHTML = '<i class="ri-loader-4-line"></i> Preparing checkout';
+
+  try {
+    const response = await fetch('http://localhost:5000/payments/initialize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(getDashboardToken() ? { Authorization: `Bearer ${getDashboardToken()}` } : {})
+      },
+      body: JSON.stringify({
+        recipient_company_id: activeConversation.partnerId,
+        amount,
+        currency,
+        description: ref || `Payment to ${activeConversation.name}`
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Could not initialize Paystack payment');
+    }
+
+    if (!data.access_code) {
+      throw new Error('Paystack did not return a checkout access code.');
+    }
+
+    closePaymentModal();
+    showUserToast(`Complete ${amountDisplay} securely in Paystack.`);
+
+    const popup = new PaystackPop();
+    pendingPaystackReference = data.reference;
+    popup.resumeTransaction(data.access_code);
+
+    setTimeout(() => {
+      verifyPaystackPayment(data.reference).catch(() => {});
+    }, 8000);
+  } catch (error) {
+    showUserToast(error.message || 'Could not initialize Paystack payment');
+  } finally {
+    btnPaymentSend.disabled = false;
+    btnPaymentSend.innerHTML = '<i class="ri-shield-check-line"></i> Authenticate with Paystack';
+  }
+});
+
+async function verifyPaystackPayment(reference) {
+  if (!reference) return null;
+
+  const response = await fetch('http://localhost:5000/payments/verify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(getDashboardToken() ? { Authorization: `Bearer ${getDashboardToken()}` } : {})
+    },
+    body: JSON.stringify({ reference })
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Could not verify Paystack payment');
+  }
+
+  if (data.paystack_status === 'success') {
+    showUserToast('Payment authenticated and verified.');
+    window.hydrateOverviewFromBackend?.();
+  }
+
+  return data;
+}
+
+window.addEventListener('focus', () => {
+  if (!pendingPaystackReference) return;
+
+  verifyPaystackPayment(pendingPaystackReference)
+    .then((data) => {
+      if (data?.paystack_status === 'success' || data?.paystack_status === 'failed' || data?.paystack_status === 'abandoned') {
+        pendingPaystackReference = null;
+      }
+    })
+    .catch(() => {});
 });
 
 // ============================================================
@@ -1426,6 +1529,7 @@ function cacheConversation(conversation, currentCompanyId) {
     name,
     sub: 'Conversation',
     avatar,
+    partnerId: partner.company_id,
     conversationId: conversation.conversation_id,
     messages: lastMessage ? [{
       type: Number(lastMessage.sender_company_id) === Number(currentCompanyId) ? 'me' : 'them',
@@ -2020,6 +2124,13 @@ function applyDiscoverResults(companies, label, isSearchResult = true) {
 
 async function loadAllDiscoverCompanies() {
   try {
+    if (!getDashboardToken()) {
+      if (!discCompanies.length) {
+        discShowEmpty();
+      }
+      return;
+    }
+
     const response = await fetch('http://localhost:5000/discover', {
       headers: {
         'Content-Type': 'application/json',
@@ -2061,6 +2172,7 @@ async function openDiscoverCompanyProfile(companyId, fallbackName = 'company') {
       throw new Error(data.error || 'Could not open company profile.');
     }
 
+    showCompanyProfileModal(data.company);
     showUserToast(`Viewed ${data.company?.company_name || fallbackName}.`);
     window.hydrateOverviewFromBackend?.();
     return data.company;
@@ -2068,6 +2180,69 @@ async function openDiscoverCompanyProfile(companyId, fallbackName = 'company') {
     showUserToast(error.message || 'Could not open company profile');
     return null;
   }
+}
+
+function showCompanyProfileModal(company) {
+  if (!company) return;
+
+  let backdrop = document.getElementById('companyProfileModalBackdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.className = 'company-profile-modal-backdrop';
+    backdrop.id = 'companyProfileModalBackdrop';
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) backdrop.classList.remove('open');
+    });
+  }
+
+  const name = company.company_name || 'Trade partner';
+  const country = company.location?.country || 'Unknown location';
+  const industry = company.industry?.industry_name || company.business_type || 'Trade';
+  const suppliedProducts = company.supplied_products?.length ? company.supplied_products : ['No supplied products listed'];
+  const desiredProducts = company.desired_products?.length ? company.desired_products : ['No desired products listed'];
+  const regions = company.target_regions?.length ? company.target_regions : [country];
+
+  backdrop.innerHTML = `
+    <section class="company-profile-modal" role="dialog" aria-modal="true" aria-label="${escapeDiscoverHtml(name)} profile">
+      <button class="company-profile-close" type="button"><i class="ri-close-line"></i></button>
+      <div class="company-profile-head">
+        <div class="company-profile-avatar">${escapeDiscoverHtml(safeInitials(name))}</div>
+        <div>
+          <h3>${escapeDiscoverHtml(name)}</h3>
+          <p>${escapeDiscoverHtml(country)} &bull; ${escapeDiscoverHtml(industry)}</p>
+        </div>
+      </div>
+      <div class="company-profile-body">
+        <div class="company-profile-section">
+          <span>About</span>
+          <p>${escapeDiscoverHtml(company.company_description || 'No company description has been added yet.')}</p>
+        </div>
+        <div class="company-profile-grid">
+          <div><span>Business type</span><strong>${escapeDiscoverHtml(company.business_type || 'Not specified')}</strong></div>
+          <div><span>Annual volume</span><strong>${escapeDiscoverHtml(company.annual_trade_volume || 'Not shown')}</strong></div>
+          <div><span>Established</span><strong>${escapeDiscoverHtml(company.year_established || 'Not specified')}</strong></div>
+          <div><span>Website</span><strong>${company.website ? `<a href="${escapeDiscoverHtml(company.website)}" target="_blank" rel="noopener">${escapeDiscoverHtml(company.website)}</a>` : 'Not listed'}</strong></div>
+        </div>
+        <div class="company-profile-section">
+          <span>Supplies</span>
+          <div class="company-profile-tags">${suppliedProducts.map(item => `<em>${escapeDiscoverHtml(item)}</em>`).join('')}</div>
+        </div>
+        <div class="company-profile-section">
+          <span>Looking for</span>
+          <div class="company-profile-tags">${desiredProducts.map(item => `<em>${escapeDiscoverHtml(item)}</em>`).join('')}</div>
+        </div>
+        <div class="company-profile-section">
+          <span>Target regions</span>
+          <div class="company-profile-tags">${regions.map(item => `<em>${escapeDiscoverHtml(item)}</em>`).join('')}</div>
+        </div>
+      </div>
+    </section>`;
+
+  backdrop.querySelector('.company-profile-close')?.addEventListener('click', () => {
+    backdrop.classList.remove('open');
+  });
+  backdrop.classList.add('open');
 }
 
 function discRenderCard() {
@@ -2290,7 +2465,7 @@ function resetDiscoverCards() {
       : status === 'pending-sent'
         ? `<button class="btn-ph-primary" disabled style="opacity:.65;"><i class="ri-time-line"></i> Pending</button>`
         : status === 'pending-received'
-          ? `<button class="btn-ph-primary match-accept-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-checkbox-circle-line"></i> Accept Request</button>`
+          ? `<button class="btn-ph-primary match-accept-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-checkbox-circle-line"></i> Accept</button><button class="btn-ph-danger match-reject-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-close-circle-line"></i> Reject</button>`
           : `<button class="btn-ph-primary match-connect-btn" data-company-id="${companyId}"><i class="ri-add-line"></i> Connect</button>`;
 
     return `
@@ -2422,6 +2597,27 @@ function resetDiscoverCards() {
       });
     });
 
+    grid.querySelectorAll('.match-reject-btn').forEach(button => {
+      button.addEventListener('click', async () => {
+        const sourceCompanyId = Number(button.dataset.sourceCompanyId);
+        const card = button.closest('.placeholder-card');
+        const companyName = card?.querySelector('h4')?.textContent || 'company';
+
+        button.disabled = true;
+        try {
+          await dashboardPost('/auth/reject', {
+            source_company_id: sourceCompanyId
+          });
+          card?.remove();
+          showUserToast(`Match request declined from ${companyName}.`);
+          window.hydrateOverviewFromBackend?.();
+        } catch (error) {
+          button.disabled = false;
+          showUserToast(error.message || 'Could not reject request');
+        }
+      });
+    });
+
     grid.querySelectorAll('.match-message-btn').forEach(button => {
       button.addEventListener('click', async () => {
         const companyId = Number(button.dataset.companyId);
@@ -2487,6 +2683,7 @@ function resetDiscoverCards() {
         name,
         sub: 'Conversation',
         avatar,
+        partnerId: otherCompany.company_id,
         conversationId: conversation.conversation_id,
         messages: lastMessage ? [{
           type: Number(lastMessage.sender_company_id) === currentCompanyId ? 'me' : 'them',
@@ -2683,6 +2880,11 @@ function resetDiscoverCards() {
   function updateProfileViewsKpi(statsResponse) {
     if (!statsResponse.ok) {
       updateKpi('Profile Views', 0, 'No profile views yet');
+      const analyticsViews = document.getElementById('analyticsProfileViews');
+      const analyticsChange = document.getElementById('analyticsProfileViewsChange');
+      if (analyticsViews) analyticsViews.textContent = '0';
+      if (analyticsChange) analyticsChange.innerHTML = '<i class="ri-subtract-line"></i> No profile views yet';
+      updateProfileViewsChart([]);
       return;
     }
 
@@ -2694,6 +2896,54 @@ function resetDiscoverCards() {
         ? `${change} this week`
         : 'No change this week';
     updateKpi('Profile Views', total, detail);
+
+    const analyticsViews = document.getElementById('analyticsProfileViews');
+    const analyticsChange = document.getElementById('analyticsProfileViewsChange');
+    if (analyticsViews) analyticsViews.textContent = total;
+    if (analyticsChange) {
+      analyticsChange.className = `akpi-change ${change > 0 ? 'up' : change < 0 ? 'down' : 'neutral'}`;
+      analyticsChange.innerHTML = `<i class="${change > 0 ? 'ri-arrow-up-line' : change < 0 ? 'ri-arrow-down-line' : 'ri-subtract-line'}"></i> ${escapeHtml(detail)}`;
+    }
+
+    updateProfileViewsChart(statsResponse.data.daily_views || []);
+  }
+
+  function updateProfileViewsChart(dailyViews) {
+    const chart = document.querySelector('#page-analytics .analytics-card .bar-chart');
+    if (!chart) return;
+
+    const rows = Array.isArray(dailyViews) ? dailyViews : [];
+    const max = Math.max(...rows.map(day => Number(day.count || 0)), 1);
+    chart.innerHTML = rows.length
+      ? rows.map(day => {
+          const height = Math.max(8, Math.round((Number(day.count || 0) / max) * 100));
+          return `<div class="bar-col"><div class="bar" title="${Number(day.count || 0)} views" style="height:${height}%"></div><span>${escapeHtml(day.label || '')}</span></div>`;
+        }).join('')
+      : '<div style="width:100%;text-align:center;color:var(--text-muted);font-size:13px;">No profile views in this period</div>';
+  }
+
+  function renderAnalyticsIndustries(matches, profile) {
+    const container = document.querySelector('#page-analytics .industry-breakdown');
+    if (!container) return;
+
+    const counts = new Map();
+    const addIndustry = (value) => {
+      const label = value?.industry_name || value;
+      if (!label) return;
+      counts.set(label, (counts.get(label) || 0) + 1);
+    };
+
+    addIndustry(profile?.industry);
+    matches.forEach(match => addIndustry((match.company || match)?.industry));
+
+    const rows = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const max = Math.max(...rows.map(([, count]) => count), 1);
+    container.innerHTML = rows.length
+      ? rows.map(([industry, count]) => {
+          const pct = Math.round((count / max) * 100);
+          return `<div class="ind-row"><span>${escapeHtml(industry)}</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:${pct}%"></div></div><span class="ind-pct">${count}</span></div>`;
+        }).join('')
+      : '<div style="font-size:13px;color:var(--text-muted);">No matching industry data yet</div>';
   }
 
   async function hydrateOverviewFromBackend() {
@@ -2808,6 +3058,7 @@ function resetDiscoverCards() {
         }
         renderMatchesPage(latestAiMatches, latestAcceptedConnections, latestSentPending, latestReceivedPending, latestProfile || core.fastProfile);
         renderLiveMarketInsights(latestProfile, latestAiMatches);
+        renderAnalyticsIndustries(latestAiMatches, latestProfile);
         return matchesResponse;
       });
 
@@ -2885,6 +3136,8 @@ document.addEventListener('keydown', (e) => {
 
 async function loadMatchStats() {
   try {
+    if (!getDashboardToken()) return;
+
     const response = await fetch(
       "http://localhost:5000/profile/matches/stats",
       {
@@ -2903,17 +3156,44 @@ async function loadMatchStats() {
       throw new Error(data.error || "Could not load match stats");
     }
 
-    document.getElementById("totalMatches").textContent =
-      data.total_active_matches;
+    document.getElementById("analyticsTotalMatches").textContent =
+      data.total_active_matches ?? 0;
 
-    document.getElementById("weeklyMatches").textContent =
-      data.matches_this_week;
+    document.getElementById("analyticsWeeklyMatches").textContent =
+      data.matches_this_week ?? 0;
 
-    document.getElementById("dealsProgress").textContent =
-      data.deals_in_progress;
+    document.getElementById("analyticsDealsProgress").textContent =
+      data.deals_in_progress ?? 0;
 
-    document.getElementById("completedDeals").textContent =
-      data.completed_deals;
+    document.getElementById("analyticsCompletedDeals").textContent =
+      data.completed_deals ?? 0;
+
+    document.getElementById("analyticsMatchRate").textContent =
+      `${data.match_rate ?? 0}%`;
+
+    document.getElementById("analyticsResponseRate").textContent =
+      `${data.response_rate ?? 0}%`;
+
+    document.getElementById("analyticsActiveDeals").textContent =
+      data.deals_in_progress ?? 0;
+
+    const matchRateChange = document.getElementById("analyticsMatchRateChange");
+    if (matchRateChange) {
+      matchRateChange.className = "akpi-change neutral";
+      matchRateChange.innerHTML = `<i class="ri-checkbox-circle-line"></i> ${data.accepted_connection_requests ?? 0} accepted of ${data.total_connection_requests ?? 0} requests`;
+    }
+
+    const responseRateChange = document.getElementById("analyticsResponseRateChange");
+    if (responseRateChange) {
+      responseRateChange.className = "akpi-change neutral";
+      responseRateChange.innerHTML = `<i class="ri-reply-line"></i> ${data.responded_received_requests ?? 0} of ${data.received_connection_requests ?? 0} received requests handled`;
+    }
+
+    const activeDealsChange = document.getElementById("analyticsActiveDealsChange");
+    if (activeDealsChange) {
+      activeDealsChange.className = "akpi-change neutral";
+      activeDealsChange.innerHTML = `<i class="ri-briefcase-4-line"></i> ${data.completed_deals ?? 0} completed deals`;
+    }
 
   } catch (error) {
     console.error(error);
@@ -2928,7 +3208,12 @@ async function loadTopPartnerCountries() {
     const rawToken = getDashboardToken();
 
     if (!rawToken) {
-      throw new Error("No login token found. Please sign in again.");
+      container.innerHTML = `
+        <div class="country-empty">
+          Sign in to load partner countries
+        </div>
+      `;
+      return;
     }
 
     const token = rawToken.replace(/^Bearer\s+/i, "");

@@ -84,12 +84,70 @@ app.use("/validateRegNUm", ValidationServiceRoute);
 
 app.get("/payment-return", (req, res) => {
   const { reference, trxref } = req.query;
+  const paymentReference = reference || trxref || "";
 
-  return res.status(200).json({
-    message: "Paystack redirected back successfully",
-    reference: reference || trxref || null,
-    note: "Payment status is finalized by webhook or verification, not by this redirect alone."
-  });
+  return res.status(200).send(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trade Grid Payment</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; background: #f5fbfc; color: #0d3b3b; display: grid; min-height: 100vh; place-items: center; margin: 0; }
+    main { width: min(480px, calc(100% - 32px)); background: #fff; border: 1px solid #dceff2; border-radius: 14px; box-shadow: 0 20px 60px rgba(13,59,59,.12); padding: 28px; }
+    h1 { font-size: 22px; margin: 0 0 10px; }
+    p { color: #547070; line-height: 1.55; margin: 0 0 18px; }
+    a { color: #0d3b3b; font-weight: 700; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 id="title">Verifying payment...</h1>
+    <p id="message">Please wait while Trade Grid confirms your Paystack transaction.</p>
+    <a href="/User%20Dashboard%20-%20Page/user-dashboard.html">Return to dashboard</a>
+  </main>
+  <script>
+    const reference = ${JSON.stringify(paymentReference)};
+    const token = localStorage.getItem('token') || localStorage.getItem('companyToken') || localStorage.getItem('userToken');
+    const title = document.getElementById('title');
+    const message = document.getElementById('message');
+
+    async function verifyPayment() {
+      if (!reference) {
+        title.textContent = 'Payment reference missing';
+        message.textContent = 'Paystack did not return a transaction reference. Check your dashboard notifications for the latest status.';
+        return;
+      }
+
+      if (!token) {
+        title.textContent = 'Sign in required';
+        message.textContent = 'The payment returned successfully, but you need to sign in again before Trade Grid can verify it in this browser.';
+        return;
+      }
+
+      try {
+        const response = await fetch('/payments/verify', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: 'Bearer ' + token
+          },
+          body: JSON.stringify({ reference })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || data.message || 'Could not verify payment');
+        title.textContent = data.paystack_status === 'success' ? 'Payment confirmed' : 'Payment checked';
+        message.textContent = data.message || 'Trade Grid has updated the payment status.';
+      } catch (error) {
+        title.textContent = 'Verification failed';
+        message.textContent = error.message || 'Trade Grid could not verify this payment right now.';
+      }
+    }
+
+    verifyPayment();
+  </script>
+</body>
+</html>`);
 });
 
 app.use((err, req, res, next) => {

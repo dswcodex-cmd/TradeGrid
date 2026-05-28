@@ -362,58 +362,97 @@ export const getMyMatchActivityStats = async (req, res) => {
     weekStart.setDate(now.getDate() - 7);
 
     
-    const totalActiveMatches = await prisma.companyMatches.count({
-      where: {
-        OR: [
-          { company1_id: current_company_id },
-          { company2_id: current_company_id }
-        ],
-        status: {
-          in: ["active", "in_progress"]
+    const matchWhere = {
+      OR: [
+        { company1_id: current_company_id },
+        { company2_id: current_company_id }
+      ]
+    };
+
+    const targetWhere = {
+      OR: [
+        { source_company_id: current_company_id },
+        { target_company_id: current_company_id }
+      ]
+    };
+
+    const receivedTargetWhere = {
+      target_company_id: current_company_id
+    };
+
+    const [
+      totalActiveMatches,
+      weeklyMatches,
+      dealsInProgress,
+      completedDeals,
+      totalRequests,
+      acceptedRequests,
+      receivedRequests,
+      respondedReceivedRequests
+    ] = await Promise.all([
+      prisma.companyMatches.count({
+        where: {
+          ...matchWhere,
+          status: {
+            in: ["active", "in_progress"]
+          }
         }
-      }
-    });
+      }),
 
-    // MATCHES CREATED THIS WEEK
-    const weeklyMatches = await prisma.companyMatches.count({
-      where: {
-        OR: [
-          { company1_id: current_company_id },
-          { company2_id: current_company_id }
-        ],
-        matched_at: {
-          gte: weekStart
+      prisma.companyMatches.count({
+        where: {
+          ...matchWhere,
+          matched_at: {
+            gte: weekStart
+          }
         }
-      }
-    });
+      }),
 
-    // DEALS IN PROGRESS
-    const dealsInProgress = await prisma.companyMatches.count({
-      where: {
-        OR: [
-          { company1_id: current_company_id },
-          { company2_id: current_company_id }
-        ],
-        status: "in_progress"
-      }
-    });
+      prisma.companyMatches.count({
+        where: {
+          ...matchWhere,
+          status: "in_progress"
+        }
+      }),
 
-    // COMPLETED DEALS
-    const completedDeals = await prisma.companyMatches.count({
-      where: {
-        OR: [
-          { company1_id: current_company_id },
-          { company2_id: current_company_id }
-        ],
-        status: "completed"
-      }
-    });
+      prisma.companyMatches.count({
+        where: {
+          ...matchWhere,
+          status: "completed"
+        }
+      }),
+
+      prisma.companyTargets.count({ where: targetWhere }),
+      prisma.companyTargets.count({ where: { ...targetWhere, status: "accepted" } }),
+      prisma.companyTargets.count({ where: receivedTargetWhere }),
+      prisma.companyTargets.count({
+        where: {
+          ...receivedTargetWhere,
+          status: {
+            in: ["accepted", "rejected"]
+          }
+        }
+      })
+    ]);
+
+    const matchRate = totalRequests
+      ? Math.round((acceptedRequests / totalRequests) * 100)
+      : (totalActiveMatches > 0 ? 100 : 0);
+    const responseRate = receivedRequests
+      ? Math.round((respondedReceivedRequests / receivedRequests) * 100)
+      : 0;
 
     return res.status(200).json({
       total_active_matches: totalActiveMatches,
       matches_this_week: weeklyMatches,
       deals_in_progress: dealsInProgress,
-      completed_deals: completedDeals
+      completed_deals: completedDeals,
+      total_connection_requests: totalRequests,
+      accepted_connection_requests: acceptedRequests,
+      received_connection_requests: receivedRequests,
+      responded_received_requests: respondedReceivedRequests,
+      match_rate: matchRate,
+      response_rate: responseRate
     });
 
   } catch (error) {
@@ -436,6 +475,7 @@ export const getMyProfileViewStats = async (req, res) => {
       total,
       thisWeek,
       previousWeek,
+      weekViews,
       recentViews
     ] = await Promise.all([
       prisma.profileView.count({
@@ -457,6 +497,15 @@ export const getMyProfileViewStats = async (req, res) => {
         }
       }),
       prisma.profileView.findMany({
+        where: {
+          viewed_company_id: current_company_id,
+          viewed_at: { gte: weekStart }
+        },
+        select: {
+          viewed_at: true
+        }
+      }),
+      prisma.profileView.findMany({
         where: { viewed_company_id: current_company_id },
         orderBy: { viewed_at: "desc" },
         take: 10,
@@ -472,11 +521,31 @@ export const getMyProfileViewStats = async (req, res) => {
       })
     ]);
 
+    const dailyBuckets = Array.from({ length: 7 }, (_, index) => {
+      const day = new Date(now);
+      day.setDate(now.getDate() - (6 - index));
+      const key = day.toISOString().slice(0, 10);
+      return {
+        date: key,
+        label: day.toLocaleDateString("en-ZA", { weekday: "short" }),
+        count: 0
+      };
+    });
+    const bucketMap = new Map(dailyBuckets.map((bucket) => [bucket.date, bucket]));
+    weekViews.forEach((view) => {
+      const key = view.viewed_at.toISOString().slice(0, 10);
+      const bucket = bucketMap.get(key);
+      if (bucket) {
+        bucket.count += 1;
+      }
+    });
+
     return res.status(200).json({
       total,
       this_week: thisWeek,
       previous_week: previousWeek,
       change_this_week: thisWeek - previousWeek,
+      daily_views: dailyBuckets,
       recent_views: recentViews.map((view) => ({
         profile_view_id: view.profile_view_id,
         viewed_at: view.viewed_at,
@@ -639,6 +708,50 @@ export const completeOnboardingProfile = async (req, res) => {
     return res.status(200).json({
       message: `Profile and onboarding details saved successfully using ${normalizedUpdateMode} mode`,
       profile: serializeCompanyProfile(updatedCompany)
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
+export const getTopPartnerCountries = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+
+    const matches = await prisma.companyMatches.findMany({
+      where: {
+        OR: [
+          { company1_id: current_company_id },
+          { company2_id: current_company_id }
+        ],
+        status: {
+          in: ["active", "in_progress", "completed"]
+        }
+      },
+      include: {
+        company1: { include: { location: true } },
+        company2: { include: { location: true } }
+      }
+    });
+
+    const countryCounts = {};
+    for (const match of matches) {
+      const partner = Number(match.company1_id) === current_company_id
+        ? match.company2
+        : match.company1;
+      const country = partner?.location?.country;
+      if (country) {
+        countryCounts[country] = (countryCounts[country] || 0) + 1;
+      }
+    }
+
+    const sorted = Object.entries(countryCounts)
+      .map(([country, count]) => ({ country, count, matches: count }))
+      .sort((a, b) => b.count - a.count);
+
+    return res.status(200).json({
+      top_partner_countries: sorted,
+      countries: sorted
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

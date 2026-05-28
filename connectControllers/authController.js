@@ -216,6 +216,15 @@ export const rejectConnectionRequest = async (req, res) => {
       }
     });
 
+    await prisma.notification.create({
+      data: {
+        company_id: Number(source_company_id),
+        type: "connection_rejected",
+        message: "Your connection request was declined",
+        related_company_id: current_company_id
+      }
+    });
+
     return res.status(200).json({
       message: "Connection request rejected"
     });

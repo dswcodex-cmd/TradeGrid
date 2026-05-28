@@ -4,6 +4,7 @@ const serializeCompanyForMatch = (company) => ({
   company_id: company.company_id,
   company_name: company.company_name,
   business_type: company.business_type,
+  trade_type: company.trade_type,
   company_description: company.company_description,
   annual_trade_volume: company.show_trade_volume ? company.annual_trade_volume : null,
   number_of_employees: company.number_of_employees,
@@ -17,7 +18,11 @@ const serializeCompanyForMatch = (company) => ({
   target_regions: company.regions.map((item) => item.region.region_name)
 });
 
-const toLowerSet = (values) => new Set(values.map((value) => value.toLowerCase()));
+const normalizeValues = (values) => values
+  .map((value) => String(value || "").trim().toLowerCase())
+  .filter(Boolean);
+
+const toLowerSet = (values) => new Set(normalizeValues(values));
 
 const getOverlap = (leftSet, rightSet) => {
   const overlap = [];
@@ -29,6 +34,25 @@ const getOverlap = (leftSet, rightSet) => {
   }
 
   return overlap;
+};
+
+const overlapRatio = (leftSet, rightSet) => {
+  if (!leftSet.size || !rightSet.size) {
+    return 0;
+  }
+
+  return getOverlap(leftSet, rightSet).length / Math.min(leftSet.size, rightSet.size);
+};
+
+const tradeTypeFit = (leftType, rightType) => {
+  const left = String(leftType || "").toUpperCase();
+  const right = String(rightType || "").toUpperCase();
+
+  if (!left || !right || left === "BOTH" || right === "BOTH") {
+    return 1;
+  }
+
+  return left !== right ? 1 : 0.35;
 };
 
 export const getMatches = async (req, res) => {
@@ -118,15 +142,19 @@ export const getMatches = async (req, res) => {
           currentCompany.industry.industry_name.toLowerCase() === candidate.industry.industry_name.toLowerCase()
         );
 
-        let score = 0;
+        const supplyDemandFit = overlapRatio(candidateSuppliedSet, myDesiredSet);
+        const demandSupplyFit = overlapRatio(candidateDesiredSet, mySuppliedSet);
+        const regionFit = overlapRatio(candidateRegionSet, myRegionSet);
+        const industryFit = sameIndustry ? 1 : 0;
+        const importExportFit = tradeTypeFit(currentCompany.trade_type, candidate.trade_type);
 
-        score += offeredToWantedOverlap.length * 40;
-        score += wantedFromOfferedOverlap.length * 35;
-        score += sharedRegions.length * 10;
-
-        if (sameIndustry) {
-          score += 15;
-        }
+        const score = Math.round(Math.min(100,
+          (supplyDemandFit * 42) +
+          (demandSupplyFit * 32) +
+          (regionFit * 12) +
+          (industryFit * 9) +
+          (importExportFit * 5)
+        ));
 
         return {
           company: serializeCompanyForMatch(candidate),
@@ -135,7 +163,15 @@ export const getMatches = async (req, res) => {
             offered_to_wanted_overlap: offeredToWantedOverlap,
             wanted_from_offered_overlap: wantedFromOfferedOverlap,
             shared_regions: sharedRegions,
-            same_industry: sameIndustry
+            same_industry: sameIndustry,
+            trade_type_fit: importExportFit,
+            scoring: {
+              supply_demand_weight: 42,
+              demand_supply_weight: 32,
+              region_weight: 12,
+              industry_weight: 9,
+              trade_type_weight: 5
+            }
           }
         };
       })

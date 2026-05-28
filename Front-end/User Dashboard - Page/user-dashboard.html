@@ -528,9 +528,9 @@
     <i class="ri-subtract-line"></i> Loading
   </p>
 </div>
-          <div class="analytics-kpi"><span class="akpi-label">Match Rate</span><h2 class="akpi-value">67%</h2><p class="akpi-change up"><i class="ri-arrow-up-line"></i> +5% vs last period</p></div>
-          <div class="analytics-kpi"><span class="akpi-label">Response Rate</span><h2 class="akpi-value">84%</h2><p class="akpi-change down"><i class="ri-arrow-down-line"></i> -2% vs last period</p></div>
-          <div class="analytics-kpi"><span class="akpi-label">Active Deals</span><h2 class="akpi-value">3</h2><p class="akpi-change neutral"><i class="ri-subtract-line"></i> No change</p></div>
+          <div class="analytics-kpi"><span class="akpi-label">Match Rate</span><h2 class="akpi-value" id="analyticsMatchRate">0%</h2><p class="akpi-change neutral" id="analyticsMatchRateChange"><i class="ri-subtract-line"></i> Loading</p></div>
+          <div class="analytics-kpi"><span class="akpi-label">Response Rate</span><h2 class="akpi-value" id="analyticsResponseRate">0%</h2><p class="akpi-change neutral" id="analyticsResponseRateChange"><i class="ri-subtract-line"></i> Loading</p></div>
+          <div class="analytics-kpi"><span class="akpi-label">Active Deals</span><h2 class="akpi-value" id="analyticsActiveDeals">0</h2><p class="akpi-change neutral" id="analyticsActiveDealsChange"><i class="ri-subtract-line"></i> Loading</p></div>
         </div>
         <div class="analytics-grid">
           <div class="analytics-card"><h3>Profile Views — Last 7 Days</h3><div class="bar-chart-wrap"><div class="bar-chart"><div class="bar-col"><div class="bar" style="height:55%"></div><span>Mon</span></div><div class="bar-col"><div class="bar" style="height:78%"></div><span>Tue</span></div><div class="bar-col"><div class="bar" style="height:45%"></div><span>Wed</span></div><div class="bar-col"><div class="bar" style="height:90%"></div><span>Thu</span></div><div class="bar-col"><div class="bar" style="height:70%"></div><span>Fri</span></div><div class="bar-col"><div class="bar" style="height:38%"></div><span>Sat</span></div><div class="bar-col"><div class="bar" style="height:28%"></div><span>Sun</span></div></div></div></div>
@@ -645,12 +645,12 @@
         </div>
         <div class="payment-fee-note">
           <i class="ri-shield-check-line"></i>
-          <span>Payments are secured and logged as trade transactions on Trade Grid.</span>
+          <span>Paystack will securely collect card details and request bank authentication where required.</span>
         </div>
         <div class="payment-modal-actions">
           <button class="btn-payment-cancel" id="btnPaymentCancel">Cancel</button>
           <button class="btn-payment-send" id="btnPaymentSend">
-            <i class="ri-send-plane-fill"></i> Send Payment
+            <i class="ri-shield-check-line"></i> Authenticate with Paystack
           </button>
         </div>
       </div>
@@ -676,6 +676,7 @@
     </div>
   </div>
 
+  <script src="https://js.paystack.co/v2/inline.js"></script>
   <script src="../Assets/tradegrid-api.js"></script>
   <script src="user-dashboard.js"></script>
 </body>
