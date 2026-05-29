@@ -9,7 +9,7 @@ import { COUNTRIES } from "./countries.js";
 export function validateCompanyReg(countryCode, regNumber) {
   const code    = (countryCode ?? "").trim().toUpperCase();
   const country = COUNTRIES[code];
-
+////////bfhewjfvehwf
   if (!country) {
     return {
       valid:       false,
