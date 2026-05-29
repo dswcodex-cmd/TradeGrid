@@ -273,13 +273,20 @@ export const getTopPartnerCountries = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
 
-    const payments = await prisma.payment.findMany({
+    const matches = await prisma.companyMatches.findMany({
       where: {
-        payer_company_id: current_company_id,
-        status: "paid"
+        OR: [
+          { company1_id: current_company_id },
+          { company2_id: current_company_id }
+        ]
       },
       include: {
-        recipient_company: {
+        company1: {
+          include: {
+            location: true
+          }
+        },
+        company2: {
           include: {
             location: true
           }
@@ -288,20 +295,37 @@ export const getTopPartnerCountries = async (req, res) => {
     });
 
     const countryCounts = {};
-    for (const payment of payments) {
-      const country = payment.recipient_company?.location?.country;
-      if (country) {
-        countryCounts[country] = (countryCounts[country] || 0) + 1;
-      }
-    }
 
-    const sorted = Object.entries(countryCounts)
-      .map(([country, count]) => ({ country, count }))
-      .sort((a, b) => b.count - a.count);
+    matches.forEach((match) => {
+      const partnerCompany =
+        match.company1_id === current_company_id
+          ? match.company2
+          : match.company1;
 
-    return res.status(200).json({ top_partner_countries: sorted });
+      const country = partnerCompany?.location?.country;
+
+      if (!country) return;
+
+      countryCounts[country] = (countryCounts[country] || 0) + 1;
+    });
+
+    const countries = Object.entries(countryCounts)
+      .map(([country, matches]) => ({
+        country,
+        matches
+      }))
+      .sort((a, b) => b.matches - a.matches)
+      .slice(0, 5);
+
+    return res.status(200).json({
+      countries
+    });
   } catch (error) {
-    return res.status(500).json({ error: error.message });
+    console.error("getTopPartnerCountries error:", error);
+
+    return res.status(500).json({
+      error: error.message
+    });
   }
 };
 

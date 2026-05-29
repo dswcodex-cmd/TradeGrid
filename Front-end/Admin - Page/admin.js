@@ -79,13 +79,15 @@ async function loadAdminDashboardData() {
     const {
       getMyProfile,
       getCompanies,
+      getCompanyMatches,
       getVerificationDocuments,
       getSupportTickets
     } = await loadAdminApi();
 
-    const [profileResponse, companiesResponse, verificationResponse, supportResponse] = await Promise.all([
+    const [profileResponse, companiesResponse, matchesResponse, verificationResponse, supportResponse] = await Promise.all([
       getMyProfile(),
       getCompanies(),
+      getCompanyMatches(),
       getVerificationDocuments(),
       getSupportTickets()
     ]);
@@ -101,14 +103,14 @@ async function loadAdminDashboardData() {
     const statCards = document.querySelectorAll('.stats .card h1');
     if (statCards.length >= 4) {
       const companies = companiesResponse.ok ? (companiesResponse.data?.companies || []) : [];
+      const companyMatches = matchesResponse.ok ? (matchesResponse.data?.matches || []) : [];
       const verificationDocs = verificationResponse.ok ? (verificationResponse.data?.documents || verificationResponse.data?.verification_documents || []) : [];
       const supportTickets = supportResponse.ok ? (supportResponse.data?.tickets || supportResponse.data?.support_tickets || []) : [];
       const openSupportTickets = supportTickets.filter(ticket => ticket.status !== 'closed' && ticket.status !== 'resolved');
-      const pendingVerificationCount = verificationDocs.filter(doc => doc.status === 'pending').length;
 
       statCards[0].textContent = companies.length;
       statCards[1].textContent = companies.filter(company => company.account_status === 'active').length;
-      statCards[2].textContent = pendingVerificationCount;
+      statCards[2].textContent = companyMatches.length;
       statCards[3].textContent = supportTickets.length;
       renderAdminCompanies(companies);
       renderAdminEmployeeRequests(supportTickets);
@@ -263,14 +265,21 @@ function closeModal() { const m = document.getElementById('adminModal'); if (m) 
    ============================================================ */
 function initUserActions() {
   document.querySelectorAll('tbody td:last-child').forEach(cell => {
+    if (cell.dataset.bound === 'true') return;
+    cell.dataset.bound = 'true';
     cell.addEventListener('click', (e) => {
       e.stopPropagation();
       closeAllMenus();
       const row     = cell.closest('tr');
+      const companyId = Number(row?.dataset.companyId);
       const company = row.querySelector('td:first-child').childNodes[0].textContent.trim();
       const email   = row.querySelector('td small')?.textContent || '';
       const status  = row.querySelector('.status')?.textContent.trim() || '';
       const country = row.querySelector('td:nth-child(2)')?.textContent.trim() || '';
+      if (!companyId) {
+        showToast('This company row is missing its backend id', 'ri-error-warning-line');
+        return;
+      }
       const menu = document.createElement('div');
       menu.className = 'action-menu';
       menu.style.cssText = `position:absolute;right:8px;top:100%;margin-top:4px;background:#fff;border:1px solid rgba(13,59,59,0.12);border-radius:12px;box-shadow:0 8px 24px rgba(13,59,59,0.14);z-index:300;min-width:180px;padding:6px;font-family:'Inter',sans-serif;`;
@@ -278,8 +287,8 @@ function initUserActions() {
       const items = [
         { icon:'ri-eye-line',    label:'View Details',   fn: () => viewUserDetails(company, email, status, country) },
         { icon:'ri-edit-line',   label:'Edit Profile',   fn: () => editUser(company) },
-        { icon: isSuspended?'ri-checkbox-circle-line':'ri-forbid-line', label: isSuspended?'Reinstate Account':'Suspend Account', fn: () => isSuspended?reinstateUser(company,row):suspendUser(company,row), danger: !isSuspended },
-        { icon:'ri-delete-bin-line', label:'Delete Account', fn: () => deleteUser(company, row), danger: true },
+        { icon: isSuspended?'ri-checkbox-circle-line':'ri-forbid-line', label: isSuspended?'Reinstate Account':'Suspend Account', fn: () => isSuspended?reinstateUser(companyId, company,row):suspendUser(companyId, company,row), danger: !isSuspended },
+        { icon:'ri-delete-bin-line', label:'Delete Account', fn: () => deleteUser(companyId, company, row), danger: true },
       ];
       items.forEach(item => {
         const btn = document.createElement('button');
@@ -309,39 +318,84 @@ function editUser(company) {
 }
 function saveUserEdit(company) { closeModal(); showToast(`Changes saved for ${company}`); }
 
-function suspendUser(company, row) {
+function suspendUser(companyId, company, row) {
   createModal('Suspend Account', `<p style="font-size:13px;color:#4a6464;line-height:1.6;margin-bottom:16px;">You are about to suspend <strong style="color:#0D3B3B;">${company}</strong>. They will immediately lose access to their account and be notified by email.</p><div><label style="display:block;font-size:12px;font-weight:600;color:#0D3B3B;margin-bottom:6px;">Reason for suspension *</label><textarea id="suspendReason" rows="3" placeholder="Provide a reason (sent to the user)..." style="width:100%;padding:10px 14px;border:1px solid rgba(13,59,59,0.18);border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;outline:none;color:#1A1A1A;background:#F0FAFB;resize:vertical;"></textarea></div>`,
-    [{ label:'Cancel', fn:'closeModal()' }, { label:'Suspend Account', fn:`confirmSuspend('${company}')`, primary:true }]);
+    [{ label:'Cancel', fn:'closeModal()' }, { label:'Suspend Account', fn:'confirmSuspend()', primary:true }]);
+  window._pendingCompany = { id: companyId, name: company };
   window._pendingRow = row;
 }
-function confirmSuspend(company) {
+async function confirmSuspend() {
   const reason = document.getElementById('suspendReason')?.value;
   if (!reason?.trim()) { alert('Please provide a reason.'); return; }
+  const company = window._pendingCompany;
+  if (!company?.id) { showToast('No company selected', 'ri-error-warning-line'); return; }
+
+  const { updateCompany } = await loadAdminApi();
+  const response = await updateCompany(company.id, {
+    account_status: 'suspended',
+    suspension_reason: reason.trim()
+  });
+
+  if (!response.ok) {
+    showToast(response.data?.error || response.data?.message || response.error || 'Could not suspend account', 'ri-error-warning-line');
+    return;
+  }
+
   const row = window._pendingRow;
   if (row) { const badge = row.querySelector('.status'); if (badge) { badge.className='status suspended'; badge.textContent='Suspended'; } }
-  closeModal(); showToast(`${company} has been suspended`, 'ri-forbid-line');
+  closeModal(); showToast(`${company.name} has been suspended`, 'ri-forbid-line');
+  loadAdminDashboardData();
 }
-function reinstateUser(company, row) {
+function reinstateUser(companyId, company, row) {
   createModal('Reinstate Account', `<p style="font-size:13px;color:#4a6464;line-height:1.6;">Reinstate <strong style="color:#0D3B3B;">${company}</strong>? They will regain full access immediately.</p>`,
-    [{ label:'Cancel', fn:'closeModal()' }, { label:'Reinstate', fn:`confirmReinstate('${company}')`, primary:true }]);
+    [{ label:'Cancel', fn:'closeModal()' }, { label:'Reinstate', fn:'confirmReinstate()', primary:true }]);
+  window._pendingCompany = { id: companyId, name: company };
   window._pendingRow = row;
 }
-function confirmReinstate(company) {
+async function confirmReinstate() {
+  const company = window._pendingCompany;
+  if (!company?.id) { showToast('No company selected', 'ri-error-warning-line'); return; }
+
+  const { updateCompany } = await loadAdminApi();
+  const response = await updateCompany(company.id, {
+    account_status: 'active',
+    suspension_reason: null
+  });
+
+  if (!response.ok) {
+    showToast(response.data?.error || response.data?.message || response.error || 'Could not reinstate account', 'ri-error-warning-line');
+    return;
+  }
+
   const row = window._pendingRow;
   if (row) { const badge = row.querySelector('.status'); if (badge) { badge.className='status active'; badge.textContent='Active'; } }
-  closeModal(); showToast(`${company} reinstated successfully`, 'ri-checkbox-circle-line');
+  closeModal(); showToast(`${company.name} reinstated successfully`, 'ri-checkbox-circle-line');
+  loadAdminDashboardData();
 }
-function deleteUser(company, row) {
+function deleteUser(companyId, company, row) {
   createModal('Delete Account', `<div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:16px;"><div style="width:40px;height:40px;background:rgba(220,38,38,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ri-error-warning-line" style="color:#dc2626;font-size:20px;"></i></div><div><p style="font-size:14px;font-weight:700;color:#0D3B3B;margin-bottom:6px;">This action cannot be undone.</p><p style="font-size:13px;color:#4a6464;line-height:1.6;">Permanently deleting <strong>${company}</strong> will remove all their data, matches, and messages within 24 hours.</p></div></div><div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.15);border-radius:10px;padding:12px;"><p style="font-size:12px;color:#dc2626;font-weight:500;">Type DELETE to confirm:</p><input id="deleteConfirm" type="text" placeholder="DELETE" style="margin-top:8px;width:100%;padding:8px 12px;border:1px solid rgba(220,38,38,0.3);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;outline:none;background:#fff;"></div>`,
-    [{ label:'Cancel', fn:'closeModal()' }, { label:'Delete Account', fn:`confirmDelete('${company}')`, primary:true }]);
+    [{ label:'Cancel', fn:'closeModal()' }, { label:'Delete Account', fn:'confirmDelete()', primary:true }]);
+  window._pendingCompany = { id: companyId, name: company };
   window._pendingRow = row;
   setTimeout(() => { const btns = document.querySelectorAll('#adminModal button'); const del = btns[btns.length-1]; if (del) del.style.background='#dc2626'; }, 50);
 }
-function confirmDelete(company) {
+async function confirmDelete() {
   const val = document.getElementById('deleteConfirm')?.value;
   if (val !== 'DELETE') { showToast('Type DELETE to confirm', 'ri-error-warning-line'); return; }
+  const company = window._pendingCompany;
+  if (!company?.id) { showToast('No company selected', 'ri-error-warning-line'); return; }
+
+  const { deleteCompany } = await loadAdminApi();
+  const response = await deleteCompany(company.id);
+
+  if (!response.ok) {
+    showToast(response.data?.error || response.data?.message || response.error || 'Could not delete account', 'ri-error-warning-line');
+    return;
+  }
+
   const row = window._pendingRow; if (row) row.remove();
-  closeModal(); showToast(`${company} has been permanently deleted`, 'ri-delete-bin-line');
+  closeModal(); showToast(`${company.name} has been permanently deleted`, 'ri-delete-bin-line');
+  loadAdminDashboardData();
 }
 
 async function ensureTicketClaimedForAdmin(card) {

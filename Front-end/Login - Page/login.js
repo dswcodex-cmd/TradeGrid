@@ -24,6 +24,38 @@ function togglePassword() {
   }
 }
 
+function clearStoredAuth() {
+  localStorage.removeItem('token');
+  localStorage.removeItem('companyToken');
+  localStorage.removeItem('userToken');
+  localStorage.removeItem('adminToken');
+  localStorage.removeItem('tradegridUser');
+  localStorage.removeItem('tradegridAdmin');
+}
+
+function storeLoginSession(data) {
+  clearStoredAuth();
+
+  localStorage.setItem('token', data.token);
+
+  if (data.account_type === 'company') {
+    localStorage.setItem('companyToken', data.token);
+    localStorage.setItem('userToken', data.token);
+
+    if (data.user) {
+      localStorage.setItem('tradegridUser', JSON.stringify(data.user));
+    }
+  }
+
+  if (data.account_type === 'admin') {
+    localStorage.setItem('adminToken', data.token);
+
+    if (data.admin) {
+      localStorage.setItem('tradegridAdmin', JSON.stringify(data.admin));
+    }
+  }
+}
+
 async function loginWithBackend(e) {
   e.preventDefault();
 
@@ -46,22 +78,18 @@ async function loginWithBackend(e) {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
+      clearStoredAuth();
       alert(data.message || data.error || 'Login failed.');
       return;
     }
 
-    localStorage.setItem('token', data.token);
-
-    if (data.user) {
-      localStorage.setItem('companyToken', data.token);
-      localStorage.setItem('userToken', data.token);
-      localStorage.setItem('tradegridUser', JSON.stringify(data.user));
+    if (!data.token || !data.account_type) {
+      clearStoredAuth();
+      alert('Login response is missing required session data.');
+      return;
     }
 
-    if (data.admin) {
-      localStorage.setItem('adminToken', data.token);
-      localStorage.setItem('tradegridAdmin', JSON.stringify(data.admin));
-    }
+    storeLoginSession(data);
 
     window.location.href = data.redirect_to || '../User Dashboard - Page/user-dashboard.html';
   } catch (error) {

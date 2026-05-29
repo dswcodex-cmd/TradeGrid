@@ -116,7 +116,7 @@ app.use((req, _res, next) => {
 });
 app.use(limiter);
 app.post("/payments/webhook", express.raw({ type: "application/json" }), paystackWebhook);
-app.use(express.json({ limit: "12mb" }));
+app.use(express.json({ limit: "100mb" }));
 app.use("/speed-dating", express.static(path.join(__dirname, "Front-end", "Speed-dating-page")));
 
 app.use("/auth", authRoutes);

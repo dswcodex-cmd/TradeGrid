@@ -481,7 +481,20 @@ export const updateAdminCompany = async (req, res) => {
       return res.status(404).json({ error: "Company not found" });
     }
 
-    const normalizedStatus = account_status ? String(account_status).trim().toLowerCase() : undefined;
+    const statusAliases = {
+      active: "active",
+      pending: "pending",
+      suspend: "suspended",
+      suspended: "suspended",
+      underreview: "under_review",
+      under_review: "under_review"
+    };
+    const requestedStatus = account_status !== undefined
+      ? String(account_status).trim().toLowerCase()
+      : undefined;
+    const normalizedStatus = requestedStatus
+      ? statusAliases[requestedStatus] || requestedStatus
+      : undefined;
     const allowedStatuses = new Set(["active", "pending", "suspended", "under_review"]);
 
     if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
@@ -566,12 +579,74 @@ export const deleteAdminCompany = async (req, res) => {
       return res.status(404).json({ error: "Company not found" });
     }
 
+    const scheduledMatches = await prisma.scheduledMatch.findMany({
+      where: {
+        OR: [
+          { company_a_id: company_id },
+          { company_b_id: company_id }
+        ]
+      },
+      select: { id: true }
+    });
+    const scheduledMatchIds = scheduledMatches.map((match) => match.id);
+
+    const supportTickets = await prisma.supportTicket.findMany({
+      where: { company_id },
+      select: { support_ticket_id: true }
+    });
+    const supportTicketIds = supportTickets.map((ticket) => ticket.support_ticket_id);
+
     await prisma.$transaction([
       prisma.notification.deleteMany({
         where: {
           OR: [
             { company_id },
             { related_company_id: company_id }
+          ]
+        }
+      }),
+      prisma.supportTicketMessage.deleteMany({
+        where: {
+          OR: [
+            { company_id },
+            ...(supportTicketIds.length
+              ? [{ support_ticket_id: { in: supportTicketIds } }]
+              : [])
+          ]
+        }
+      }),
+      prisma.supportTicket.deleteMany({
+        where: { company_id }
+      }),
+      prisma.matchOutcome.deleteMany({
+        where: {
+          OR: [
+            { company_id },
+            ...(scheduledMatchIds.length
+              ? [{ match_id: { in: scheduledMatchIds } }]
+              : [])
+          ]
+        }
+      }),
+      prisma.scheduledMatch.deleteMany({
+        where: {
+          OR: [
+            { company_a_id: company_id },
+            { company_b_id: company_id }
+          ]
+        }
+      }),
+      prisma.registration.deleteMany({
+        where: { company_id }
+      }),
+      prisma.lobbyMessage.deleteMany({
+        where: { company_id }
+      }),
+      prisma.profileView.deleteMany({
+        where: {
+          OR: [
+            { viewed_company_id: company_id },
+            { viewer_company_id: company_id }
           ]
         }
       }),
@@ -763,7 +838,7 @@ export const getAdminCompanyMatches = async (req, res) => {
       return res.status(400).json({ error: "company_id must be a valid number" });
     }
 
-    const matches = await prisma.CompanyMatches.findMany({
+    const matches = await prisma.companyMatches.findMany({
       where: {
         ...(status ? { status } : {}),
         ...(numericCompanyId
@@ -776,11 +851,21 @@ export const getAdminCompanyMatches = async (req, res) => {
           : {})
       },
       include: {
-        company1: true,
-        company2: true
+        company1: {
+          include: {
+            industry: true,
+            location: true
+          }
+        },
+        company2: {
+          include: {
+            industry: true,
+            location: true
+          }
+        }
       },
       orderBy: {
-        created_at: "desc"
+        matched_at: "desc"
       }
     });
 

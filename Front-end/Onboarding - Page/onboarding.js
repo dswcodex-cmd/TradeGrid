@@ -994,6 +994,8 @@ function validateStep(step) {
       showErr('password', 'Password is required.'); valid = false;
     } else if (pw.value.length < 8) {
       showErr('password', 'Password must be at least 8 characters.'); valid = false;
+    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(pw.value)) {
+      showErr('password', 'Password must include uppercase, lowercase, number, and special character.'); valid = false;
     } else { clearErr('password'); }
 
     // Confirm password
@@ -1151,6 +1153,229 @@ function removeFile(key, btn) {
   btn.closest('.uploaded-file').remove();
 }
 
+function valueOf(id) {
+  return document.getElementById(id)?.value?.trim() || '';
+}
+
+function checkedValue(name) {
+  return document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+}
+
+function selectedText(id) {
+  const el = document.getElementById(id);
+  if (!el || el.selectedIndex < 0) return '';
+  return el.options[el.selectedIndex]?.textContent?.replace(/\s+/g, ' ').trim() || '';
+}
+
+function cleanCountryLabel(label) {
+  const parts = String(label || '').split(/\s+/).filter(Boolean);
+  if (parts.length > 1 && !/^[A-Za-z0-9]/.test(parts[0])) {
+    return parts.slice(1).join(' ');
+  }
+  return String(label || '').trim();
+}
+
+function selectedMarkets() {
+  return Array.from(document.querySelectorAll('input[name="markets"]:checked'))
+    .map(input => input.value);
+}
+
+function selectedMarketLabels() {
+  return Array.from(document.querySelectorAll('input[name="markets"]:checked'))
+    .map(input => input.closest('label')?.textContent?.replace(/\s+/g, ' ').trim() || input.value);
+}
+
+function currentRegionValue() {
+  const countryCode = valueOf('country');
+  const cfg = COUNTRY_CONFIG[countryCode] || COUNTRY_CONFIG.DEFAULT;
+  if (cfg.regionType === 'select') return valueOf('regionSelect');
+  if (cfg.regionType === 'text') return valueOf('regionText');
+  return '';
+}
+
+function fullAddress() {
+  return [
+    valueOf('streetAddress'),
+    valueOf('addressLine2'),
+    valueOf('suburb'),
+    valueOf('city'),
+    currentRegionValue(),
+    valueOf('postalCode'),
+    cleanCountryLabel(selectedText('country')) || valueOf('country')
+  ].filter(Boolean).join(', ');
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) {
+      resolve(null);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function collectDocumentsPayload() {
+  const labels = {
+    regdoc: document.getElementById('regDocLabel')?.textContent?.replace('*', '').trim() || 'Business Registration Certificate',
+    tax: 'Tax Clearance Certificate',
+    id: 'Identity Document',
+    bank: 'Bank Confirmation Letter',
+    licence: 'Import / Export Licence',
+    bbbee: 'B-BBEE Certificate'
+  };
+
+  const documents = [];
+
+  for (const [key, file] of Object.entries(uploadedFiles)) {
+    if (!file) continue;
+
+    documents.push({
+      document_key: key,
+      document_type: labels[key] || key,
+      file_name: file.name,
+      file_size: file.size,
+      mime_type: file.type,
+      file_data_url: await fileToDataUrl(file),
+      notes: key === 'regdoc' ? document.getElementById('regDocHint')?.textContent || null : null
+    });
+  }
+
+  return documents;
+}
+
+async function buildSignupPayload() {
+  const phoneCode = valueOf('phoneCode');
+  const phone = valueOf('phone');
+  const countryLabel = cleanCountryLabel(selectedText('country'));
+  const industryLabel = selectedText('industry');
+  const targetMarketValues = selectedMarkets();
+  const targetMarketLabels = selectedMarketLabels();
+
+  return {
+    company_name: valueOf('businessName'),
+    registration_number: valueOf('regNumber'),
+    email: valueOf('businessEmail'),
+    Password: valueOf('password'),
+    business_type: valueOf('entityType') || checkedValue('entityType'),
+    trade_role: checkedValue('tradeRole'),
+    industry_name: industryLabel || valueOf('industry'),
+    year_established: valueOf('yearEst'),
+    number_of_employees: valueOf('employees'),
+    annual_trade_volume: selectedText('turnover') || valueOf('turnover'),
+    company_description: valueOf('bizDescription'),
+    country: countryLabel || valueOf('country'),
+    address: fullAddress(),
+    phone: `${phoneCode} ${phone}`.trim(),
+    website: valueOf('website'),
+    target_markets: targetMarketLabels.length ? targetMarketLabels : targetMarketValues,
+    marketing_opt_in: Boolean(document.getElementById('marketingCheck')?.checked),
+    documents: await collectDocumentsPayload(),
+    onboarding: {
+      trade_role: checkedValue('tradeRole'),
+      entity_type: checkedValue('entityType'),
+      industry: {
+        value: valueOf('industry'),
+        label: industryLabel
+      },
+      business: {
+        registered_name: valueOf('businessName'),
+        trading_name: valueOf('tradingName'),
+        registration_number: valueOf('regNumber'),
+        vat_number: valueOf('vatNumber'),
+        tax_reference_number: valueOf('taxRefNumber'),
+        permit_number: valueOf('permitNumber'),
+        year_established: valueOf('yearEst'),
+        employees: valueOf('employees'),
+        turnover: valueOf('turnover'),
+        turnover_label: selectedText('turnover'),
+        description: valueOf('bizDescription')
+      },
+      address: {
+        country: valueOf('country'),
+        country_label: countryLabel,
+        street_address: valueOf('streetAddress'),
+        address_line_2: valueOf('addressLine2'),
+        suburb: valueOf('suburb'),
+        city: valueOf('city'),
+        region: currentRegionValue(),
+        postal_code: valueOf('postalCode'),
+        extra_field: valueOf('extraField'),
+        full_address: fullAddress()
+      },
+      contact: {
+        first_name: valueOf('firstName'),
+        last_name: valueOf('lastName'),
+        job_title: valueOf('jobTitle'),
+        id_number: valueOf('idNumber'),
+        email: valueOf('businessEmail'),
+        phone_code: phoneCode,
+        phone,
+        landline: valueOf('landline'),
+        website: valueOf('website'),
+        linkedin: valueOf('linkedin'),
+        referral_source: valueOf('referralSource')
+      },
+      target_markets: targetMarketLabels.length ? targetMarketLabels : targetMarketValues,
+      agreements: {
+        terms: Boolean(document.getElementById('termsCheck')?.checked),
+        popia: Boolean(document.getElementById('popiaCheck')?.checked),
+        accuracy: Boolean(document.getElementById('accuracyCheck')?.checked),
+        marketing: Boolean(document.getElementById('marketingCheck')?.checked)
+      }
+    }
+  };
+}
+
+async function submitSignupApplication() {
+  const submitBtn = document.querySelector('#signupForm .btn-submit');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="ri-loader-4-line"></i> Submitting...';
+  }
+
+  try {
+    const payload = await buildSignupPayload();
+    const response = await fetch('http://localhost:5000/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Application could not be submitted.');
+    }
+
+    try {
+      await fetch('http://localhost:5000/auth/send-email-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: payload.email })
+      });
+    } catch (error) {
+      console.warn('Verification email could not be sent automatically:', error);
+    }
+
+    document.getElementById('signupForm').style.display = 'none';
+    document.getElementById('successScreen').classList.add('active');
+    document.querySelector('.steps').style.display = 'none';
+    document.querySelector('.form-header').style.display = 'none';
+    document.querySelector('.mobile-progress').style.display = 'none';
+  } catch (error) {
+    alert(error.message || 'Application could not be submitted.');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="ri-check-double-line"></i> Submit Application';
+    }
+  }
+}
+
 /* ── Drag & drop ── */
 document.querySelectorAll('.upload-zone').forEach(zone => {
   zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
@@ -1169,12 +1394,8 @@ document.querySelectorAll('.upload-zone').forEach(zone => {
 });
 
 /* ── Form submit ── */
-document.getElementById('signupForm').addEventListener('submit', function(e) {
+document.getElementById('signupForm').addEventListener('submit', async function(e) {
   e.preventDefault();
   if (!validateStep(4)) return;
-  document.getElementById('signupForm').style.display = 'none';
-  document.getElementById('successScreen').classList.add('active');
-  document.querySelector('.steps').style.display = 'none';
-  document.querySelector('.form-header').style.display = 'none';
-  document.querySelector('.mobile-progress').style.display = 'none';
+  await submitSignupApplication();
 });

@@ -3,8 +3,10 @@ import jwt from "jsonwebtoken";
 import twilio from "twilio";
 import prisma from "../prismaClient.js";
 
+const twilioAccountSid = process.env.TWILIO_ASID || process.env.TWILIO_ACCOUNT_SID;
+
 const twilioClient = twilio(
-  process.env.TWILIO_ASID,
+  twilioAccountSid,
   process.env.TWILIO_AUTH_TOKEN
 );
 
@@ -16,7 +18,7 @@ function normalizeEmail(email) {
 
 function ensureTwilioVerifyConfigured() {
   if (
-    !process.env.TWILIO_ASID ||
+    !twilioAccountSid ||
     !process.env.TWILIO_AUTH_TOKEN ||
     !process.env.TWILIO_VERIFY_SERVICE_SID
   ) {
@@ -24,19 +26,108 @@ function ensureTwilioVerifyConfigured() {
   }
 }
 
+const normalizeTradeType = (value) => {
+  const normalized = String(value || "").trim().toUpperCase();
+  if (normalized === "IMPORTER" || normalized === "EXPORTER" || normalized === "BOTH") {
+    return normalized;
+  }
+  return "BOTH";
+};
+
+const parseEmployeeCount = (value) => {
+  const raw = String(value || "").trim();
+  if (!raw) return null;
+  if (raw.endsWith("+")) return Number(raw.replace(/\D/g, "")) || null;
+  const firstNumber = raw.match(/\d+/)?.[0];
+  return firstNumber ? Number(firstNumber) : null;
+};
+
+const getOrCreateIndustry = async (industryName) => {
+  const name = String(industryName || "").trim();
+  if (!name) return null;
+
+  return prisma.industry.upsert({
+    where: { industry_name: name },
+    update: {},
+    create: { industry_name: name }
+  });
+};
+
+const getOrCreateLocation = async (country) => {
+  const countryName = String(country || "").trim();
+  if (!countryName) return null;
+
+  const existingLocation = await prisma.location.findFirst({
+    where: {
+      country: {
+        equals: countryName,
+        mode: "insensitive"
+      }
+    }
+  });
+
+  if (existingLocation) return existingLocation;
+
+  return prisma.location.create({
+    data: { country: countryName }
+  });
+};
+
+const serializeMetadata = (payload) => JSON.stringify(payload, null, 2);
+
 export const signup = async (req, res) => {
     console.log("Signup");
   try {
-    const { company_name, registration_number, email, Password, business_type } = req.body;
+    const {
+      company_name,
+      registration_number,
+      email,
+      Password,
+      password,
+      business_type,
+      trade_role,
+      industry_name,
+      year_established,
+      number_of_employees,
+      annual_trade_volume,
+      company_description,
+      country,
+      address,
+      phone,
+      website,
+      target_markets = [],
+      documents = [],
+      marketing_opt_in,
+      onboarding
+    } = req.body;
     const normalizedEmail = normalizeEmail(email);
+    const rawPassword = Password || password;
+    const normalizedRegistrationNumber = String(registration_number || "").trim();
+    const companyName = String(company_name || "").trim();
+    const businessType = String(business_type || "").trim();
 
     console.log("prisma models:", prisma);
     console.log("company model:", prisma.company);
 
+    const RegExEmail= /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const RegExPassword= passwordPattern;
+
+    if (!companyName || !normalizedRegistrationNumber || !businessType) {
+      return res.status(400).json({
+        error: "company_name, registration_number, and business_type are required"
+      });
+    }
+
+    if (!RegExEmail.test(normalizedEmail) || !RegExPassword.test(rawPassword)) {
+      return res.status(400).json({
+        error: "Invalid email or password format"
+      });
+    }
+
     const existingUser = await prisma.company.findFirst({
       where: {
         OR: [
-          { registration_number },
+          { registration_number: normalizedRegistrationNumber },
           { email: normalizedEmail }
         ]
       }
@@ -45,36 +136,104 @@ export const signup = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ message: "Company already registered" });
     }
-    
-    const RegExEmail= /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const RegExPassword= passwordPattern;
 
-    if (!RegExEmail.test(normalizedEmail) || !RegExPassword.test(Password)) {
-      return res.status(400).json({
-        error: "Invalid email or password format"
-      });
-    }
-
-    const hashedPassword = await bcrypt.hash(Password, 10);
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
+    const industry = await getOrCreateIndustry(industry_name || onboarding?.industry?.label || onboarding?.industry?.value);
+    const location = await getOrCreateLocation(country || onboarding?.address?.country_label || onboarding?.address?.country);
+    const metadata = {
+      ...onboarding,
+      trade_role,
+      target_markets,
+      documents: documents.map((document) => ({
+        document_type: document.document_type,
+        file_name: document.file_name,
+        file_size: document.file_size,
+        mime_type: document.mime_type
+      })),
+      marketing_opt_in: Boolean(marketing_opt_in)
+    };
 
     const user = await prisma.company.create({
-    data: {
-      registration_number,
-      email: normalizedEmail,
-      is_email_verified: false,
-      Password: hashedPassword,
-      company_name,
-      business_type
+      data: {
+        registration_number: normalizedRegistrationNumber,
+        email: normalizedEmail,
+        is_email_verified: false,
+        account_status: "pending",
+        Password: hashedPassword,
+        company_name: companyName,
+        business_type: businessType,
+        trade_type: normalizeTradeType(trade_role),
+        number_of_employees: parseEmployeeCount(number_of_employees),
+        year_established: year_established ? Number(year_established) : null,
+        annual_trade_volume: annual_trade_volume || null,
+        company_description: company_description || null,
+        address: address || null,
+        phone: phone || null,
+        website: website || null,
+        notify_weekly_digest: Boolean(marketing_opt_in),
+        iec_number: onboarding?.business?.permit_number || null,
+        gst_number: onboarding?.business?.vat_number || null,
+        admin_notes: serializeMetadata(metadata),
+        ...(industry ? { industry_id: industry.industry_id } : {}),
+        ...(location ? { location_id: location.location_id } : {})
       }
     });
 
+    if (Array.isArray(target_markets) && target_markets.length) {
+      for (const market of target_markets) {
+        const regionName = String(market || "").trim();
+        if (!regionName) continue;
+
+        const region = await prisma.region.upsert({
+          where: { region_name: regionName },
+          update: {},
+          create: { region_name: regionName }
+        });
+
+        await prisma.companyRegions.upsert({
+          where: {
+            company_id_region_id: {
+              company_id: user.company_id,
+              region_id: region.region_id
+            }
+          },
+          update: {},
+          create: {
+            company_id: user.company_id,
+            region_id: region.region_id
+          }
+        });
+      }
+    }
+
+    if (Array.isArray(documents) && documents.length) {
+      const validDocuments = documents
+        .filter((document) => document?.document_type && document?.file_name)
+        .map((document) => ({
+          company_id: user.company_id,
+          document_type: String(document.document_type),
+          file_name: String(document.file_name),
+          file_url: document.file_data_url || null,
+          notes: document.notes || null,
+          status: "pending",
+          submitted_at: new Date()
+        }));
+
+      if (validDocuments.length) {
+        await prisma.verificationDocument.createMany({
+          data: validDocuments
+        });
+      }
+    }
+
     res.status(201).json({
-      message: "Signup successful. Verify your email before logging in.",
+      message: "Signup successful. Your account is pending approval.",
       user: {
         company_id: user.company_id,
         company_name: user.company_name,
         email: user.email,
-        is_email_verified: user.is_email_verified
+        is_email_verified: user.is_email_verified,
+        account_status: user.account_status
       }
     });
   } catch (error) {
