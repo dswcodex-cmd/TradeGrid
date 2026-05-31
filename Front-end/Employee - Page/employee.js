@@ -106,55 +106,181 @@ function formatDate(value) {
   return new Date(value).toISOString().slice(0, 10);
 }
 
+function escapeEmployeeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function groupDocsByCompany(documents) {
+  return [...documents.reduce((groups, doc) => {
+    const companyId = doc.company_id || doc.company?.company_id || 'unknown';
+    const existing = groups.get(companyId) || {
+      company: doc.company || { company_id: companyId, company_name: 'Unknown Company' },
+      documents: []
+    };
+
+    existing.documents.push(doc);
+    groups.set(companyId, existing);
+    return groups;
+  }, new Map()).values()];
+}
+
+function renderDocumentList(documents, reviewable = false) {
+  return documents.map((doc) => {
+    const docId = doc.verification_document_id || doc.document_id || doc.id;
+    const status = String(doc.status || 'pending').toLowerCase();
+    const reviewButtons = reviewable ? `
+      <button class="btn-secondary doc-review-btn" data-document-id="${docId}" data-status="approved"><i class="ri-check-line"></i> Approve</button>
+      <button class="btn-secondary doc-review-btn" data-document-id="${docId}" data-status="rejected"><i class="ri-close-line"></i> Reject</button>
+    ` : '';
+    const fileAction = doc.file_url
+      ? `<a class="btn-secondary" href="${doc.file_url}" target="_blank" rel="noopener"><i class="ri-file-search-line"></i> View file</a>`
+      : '<span class="empty-state" style="font-size:12px;">No file preview available</span>';
+
+    return `
+      <div style="border-top:1px solid #eef2f2;padding:12px 0;">
+        <div class="task-header" style="align-items:flex-start;">
+          <div class="task-info">
+            <h4>${escapeEmployeeHtml(doc.document_type || 'Verification document')}</h4>
+            <p class="task-meta"><i class="ri-file-text-line"></i> ${escapeEmployeeHtml(doc.file_name || 'Uploaded file')} &bull; Submitted ${formatDate(doc.submitted_at)}</p>
+            ${doc.review_notes ? `<p class="task-meta"><i class="ri-chat-check-line"></i> ${escapeEmployeeHtml(doc.review_notes)}</p>` : ''}
+          </div>
+          <span class="status ${status === 'approved' ? 'low' : status === 'rejected' ? 'high' : 'inprogress'}">${escapeEmployeeHtml(status)}</span>
+        </div>
+        <div class="request-actions" style="margin-top:10px;">
+          ${fileAction}
+          ${reviewButtons}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
 function renderEmployeeTasks(verificationDocs) {
   const tasksBody = document.getElementById('tasksBody');
   if (!tasksBody) return;
 
   const assignedDocs = verificationDocs.filter((doc) => doc.status === 'pending');
-  const completedDocs = verificationDocs.filter((doc) => doc.status === 'approved');
+  const completedDocs = verificationDocs.filter((doc) => ['approved', 'rejected'].includes(String(doc.status || '').toLowerCase()));
+  const assignedGroups = groupDocsByCompany(assignedDocs);
+  const completedGroups = groupDocsByCompany(completedDocs);
 
-  const assignedMarkup = assignedDocs.map((doc) => `
-    <div class="task-card" data-tab-content="assigned">
+  const groupCard = (group, tab, reviewable = false) => `
+    <div class="task-card" data-tab-content="${tab}"${tab !== 'assigned' ? ' style="display:none;"' : ''}>
       <div class="task-header">
         <div class="task-info">
-          <h4>${doc.document_type} - ${doc.company?.company_name || 'Unknown Company'}</h4>
-          <p class="task-meta"><i class="ri-building-2-line"></i> ${doc.company?.company_name || 'Unknown Company'} &bull; <i class="ri-file-text-line"></i> Verification Review</p>
+          <h4>${escapeEmployeeHtml(group.company?.company_name || 'Unknown Company')}</h4>
+          <p class="task-meta"><i class="ri-building-2-line"></i> ${escapeEmployeeHtml(group.company?.email || 'No email')} &bull; <i class="ri-file-text-line"></i> ${group.documents.length} document${group.documents.length === 1 ? '' : 's'} to review</p>
         </div>
-        <i class="ri-arrow-right-s-line task-arrow"></i>
+        <button class="btn-secondary view-company-profile-btn" data-company-id="${group.company?.company_id || ''}"><i class="ri-building-line"></i> View Profile</button>
       </div>
-      <div class="task-footer">
-        <div class="task-badges">
-          <span class="status high">High Priority</span>
-          <span class="status inprogress">In Progress</span>
-        </div>
-        <span class="task-due"><i class="ri-time-line"></i> Submitted ${formatDate(doc.submitted_at)}</span>
-      </div>
+      ${renderDocumentList(group.documents, reviewable)}
     </div>
-  `).join('');
+  `;
 
-  const completedMarkup = completedDocs.length
-    ? completedDocs.map((doc) => `
-      <div class="task-card" data-tab-content="completed" style="display:none;">
-        <div class="task-header">
-          <div class="task-info">
-            <h4>${doc.document_type} - ${doc.company?.company_name || 'Unknown Company'}</h4>
-            <p class="task-meta"><i class="ri-building-2-line"></i> ${doc.company?.company_name || 'Unknown Company'} &bull; <i class="ri-checkbox-circle-line"></i> Approved</p>
-          </div>
-          <i class="ri-arrow-right-s-line task-arrow"></i>
-        </div>
-        <div class="task-footer">
-          <div class="task-badges">
-            <span class="status low">Completed</span>
-          </div>
-          <span class="task-due"><i class="ri-time-line"></i> Reviewed ${formatDate(doc.reviewed_at || doc.updated_at)}</span>
-        </div>
-      </div>
-    `).join('')
+  const assignedMarkup = assignedGroups.map(group => groupCard(group, 'assigned', true)).join('');
+  const completedMarkup = completedGroups.length
+    ? completedGroups.map(group => groupCard(group, 'completed', false)).join('')
     : '<div class="empty-tab" data-tab-content="completed" style="display:none;"><p class="empty-state">No completed tasks.</p></div>';
 
   const pendingMarkup = '<div class="empty-tab" data-tab-content="pending" style="display:none;"><p class="empty-state">No pending tasks.</p></div>';
 
   tasksBody.innerHTML = `${assignedMarkup || '<div class="empty-tab" data-tab-content="assigned"><p class="empty-state">No assigned tasks.</p></div>'}${pendingMarkup}${completedMarkup}`;
+  bindVerificationReviewActions();
+}
+
+function showCompanyReviewModal(company) {
+  let modal = document.getElementById('employeeCompanyReviewModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'employeeCompanyReviewModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(8,31,31,.42);display:none;align-items:center;justify-content:center;z-index:9000;padding:20px;';
+    modal.innerHTML = `
+      <div style="width:min(720px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:22px;box-shadow:0 24px 70px rgba(8,31,31,.24);padding:24px;">
+        <div style="display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:14px;">
+          <div>
+            <p style="margin:0 0 6px;color:#0FA3B1;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;">Company profile</p>
+            <h3 id="employeeCompanyName" style="margin:0;color:#0D3B3B;"></h3>
+            <p id="employeeCompanyMeta" style="margin:6px 0 0;color:#5f7373;font-size:13px;"></p>
+          </div>
+          <button id="employeeCompanyClose" style="border:0;background:#eef6f6;width:34px;height:34px;border-radius:50%;cursor:pointer;"><i class="ri-close-line"></i></button>
+        </div>
+        <p id="employeeCompanyDesc" style="line-height:1.65;color:#345;font-size:14px;"></p>
+        <div id="employeeCompanyDocs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin-top:16px;"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => { modal.style.display = 'none'; };
+    modal.querySelector('#employeeCompanyClose').addEventListener('click', close);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) close();
+    });
+  }
+
+  const chips = (values) => (values?.length ? values : ['Not provided'])
+    .map(value => `<span style="display:inline-flex;padding:6px 10px;border-radius:999px;background:#eef8f8;color:#0D3B3B;font-size:12px;font-weight:700;">${escapeEmployeeHtml(value.product?.product_name || value.region?.region_name || value.product_name || value.region_name || value)}</span>`)
+    .join('');
+  const section = (title, values) => `
+    <div style="border:1px solid #e2eeee;border-radius:16px;padding:14px;background:#fbfefe;">
+      <h4 style="margin:0 0 10px;color:#0D3B3B;font-size:14px;">${escapeEmployeeHtml(title)}</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">${chips(values)}</div>
+    </div>`;
+
+  modal.querySelector('#employeeCompanyName').textContent = company.company_name || 'Unknown Company';
+  modal.querySelector('#employeeCompanyMeta').textContent = `${company.email || 'No email'} • ${company.registration_number || 'No registration number'}`;
+  modal.querySelector('#employeeCompanyDesc').textContent = company.company_description || 'No description added yet.';
+  modal.querySelector('#employeeCompanyDocs').innerHTML = [
+    section('Supplied products', company.products || company.supplied_products || []),
+    section('Desired products', company.desired_products || []),
+    section('Target regions', company.regions || company.target_regions || []),
+    section('Verification documents', (company.verification_documents || []).map(doc => `${doc.document_type}: ${doc.status}`))
+  ].join('');
+  modal.style.display = 'flex';
+}
+
+function bindVerificationReviewActions() {
+  const tasksBody = document.getElementById('tasksBody');
+  if (!tasksBody || tasksBody.dataset.verificationBound === 'true') return;
+
+  tasksBody.dataset.verificationBound = 'true';
+  tasksBody.addEventListener('click', async (event) => {
+    const reviewBtn = event.target.closest('.doc-review-btn');
+    if (reviewBtn) {
+      event.stopPropagation();
+      const documentId = Number(reviewBtn.dataset.documentId);
+      const status = reviewBtn.dataset.status;
+      const review_notes = status === 'approved'
+        ? 'Document reviewed and approved.'
+        : window.prompt('Add a short rejection note for the company:') || 'Document needs to be resubmitted.';
+
+      reviewBtn.disabled = true;
+      const response = await reviewVerificationDocument(documentId, { status, review_notes });
+      if (!response.ok) {
+        reviewBtn.disabled = false;
+        window.alert(response.data?.error || 'Could not review this document right now.');
+        return;
+      }
+
+      loadEmployeeDashboardData();
+      return;
+    }
+
+    const profileBtn = event.target.closest('.view-company-profile-btn');
+    if (profileBtn) {
+      event.stopPropagation();
+      const companyId = Number(profileBtn.dataset.companyId);
+      if (!companyId) return;
+      const response = await getCompanyById(companyId);
+      if (!response.ok) {
+        window.alert(response.data?.error || 'Could not open this company profile right now.');
+        return;
+      }
+      showCompanyReviewModal(response.data?.company || response.data);
+    }
+  });
 }
 
 function renderEmployeeMessages(supportTickets) {

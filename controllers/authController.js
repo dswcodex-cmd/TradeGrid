@@ -106,9 +106,6 @@ export const signup = async (req, res) => {
     const companyName = String(company_name || "").trim();
     const businessType = String(business_type || "").trim();
 
-    console.log("prisma models:", prisma);
-    console.log("company model:", prisma.company);
-
     const RegExEmail= /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const RegExPassword= passwordPattern;
 

@@ -31,6 +31,31 @@ const getOverlap = (leftSet, rightSet) => {
   return overlap;
 };
 
+const clampPercent = (value) => Math.max(0, Math.min(100, Math.round(value)));
+
+const deterministicRandomPercent = (leftId, rightId) => {
+  const seed = `${Math.min(leftId, rightId)}:${Math.max(leftId, rightId)}`;
+  let hash = 0;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = (hash * 31 + seed.charCodeAt(index)) % 101;
+  }
+
+  return hash;
+};
+
+const normalizeVolume = (value) => String(value || "").trim().toLowerCase();
+
+const calculateVolumeCompatibility = (leftVolume, rightVolume) => {
+  const left = normalizeVolume(leftVolume);
+  const right = normalizeVolume(rightVolume);
+
+  if (!left || !right) return 0;
+  if (left === right) return 100;
+
+  return 50;
+};
+
 export const getMatches = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
@@ -118,15 +143,25 @@ export const getMatches = async (req, res) => {
           currentCompany.industry.industry_name.toLowerCase() === candidate.industry.industry_name.toLowerCase()
         );
 
-        let score = 0;
+        const productSignals = offeredToWantedOverlap.length + wantedFromOfferedOverlap.length;
+        const productPossible = Math.max(myDesiredProducts.length + mySuppliedProducts.length, 1);
+        const productCompatibility = clampPercent((productSignals / productPossible) * 100);
+        const regionCompatibility = myRegions.length
+          ? clampPercent((sharedRegions.length / myRegions.length) * 100)
+          : 0;
+        const volumeCompatibility = calculateVolumeCompatibility(
+          currentCompany.annual_trade_volume,
+          candidate.annual_trade_volume
+        );
+        const randomCompatibility = deterministicRandomPercent(current_company_id, candidate.company_id);
+        const hasCompatibilitySignal = productSignals > 0 || sharedRegions.length > 0 || volumeCompatibility > 0 || sameIndustry;
 
-        score += offeredToWantedOverlap.length * 40;
-        score += wantedFromOfferedOverlap.length * 35;
-        score += sharedRegions.length * 10;
-
-        if (sameIndustry) {
-          score += 15;
-        }
+        const score = clampPercent(
+          (productCompatibility * 0.5) +
+          (regionCompatibility * 0.25) +
+          (volumeCompatibility * 0.1) +
+          (randomCompatibility * 0.15)
+        );
 
         return {
           company: serializeCompanyForMatch(candidate),
@@ -135,11 +170,24 @@ export const getMatches = async (req, res) => {
             offered_to_wanted_overlap: offeredToWantedOverlap,
             wanted_from_offered_overlap: wantedFromOfferedOverlap,
             shared_regions: sharedRegions,
-            same_industry: sameIndustry
+            same_industry: sameIndustry,
+            has_compatibility_signal: hasCompatibilitySignal,
+            compatibility_breakdown: {
+              product_compatibility: productCompatibility,
+              trade_region_compatibility: regionCompatibility,
+              volume_range_compatibility: volumeCompatibility,
+              random_compatibility: randomCompatibility,
+              weights: {
+                product_compatibility: 50,
+                trade_region_compatibility: 25,
+                volume_range_compatibility: 10,
+                random_compatibility: 15
+              }
+            }
           }
         };
       })
-      .filter((match) => match.match_score > 0)
+      .filter((match) => match.match_reasons.has_compatibility_signal)
       .sort((left, right) => right.match_score - left.match_score);
 
     return res.status(200).json({

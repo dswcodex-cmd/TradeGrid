@@ -126,19 +126,19 @@
           
         </div>
         <div class="kpi-grid">
-          <div class="kpi-card"><div class="kpi-icon teal"><i class="ri-exchange-line"></i></div><div class="kpi-info"><span class="kpi-label">Active Matches</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading backend data</p></div></div>
-          <div class="kpi-card"><div class="kpi-icon green"><i class="ri-message-3-line"></i></div><div class="kpi-info"><span class="kpi-label">Unread Messages</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading backend data</p></div></div>
-          <div class="kpi-card"><div class="kpi-icon yellow"><i class="ri-eye-line"></i></div><div class="kpi-info"><span class="kpi-label">Profile Views</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading backend data</p></div></div>
-          <div class="kpi-card"><div class="kpi-icon red"><i class="ri-handshake-line"></i></div><div class="kpi-info"><span class="kpi-label">Deals in Progress</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading backend data</p></div></div>
+          <div class="kpi-card"><div class="kpi-icon teal"><i class="ri-exchange-line"></i></div><div class="kpi-info"><span class="kpi-label">Active Matches</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading your trade activity</p></div></div>
+          <div class="kpi-card"><div class="kpi-icon green"><i class="ri-message-3-line"></i></div><div class="kpi-info"><span class="kpi-label">Unread Messages</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading your conversations</p></div></div>
+          <div class="kpi-card"><div class="kpi-icon yellow"><i class="ri-eye-line"></i></div><div class="kpi-info"><span class="kpi-label">Profile Views</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading profile insights</p></div></div>
+          <div class="kpi-card"><div class="kpi-icon red"><i class="ri-handshake-line"></i></div><div class="kpi-info"><span class="kpi-label">Deals in Progress</span><h2 class="kpi-value">0</h2><p class="kpi-change neutral"><i class="ri-database-2-line"></i> Loading deal activity</p></div></div>
         </div>
         <div class="dash-grid">
           <div class="dash-card">
             <div class="dash-card-header"><h3>Recent Matches</h3><a href="#" class="dash-link" data-page="matches">View all</a></div>
-            <div class="match-placeholder" style="padding:18px 0;color:var(--text-muted);font-size:13px;line-height:1.5;">Loading backend matches...</div>
+            <div class="match-placeholder" style="padding:18px 0;color:var(--text-muted);font-size:13px;line-height:1.5;">Loading matches...</div>
           </div>
           <div class="dash-card">
             <div class="dash-card-header"><h3>Recent Messages</h3><a href="#" class="dash-link" data-page="messages">View all</a></div>
-            <div class="msg-preview-placeholder" style="padding:18px 0;color:var(--text-muted);font-size:13px;line-height:1.5;">Loading backend messages...</div>
+            <div class="msg-preview-placeholder" style="padding:18px 0;color:var(--text-muted);font-size:13px;line-height:1.5;">Loading messages...</div>
           </div>
           <div class="dash-card">
             <div class="dash-card-header"><h3>Verification Status</h3><a href="#" class="dash-link" data-page="verification">Manage</a></div>
@@ -165,7 +165,7 @@
       <div class="page-inner">
         <div class="page-title-row"><h2>Business Matches</h2><p>AI-curated trading partner matches</p></div>
         <div class="placeholder-grid">
-          <div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--text-muted);font-size:14px;">Loading backend matches...</div>
+          <div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--text-muted);font-size:14px;">Loading matches...</div>
         </div>
       </div>
     </main>
@@ -177,12 +177,12 @@
         <div class="messages-layout">
           <div class="msg-list-panel">
             <div class="msg-list-search"><i class="ri-search-line"></i><input type="text" placeholder="Search conversations..." /></div>
-            <div class="msg-list-item"><div class="ml-body"><p class="ml-preview">Loading backend conversations...</p></div></div>
+            <div class="msg-list-item"><div class="ml-body"><p class="ml-preview">Loading conversations...</p></div></div>
           </div>
           <div class="msg-chat-panel">
-            <div class="msg-chat-header"><div class="ml-avatar">--</div><div><p class="chat-name">Select a conversation</p><p class="chat-sub">Backend messages only</p></div></div>
+            <div class="msg-chat-header"><div class="ml-avatar">--</div><div><p class="chat-name">Select a conversation</p><p class="chat-sub">Your trade messages</p></div></div>
             <div class="msg-chat-body">
-              <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">Select a backend conversation.</div>
+              <div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">Select a conversation.</div>
             </div>
             <div class="msg-chat-input">
               <input type="text" placeholder="Type a message..." />
@@ -364,7 +364,7 @@
                   style="width:34px;height:34px;border-radius:50%;background:var(--primary);color:#B5EAF0;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">
                   JP</div>
                 <div style="flex:1;">
-                  <p style="font-size:12px;font-weight:600;color:var(--primary);">Loading backend matches</p><span
+                  <p style="font-size:12px;font-weight:600;color:var(--primary);">Loading matches</p><span
                     style="font-size:10px;color:var(--text-muted);">Please wait</span>
                 </div><span
                   style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);padding:2px 8px;border-radius:20px;">--</span>
@@ -374,7 +374,7 @@
                   style="width:34px;height:34px;border-radius:50%;background:var(--primary);color:#B5EAF0;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">
                   EU</div>
                 <div style="flex:1;">
-                  <p style="font-size:12px;font-weight:600;color:var(--primary);">Loading backend matches</p><span
+                  <p style="font-size:12px;font-weight:600;color:var(--primary);">Loading matches</p><span
                     style="font-size:10px;color:var(--text-muted);">Please wait</span>
                 </div><span
                   style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);padding:2px 8px;border-radius:20px;">--</span>
@@ -384,7 +384,7 @@
                   style="width:34px;height:34px;border-radius:50%;background:var(--primary);color:#B5EAF0;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">
                   AS</div>
                 <div style="flex:1;">
-                  <p style="font-size:12px;font-weight:600;color:var(--primary);">Loading backend matches</p><span
+                  <p style="font-size:12px;font-weight:600;color:var(--primary);">Loading matches</p><span
                     style="font-size:10px;color:var(--text-muted);">Please wait</span>
                 </div><span
                   style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);padding:2px 8px;border-radius:20px;">--</span>

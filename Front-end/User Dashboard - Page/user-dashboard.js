@@ -202,6 +202,40 @@ function getDashboardToken() {
   }
 }
 
+const DASHBOARD_API_BASE = 'http://localhost:5000';
+
+function friendlyDashboardError(fallback = 'Something went wrong. Please try again in a moment.') {
+  return fallback;
+}
+
+function escapeDashboardHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+async function dashboardJsonPost(path, body) {
+  const token = getDashboardToken();
+  const response = await fetch(DASHBOARD_API_BASE + path, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    },
+    body: JSON.stringify(body || {})
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.error || data.message || 'Request failed');
+  }
+
+  return data;
+}
+
 // ============================================================
 //   PAYMENT MODAL
 // ============================================================
@@ -220,7 +254,7 @@ const currencySymbols = {
 
 function openPaymentModal() {
   if (!activeConversationId) {
-    showUserToast('Select a backend conversation first.');
+    showUserToast('Select a conversation first.');
     return;
   }
   payAmount.value    = '';
@@ -355,7 +389,7 @@ btnRunImgSearch.addEventListener('click', async () => {
 
     currentProduct = {
       name: data.product_name || 'Identified product',
-      desc: `${data.companies?.length || 0} supplier${data.companies?.length === 1 ? '' : 's'} found from backend.`,
+      desc: `${data.companies?.length || 0} supplier${data.companies?.length === 1 ? '' : 's'} found.`,
       tags: data.matched_products || [],
     };
 
@@ -381,6 +415,76 @@ btnViewProduct.addEventListener('click', () => {
   closeImgPanel();
   navigateTo('discover');
 });
+
+function openProductEnquiryModal(product) {
+  let modal = document.getElementById('productEnquiryModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'productEnquiryModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(13,59,59,.38);display:none;align-items:center;justify-content:center;z-index:9200;padding:20px;';
+    modal.innerHTML = `
+      <div style="width:min(520px,100%);background:#fff;border-radius:22px;box-shadow:0 24px 70px rgba(13,59,59,.22);padding:24px;">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px;">
+          <div>
+            <h3 style="margin:0;color:#0D3B3B;font-size:20px;">Send enquiry</h3>
+            <p id="enquiryProductLabel" style="margin:6px 0 0;color:#5f7373;font-size:13px;line-height:1.5;"></p>
+          </div>
+          <button id="closeProductEnquiry" style="border:0;background:#eef6f6;width:34px;height:34px;border-radius:50%;cursor:pointer;"><i class="ri-close-line"></i></button>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0;">
+          <label style="display:flex;gap:8px;align-items:center;padding:10px 12px;border:1px solid #d7e7e7;border-radius:12px;cursor:pointer;">
+            <input type="radio" name="enquiryCategory" value="general" checked> General enquiry
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;padding:10px 12px;border:1px solid #d7e7e7;border-radius:12px;cursor:pointer;">
+            <input type="radio" name="enquiryCategory" value="technical"> Technical help
+          </label>
+        </div>
+        <textarea id="productEnquiryMessage" rows="5" style="width:100%;box-sizing:border-box;border:1px solid #d7e7e7;border-radius:14px;padding:13px;font-family:inherit;resize:vertical;" placeholder="Tell the team what you need help sourcing or clarifying..."></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+          <button id="cancelProductEnquiry" style="border:1px solid #d7e7e7;background:#fff;border-radius:12px;padding:10px 16px;cursor:pointer;">Cancel</button>
+          <button id="submitProductEnquiry" style="border:0;background:#0D3B3B;color:#fff;border-radius:12px;padding:10px 18px;cursor:pointer;font-weight:700;">Send enquiry</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => { modal.style.display = 'none'; };
+    modal.querySelector('#closeProductEnquiry').addEventListener('click', close);
+    modal.querySelector('#cancelProductEnquiry').addEventListener('click', close);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) close();
+    });
+    modal.querySelector('#submitProductEnquiry').addEventListener('click', async () => {
+      const category = modal.querySelector('input[name="enquiryCategory"]:checked')?.value || 'general';
+      const messageInput = modal.querySelector('#productEnquiryMessage');
+      const message = messageInput.value.trim();
+      const productName = modal.dataset.productName || 'product';
+
+      if (!message) {
+        showUserToast('Please add a short enquiry message.');
+        return;
+      }
+
+      try {
+        await dashboardJsonPost('/support/tickets', {
+          title: `Product enquiry: ${productName}`,
+          description: message,
+          category,
+          priority: category === 'technical' ? 'high' : 'medium'
+        });
+        close();
+        showUserToast(category === 'technical'
+          ? 'Your technical enquiry was sent to the admin team.'
+          : 'Your enquiry was sent to the support team.');
+      } catch (error) {
+        showUserToast(friendlyDashboardError('Could not send the enquiry right now. Please try again.'));
+      }
+    });
+  }
+
+  modal.dataset.productName = product?.name || 'product';
+  modal.querySelector('#enquiryProductLabel').textContent = `About ${product?.name || 'this product'}. Choose where this should go and add a short note.`;
+  modal.querySelector('#productEnquiryMessage').value = `I would like to enquire about ${product?.name || 'this product'}.`;
+  modal.style.display = 'flex';
+}
 
 function renderProductDetail(p) {
   const el = document.getElementById('productDetailContent');
@@ -412,7 +516,7 @@ function renderProductDetail(p) {
     '</div>';
 
   document.getElementById('btnBackProduct').addEventListener('click', () => navigateTo('discover'));
-  document.getElementById('btnEnquire').addEventListener('click', () => { showUserToast('Enquiry sent to matched suppliers!'); navigateTo('messages'); });
+  document.getElementById('btnEnquire').addEventListener('click', () => openProductEnquiryModal(p));
   document.getElementById('btnSaveProduct').addEventListener('click', () => showUserToast('Product saved to watchlist!'));
 }
 
@@ -738,7 +842,7 @@ liveNotifMarkAll.addEventListener('click', async () => {
     if (n.dataset.derived !== 'true') n.classList.remove('unread');
   });
   updateTopbarNotifCount();
-  showUserToast('Backend notifications marked as read');
+  showUserToast('Notifications marked as read');
 });
 
 // ── Topbar search ──
@@ -766,9 +870,10 @@ topbarSearchBtn.addEventListener('click', async () => {
 
     applyDiscoverResults(data.companies || [], q);
     navigateTo('discover');
+    showUserToast(`${data.companies?.length || 0} compan${data.companies?.length === 1 ? 'y' : 'ies'} found.`);
   } catch (error) {
     console.error(error);
-    showUserToast(error.message || 'Search failed');
+    showUserToast(friendlyDashboardError('Search is unavailable right now. Please try again shortly.'));
   }
 });
 topbarSearchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') topbarSearchBtn.click(); });
@@ -1533,13 +1638,13 @@ function renderMessagesList(conversations, currentCompanyId) {
     activeConversationId = null;
     const empty = document.createElement('div');
     empty.className = 'msg-list-item';
-    empty.innerHTML = '<div class="ml-body"><p class="ml-preview">No backend conversations yet.</p></div>';
+    empty.innerHTML = '<div class="ml-body"><p class="ml-preview">No conversations yet.</p></div>';
     panel.appendChild(empty);
     const body = document.querySelector('.msg-chat-body');
     if (body) body.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:13px;">Select a conversation or start one from Matches.</div>';
     const chatHeader = document.querySelector('.msg-chat-header');
     if (chatHeader) {
-      chatHeader.innerHTML = '<div class="ml-avatar">--</div><div><p class="chat-name">No backend conversation selected</p><p class="chat-sub">Start one from Matches</p></div>';
+      chatHeader.innerHTML = '<div class="ml-avatar">--</div><div><p class="chat-name">No conversation selected</p><p class="chat-sub">Start one from Matches</p></div>';
     }
     const payRecipientAvatar = document.getElementById('payRecipientAvatar');
     const payRecipientName = document.getElementById('payRecipientName');
@@ -1615,7 +1720,7 @@ async function openConversationFromMatch(companyId) {
   });
   const conversationId = created.conversation?.conversation_id;
   if (!conversationId) {
-    throw new Error('Conversation was not returned by the backend.');
+    throw new Error('Conversation could not be opened.');
   }
 
   const currentCompanyId = getStoredCompanyId();
@@ -1968,7 +2073,7 @@ function renderDiscoverInsights() {
           </div>
           <span style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);padding:2px 8px;border-radius:20px;">${escapeDiscoverHtml(company.score)}</span>
         </div>
-      `).join('') : '<p style="font-size:12px;color:var(--text-muted);line-height:1.6;">No backend matches available yet.</p>'}`;
+      `).join('') : '<p style="font-size:12px;color:var(--text-muted);line-height:1.6;">No matches available yet.</p>'}`;
   }
 
   if (regionsCard) {
@@ -1993,7 +2098,7 @@ function renderDiscoverInsights() {
           <span>${escapeDiscoverHtml(region)}</span>
           <span style="margin-left:auto;font-weight:700;color:var(--primary);">${count}</span>
         </div>
-      `).join('') : '<p style="font-size:12px;color:var(--text-muted);line-height:1.6;">Regions will appear when backend companies load.</p>'}`;
+      `).join('') : '<p style="font-size:12px;color:var(--text-muted);line-height:1.6;">Regions will appear when companies load.</p>'}`;
   }
 }
 
@@ -2042,9 +2147,68 @@ async function loadAllDiscoverCompanies() {
   }
 }
 
+function showCompanyProfileModal(company) {
+  if (!company) return;
+
+  let modal = document.getElementById('matchCompanyProfileModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'matchCompanyProfileModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(13,59,59,.42);display:none;align-items:center;justify-content:center;z-index:9300;padding:20px;';
+    modal.innerHTML = `
+      <div style="width:min(760px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:24px;box-shadow:0 24px 80px rgba(13,59,59,.25);padding:26px;">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px;">
+          <div>
+            <p style="margin:0 0 7px;color:#0FA3B1;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;">Company profile</p>
+            <h3 id="profileModalName" style="margin:0;color:#0D3B3B;font-size:24px;"></h3>
+            <p id="profileModalMeta" style="margin:7px 0 0;color:#5f7373;font-size:13px;"></p>
+          </div>
+          <button id="closeMatchCompanyProfile" style="border:0;background:#eef6f6;width:36px;height:36px;border-radius:50%;cursor:pointer;"><i class="ri-close-line"></i></button>
+        </div>
+        <p id="profileModalDesc" style="color:#345;line-height:1.65;font-size:14px;margin:0 0 18px;"></p>
+        <div id="profileModalSections" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => { modal.style.display = 'none'; };
+    modal.querySelector('#closeMatchCompanyProfile').addEventListener('click', close);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) close();
+    });
+  }
+
+  const chips = (values) => (values?.length ? values : ['Not provided'])
+    .map(value => `<span style="display:inline-flex;padding:6px 10px;border-radius:999px;background:#eef8f8;color:#0D3B3B;font-size:12px;font-weight:700;">${escapeDashboardHtml(value)}</span>`)
+    .join('');
+  const section = (title, values) => `
+    <div style="border:1px solid #e2eeee;border-radius:18px;padding:15px;background:#fbfefe;">
+      <h4 style="margin:0 0 10px;color:#0D3B3B;font-size:14px;">${escapeDashboardHtml(title)}</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">${chips(values)}</div>
+    </div>`;
+
+  const name = company.company_name || 'Unnamed company';
+  const country = company.location?.country || company.country || 'Unknown location';
+  const industry = company.industry?.industry_name || company.industry || company.business_type || 'Trade';
+
+  modal.querySelector('#profileModalName').textContent = name;
+  modal.querySelector('#profileModalMeta').textContent = `${country} • ${industry}`;
+  modal.querySelector('#profileModalDesc').textContent = company.company_description || 'This company has not added a detailed description yet.';
+  modal.querySelector('#profileModalSections').innerHTML = [
+    section('Supplies', company.supplied_products || []),
+    section('Looking for', company.desired_products || []),
+    section('Target regions', company.target_regions || []),
+    section('Business details', [
+      company.business_type,
+      company.annual_trade_volume ? `Volume: ${company.annual_trade_volume}` : null,
+      company.number_of_employees ? `${company.number_of_employees} employees` : null,
+      company.website
+    ].filter(Boolean))
+  ].join('');
+  modal.style.display = 'flex';
+}
+
 async function openDiscoverCompanyProfile(companyId, fallbackName = 'company') {
   if (!companyId) {
-    showUserToast('This company profile is missing a backend ID.');
+    showUserToast('This company profile is unavailable right now.');
     return null;
   }
 
@@ -2061,11 +2225,11 @@ async function openDiscoverCompanyProfile(companyId, fallbackName = 'company') {
       throw new Error(data.error || 'Could not open company profile.');
     }
 
-    showUserToast(`Viewed ${data.company?.company_name || fallbackName}.`);
+    showCompanyProfileModal(data.company);
     window.hydrateOverviewFromBackend?.();
     return data.company;
   } catch (error) {
-    showUserToast(error.message || 'Could not open company profile');
+    showUserToast(friendlyDashboardError(`Could not open ${fallbackName}'s profile right now.`));
     return null;
   }
 }
@@ -2212,7 +2376,7 @@ function resetDiscoverCards() {
     const data = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      throw new Error(data.error || data.message || 'Backend request failed.');
+      throw new Error(data.error || data.message || 'Request failed.');
     }
 
     return data;
@@ -2277,7 +2441,13 @@ function resetDiscoverCards() {
     };
   }
 
-  function matchCardHtml({ company, score, status, sourceCompanyId }) {
+  function sortNewestFirst(items) {
+    return [...(items || [])].sort((left, right) =>
+      new Date(right.created_at || right.updated_at || 0) - new Date(left.created_at || left.updated_at || 0)
+    );
+  }
+
+  function matchCardHtml({ company, score, status, sourceCompanyId, breakdown }) {
     const name = company.company_name || company.name || 'Unnamed company';
     const companyId = Number(company.company_id);
     const country = company.location?.country || company.country || 'Unknown location';
@@ -2290,8 +2460,16 @@ function resetDiscoverCards() {
       : status === 'pending-sent'
         ? `<button class="btn-ph-primary" disabled style="opacity:.65;"><i class="ri-time-line"></i> Pending</button>`
         : status === 'pending-received'
-          ? `<button class="btn-ph-primary match-accept-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-checkbox-circle-line"></i> Accept Request</button>`
+          ? `<button class="btn-ph-primary match-accept-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-checkbox-circle-line"></i> Accept Request</button><button class="btn-ph-secondary match-reject-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-close-circle-line"></i> Reject</button>`
           : `<button class="btn-ph-primary match-connect-btn" data-company-id="${companyId}"><i class="ri-add-line"></i> Connect</button>`;
+    const stats = breakdown
+      ? `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0 2px;font-size:11px;color:var(--text-muted);">
+          <span>Products: <strong>${Number(breakdown.product_compatibility || 0)}%</strong></span>
+          <span>Regions: <strong>${Number(breakdown.trade_region_compatibility || 0)}%</strong></span>
+          <span>Volume: <strong>${Number(breakdown.volume_range_compatibility || 0)}%</strong></span>
+          <span>Market fit: <strong>${Number(breakdown.random_compatibility || 0)}%</strong></span>
+        </div>`
+      : '';
 
     return `
       <div class="placeholder-card" data-company-id="${companyId}">
@@ -2299,6 +2477,7 @@ function resetDiscoverCards() {
         <h4>${escapeHtml(name)}</h4>
         <p>${escapeHtml(country)} &bull; ${escapeHtml(industry)} &bull; ${escapeHtml(products)}</p>
         <div class="ph-score">${escapeHtml(score)}</div>
+        ${stats}
         <div class="ph-actions">
           ${action}
           <button class="btn-ph-secondary match-profile-btn" data-company-id="${companyId}"><i class="ri-user-line"></i> View Profile</button>
@@ -2316,19 +2495,10 @@ function resetDiscoverCards() {
     const acceptedCompanies = acceptedConnections
       .map(connection => getConnectionCompany(connection, currentCompanyId))
       .filter(Boolean);
-    const acceptedIds = new Set(acceptedCompanies.map(company => Number(company.company_id)));
-    const renderedIds = new Set(acceptedIds);
+    const renderedIds = new Set();
 
     const cards = [];
-    acceptedCompanies.forEach(company => {
-      cards.push(matchCardHtml({
-        company,
-        score: 'Connected',
-        status: 'connected'
-      }));
-    });
-
-    receivedPending.forEach(request => {
+    sortNewestFirst(receivedPending).forEach(request => {
       const company = request.source;
       const companyId = Number(company?.company_id);
       if (!companyId || renderedIds.has(companyId)) return;
@@ -2341,7 +2511,7 @@ function resetDiscoverCards() {
       }));
     });
 
-    sentPending.forEach(request => {
+    sortNewestFirst(sentPending).forEach(request => {
       const company = request.target;
       const companyId = Number(company?.company_id);
       if (!companyId || renderedIds.has(companyId)) return;
@@ -2350,6 +2520,17 @@ function resetDiscoverCards() {
         company,
         score: 'Request sent',
         status: 'pending-sent'
+      }));
+    });
+
+    acceptedCompanies.forEach(company => {
+      const companyId = Number(company?.company_id);
+      if (!companyId || renderedIds.has(companyId)) return;
+      renderedIds.add(companyId);
+      cards.push(matchCardHtml({
+        company,
+        score: 'Connected',
+        status: 'connected'
       }));
     });
 
@@ -2368,16 +2549,17 @@ function resetDiscoverCards() {
       cards.push(matchCardHtml({
         company,
         score: `${Math.max(0, Math.min(100, Number(match.match_score || 0)))}% match`,
-        status
+        status,
+        breakdown: match.match_reasons?.compatibility_breakdown
       }));
     });
 
     grid.innerHTML = cards.length
       ? cards.join('')
-      : `<div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--text-muted);font-size:14px;">No backend matches yet. Add products, desired products, and target regions to your profile to improve matching.</div>`;
+      : `<div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--text-muted);font-size:14px;">No matches yet. Add products, desired products, and target regions to improve your recommendations.</div>`;
 
     if (subtitle) {
-      subtitle.textContent = `${acceptedCompanies.length} connected partner${acceptedCompanies.length === 1 ? '' : 's'} · ${aiMatches.length} suggested backend match${aiMatches.length === 1 ? '' : 'es'}`;
+      subtitle.textContent = `${receivedPending.length} new request${receivedPending.length === 1 ? '' : 's'} • ${acceptedCompanies.length} connected partner${acceptedCompanies.length === 1 ? '' : 's'} • ${aiMatches.length} suggested match${aiMatches.length === 1 ? '' : 'es'}`;
     }
 
     grid.querySelectorAll('.match-connect-btn').forEach(button => {
@@ -2418,6 +2600,27 @@ function resetDiscoverCards() {
         } catch (error) {
           button.disabled = false;
           showUserToast(error.message || 'Could not accept request');
+        }
+      });
+    });
+
+    grid.querySelectorAll('.match-reject-btn').forEach(button => {
+      button.addEventListener('click', async () => {
+        const sourceCompanyId = Number(button.dataset.sourceCompanyId);
+        const card = button.closest('.placeholder-card');
+        const companyName = card?.querySelector('h4')?.textContent || 'company';
+
+        button.disabled = true;
+        try {
+          await dashboardPost('/auth/reject', {
+            source_company_id: sourceCompanyId
+          });
+          card?.remove();
+          showUserToast(`Request from ${companyName} rejected.`);
+          window.hydrateOverviewFromBackend?.();
+        } catch (error) {
+          button.disabled = false;
+          showUserToast(friendlyDashboardError('Could not reject the request right now.'));
         }
       });
     });
@@ -2701,7 +2904,7 @@ function resetDiscoverCards() {
       const token = getDashboardToken();
       if (!token) {
         ['Recent Matches', 'Recent Messages', 'Verification Status', 'Market Insights'].forEach(title => {
-          setCardEmpty(getOverviewCard(title), 'Log in to load live backend data for this section.');
+          setCardEmpty(getOverviewCard(title), 'Log in to load this section.');
         });
         renderMatchesPage([], [], [], [], null);
         renderMessagesList([], getStoredCompanyId());
@@ -2827,8 +3030,8 @@ function resetDiscoverCards() {
       }
     } catch (error) {
       console.error('Dashboard hydration failed', error);
-      setCardEmpty(getOverviewCard('Recent Matches'), 'No backend matches yet.');
-      setCardEmpty(getOverviewCard('Recent Messages'), 'No backend conversations yet.');
+      setCardEmpty(getOverviewCard('Recent Matches'), 'No matches yet.');
+      setCardEmpty(getOverviewCard('Recent Messages'), 'No conversations yet.');
       renderMatchesPage([], [], [], [], null);
       renderMessagesList([], getStoredCompanyId());
     }
@@ -2851,7 +3054,7 @@ document.getElementById('discBtnConnect')?.addEventListener('click', () => {
   const name = company.name;
 
   if (!company.company_id) {
-    showUserToast('This company cannot be connected because it has no backend ID.');
+    showUserToast('This company cannot be connected right now.');
     return;
   }
 

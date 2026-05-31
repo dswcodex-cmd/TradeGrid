@@ -94,7 +94,7 @@ async function loginWithBackend(e) {
     window.location.href = data.redirect_to || '../User Dashboard - Page/user-dashboard.html';
   } catch (error) {
     console.error(error);
-    alert('Could not connect to the backend. Make sure the server is running on port 5000.');
+    alert('We could not sign you in right now. Please try again shortly.');
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -195,7 +195,7 @@ async function sendForgotCode(event) {
     modal.querySelector('#forgotCode')?.focus();
   } catch (error) {
     console.error(error);
-    alert('Could not connect to the backend. Make sure the server is running on port 5000.');
+    alert('We could not complete this request right now. Please try again shortly.');
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -241,7 +241,7 @@ async function resetForgotPassword(event) {
     alert('Password reset successfully. You can now sign in.');
   } catch (error) {
     console.error(error);
-    alert('Could not connect to the backend. Make sure the server is running on port 5000.');
+    alert('We could not complete this request right now. Please try again shortly.');
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;

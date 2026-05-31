@@ -123,10 +123,10 @@ async function loadAdminDashboardData() {
       }
     }
 
-    showToast('Admin data synced from backend');
+    showToast('Admin data refreshed');
   } catch (error) {
     console.error('Failed to load admin dashboard data:', error);
-    showToast('Failed to load admin backend data', 'ri-error-warning-line');
+    showToast('Could not refresh admin data. Please try again.', 'ri-error-warning-line');
   }
 }
 
@@ -277,7 +277,7 @@ function initUserActions() {
       const status  = row.querySelector('.status')?.textContent.trim() || '';
       const country = row.querySelector('td:nth-child(2)')?.textContent.trim() || '';
       if (!companyId) {
-        showToast('This company row is missing its backend id', 'ri-error-warning-line');
+        showToast('This company record is unavailable right now.', 'ri-error-warning-line');
         return;
       }
       const menu = document.createElement('div');

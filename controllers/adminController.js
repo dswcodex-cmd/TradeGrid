@@ -753,8 +753,24 @@ export const getAdminVerificationDocuments = async (req, res) => {
       }
     });
 
+    const serializedDocuments = documents.map(serializeVerificationDocument);
+    const companyGroups = [...serializedDocuments
+      .reduce((groups, document) => {
+        const key = document.company_id;
+        const existing = groups.get(key) || {
+          company: document.company,
+          documents: []
+        };
+
+        existing.documents.push(document);
+        groups.set(key, existing);
+        return groups;
+      }, new Map())
+      .values()];
+
     return res.status(200).json({
-      documents: documents.map(serializeVerificationDocument)
+      documents: serializedDocuments,
+      company_groups: companyGroups
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
