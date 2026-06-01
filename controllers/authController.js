@@ -27,6 +27,84 @@ function ensureTwilioVerifyConfigured() {
   }
 }
 
+const emailOtpStore = new Map();
+const EMAIL_OTP_TTL_MS = 10 * 60 * 1000;
+
+function generateOtpCode() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function emailOtpKey(email, purpose) {
+  return `${purpose}:${normalizeEmail(email)}`;
+}
+
+function saveEmailOtp(email, purpose) {
+  const code = generateOtpCode();
+  emailOtpStore.set(emailOtpKey(email, purpose), {
+    code,
+    expiresAt: Date.now() + EMAIL_OTP_TTL_MS
+  });
+  return code;
+}
+
+function verifyStoredEmailOtp(email, purpose, code) {
+  const key = emailOtpKey(email, purpose);
+  const record = emailOtpStore.get(key);
+
+  if (!record || record.expiresAt < Date.now()) {
+    emailOtpStore.delete(key);
+    return false;
+  }
+
+  if (String(record.code) !== String(code).trim()) {
+    return false;
+  }
+
+  emailOtpStore.delete(key);
+  return true;
+}
+
+async function sendEmailOtp(email, purpose) {
+  const code = saveEmailOtp(email, purpose);
+  const subject = purpose === "password_reset"
+    ? "Trade Grid password reset code"
+    : "Trade Grid email verification code";
+  const text = `Your Trade Grid verification code is ${code}. It expires in 10 minutes.`;
+
+  if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
+    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        personalizations: [{ to: [{ email }] }],
+        from: {
+          email: process.env.SENDGRID_FROM_EMAIL,
+          name: process.env.SENDGRID_FROM_NAME || "Trade Grid"
+        },
+        subject,
+        content: [{ type: "text/plain", value: text }]
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "");
+      throw new Error(errorText || "Could not send email code");
+    }
+
+    return { delivery: "email", status: "pending" };
+  }
+
+  console.warn(`[TradeGrid OTP] ${purpose} code for ${email}: ${code}`);
+  return {
+    delivery: "development",
+    status: "pending",
+    dev_code: process.env.NODE_ENV === "production" ? undefined : code
+  };
+}
+
 const normalizeTradeType = (value) => {
   const normalized = String(value || "").trim().toUpperCase();
   if (normalized === "IMPORTER" || normalized === "EXPORTER" || normalized === "BOTH") {
@@ -386,18 +464,13 @@ export const sendEmailVerification = async (req, res) => {
       return res.status(400).json({ error: "email is required" });
     }
 
-    ensureTwilioVerifyConfigured();
-
-    const verification = await twilioClient.verify.v2
-      .services(process.env.TWILIO_VERIFY_SERVICE_SID)
-      .verifications.create({
-        to: normalizedEmail,
-        channel: "email"
-      });
+    const verification = await sendEmailOtp(normalizedEmail, "email_verification");
 
     return res.status(200).json({
       message: "Verification email sent",
-      status: verification.status
+      status: verification.status,
+      delivery: verification.delivery,
+      ...(verification.dev_code ? { dev_code: verification.dev_code } : {})
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -413,19 +486,12 @@ export const verifyEmailCode = async (req, res) => {
       return res.status(400).json({ error: "email and code are required" });
     }
 
-    ensureTwilioVerifyConfigured();
+    const isApproved = verifyStoredEmailOtp(normalizedEmail, "email_verification", code);
 
-    const verificationCheck = await twilioClient.verify.v2
-      .services(process.env.TWILIO_VERIFY_SERVICE_SID)
-      .verificationChecks.create({
-        to: normalizedEmail,
-        code
-      });
-
-    if (verificationCheck.status !== "approved") {
+    if (!isApproved) {
       return res.status(400).json({
         message: "Invalid or expired verification code",
-        status: verificationCheck.status
+        status: "denied"
       });
     }
 
@@ -447,7 +513,7 @@ export const verifyEmailCode = async (req, res) => {
 
     return res.status(200).json({
       message: "Email verified successfully",
-      status: verificationCheck.status
+      status: "approved"
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -470,18 +536,13 @@ export const sendPasswordResetCode = async (req, res) => {
       return res.status(404).json({ error: "No company account found for this email" });
     }
 
-    ensureTwilioVerifyConfigured();
-
-    const verification = await twilioClient.verify.v2
-      .services(process.env.TWILIO_VERIFY_SERVICE_SID)
-      .verifications.create({
-        to: normalizedEmail,
-        channel: "email"
-      });
+    const verification = await sendEmailOtp(normalizedEmail, "password_reset");
 
     return res.status(200).json({
       message: "Password reset code sent",
-      status: verification.status
+      status: verification.status,
+      delivery: verification.delivery,
+      ...(verification.dev_code ? { dev_code: verification.dev_code } : {})
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -511,19 +572,12 @@ export const resetPasswordWithCode = async (req, res) => {
       return res.status(404).json({ error: "No company account found for this email" });
     }
 
-    ensureTwilioVerifyConfigured();
+    const isApproved = verifyStoredEmailOtp(normalizedEmail, "password_reset", code);
 
-    const verificationCheck = await twilioClient.verify.v2
-      .services(process.env.TWILIO_VERIFY_SERVICE_SID)
-      .verificationChecks.create({
-        to: normalizedEmail,
-        code
-      });
-
-    if (verificationCheck.status !== "approved") {
+    if (!isApproved) {
       return res.status(400).json({
         message: "Invalid or expired reset code",
-        status: verificationCheck.status
+        status: "denied"
       });
     }
 

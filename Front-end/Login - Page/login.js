@@ -189,9 +189,14 @@ async function sendForgotCode(event) {
       return;
     }
 
-    modal.querySelector('#forgotHelpText').textContent = 'Enter the OTP code sent to your email, then choose a new password.';
+    modal.querySelector('#forgotHelpText').textContent = data.dev_code
+      ? `Development OTP: ${data.dev_code}. Enter this code, then choose a new password.`
+      : 'Enter the OTP code sent to your email, then choose a new password.';
     modal.querySelector('#forgotEmailForm').classList.add('hidden');
     modal.querySelector('#forgotResetForm').classList.remove('hidden');
+    if (data.dev_code) {
+      modal.querySelector('#forgotCode').value = data.dev_code;
+    }
     modal.querySelector('#forgotCode')?.focus();
   } catch (error) {
     console.error(error);

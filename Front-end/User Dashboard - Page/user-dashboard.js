@@ -2350,15 +2350,40 @@ function discRenderCard() {
   document.getElementById('discCardMarkets').textContent  = c.markets;
   document.getElementById('discCardProducts').textContent = c.products;
   document.getElementById('discCardTags').innerHTML       = c.tags.map(t => `<span style="padding:4px 12px;border-radius:20px;background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);font-size:11px;font-weight:600;color:var(--accent);">${t}</span>`).join('');
+  const passBtn = document.getElementById('discBtnPass');
   const connectBtn = document.getElementById('discBtnConnect');
+  const actionHint = document.getElementById('discActionHint');
+  const isConnected = c.relationship_status === 'connected';
+  const isPending = c.relationship_status === 'pending';
+  setDiscoverActionsDisabled(false);
+  if (passBtn) {
+    passBtn.disabled = isConnected;
+    passBtn.style.opacity = isConnected ? '.45' : '1';
+    passBtn.style.cursor = isConnected ? 'not-allowed' : 'pointer';
+    passBtn.title = isConnected ? 'Already connected - pass is unavailable' : 'Pass';
+  }
   if (connectBtn) {
-    if (c.relationship_status === 'connected') {
+    connectBtn.disabled = false;
+    connectBtn.style.opacity = '1';
+    connectBtn.style.cursor = 'pointer';
+    if (isConnected) {
       connectBtn.innerHTML = '<i class="ri-message-3-line"></i> Message';
-    } else if (c.relationship_status === 'pending') {
+      connectBtn.title = 'Open conversation';
+    } else if (isPending) {
       connectBtn.innerHTML = '<i class="ri-time-line"></i> Pending';
+      connectBtn.title = 'Request pending';
     } else {
       connectBtn.innerHTML = '<i class="ri-check-line"></i> Connect';
+      connectBtn.title = 'Send connection request';
     }
+  }
+  if (actionHint) {
+    const hintText = isConnected
+      ? 'You are already connected with this business. Pass is disabled; use Message to continue the conversation.'
+      : isPending
+        ? 'A connection request is already pending. You can review the profile or wait for the business to respond.'
+        : 'Pass skips this company. Connect sends a request. Use profile or enquiry if you need more context first.';
+    actionHint.querySelector('span').textContent = hintText;
   }
   document.getElementById('remainingCount').textContent   = (discCompanies.length - discIndex) + ' companies remaining';
   document.getElementById('statViewed').textContent       = discIndex;
@@ -2369,6 +2394,16 @@ function discRenderCard() {
   document.getElementById('progressLabel').textContent    = pct + '% complete';
   const tipEl = document.getElementById('tipText');
   if (tipEl) tipEl.textContent = discTips[discIndex % discTips.length];
+}
+
+function setDiscoverActionsDisabled(disabled) {
+  ['discBtnPass', 'discBtnProfile', 'discBtnEnquire', 'discBtnConnect'].forEach((id) => {
+    const button = document.getElementById(id);
+    if (!button) return;
+    button.disabled = disabled;
+    button.style.opacity = disabled ? '.45' : '1';
+    button.style.cursor = disabled ? 'not-allowed' : 'pointer';
+  });
 }
 
 function discSwipe(dir) {
@@ -2385,7 +2420,23 @@ function discSwipe(dir) {
 function discShowEmpty() {
   document.getElementById('discMatchCard').style.display  = 'none';
   document.getElementById('discCardGhost').style.display  = 'none';
-  document.getElementById('discActionRow').style.display  = 'none';
+  document.getElementById('discActionRow').style.display  = 'flex';
+  const passBtn = document.getElementById('discBtnPass');
+  const connectBtn = document.getElementById('discBtnConnect');
+  if (passBtn) {
+    passBtn.innerHTML = '<i class="ri-close-line"></i><span>Pass</span>';
+    passBtn.title = 'No company card available';
+  }
+  if (connectBtn) {
+    connectBtn.innerHTML = '<i class="ri-team-line"></i><span>Connect</span>';
+    connectBtn.title = 'No company card available';
+  }
+  setDiscoverActionsDisabled(true);
+  const actionHint = document.getElementById('discActionHint');
+  if (actionHint) {
+    actionHint.style.display = 'flex';
+    actionHint.querySelector('span').textContent = 'No company card is available right now. Use Start Over to review any other available and unconnected companies again.';
+  }
   document.getElementById('discEmptyState').style.display = 'flex';
   document.getElementById('remainingCount').textContent   = '0 companies remaining';
 }
@@ -2395,6 +2446,9 @@ function resetDiscoverCards() {
   document.getElementById('discMatchCard').style.display  = '';
   document.getElementById('discCardGhost').style.display  = '';
   document.getElementById('discActionRow').style.display  = 'flex';
+  setDiscoverActionsDisabled(false);
+  const actionHint = document.getElementById('discActionHint');
+  if (actionHint) actionHint.style.display = 'flex';
   document.getElementById('discEmptyState').style.display = 'none';
   discRenderCard();
 }
@@ -2511,6 +2565,46 @@ function resetDiscoverCards() {
       .find(card => card.querySelector('.dash-card-header h3')?.textContent.trim() === title);
   }
 
+  const DEFAULT_MATCH_WEIGHTS = {
+    product_compatibility: 50,
+    trade_region_compatibility: 25,
+    volume_range_compatibility: 10,
+    random_compatibility: 15
+  };
+
+  function getCompatibilityBreakdown(match) {
+    return match?.match_reasons?.compatibility_breakdown || match?.compatibility_breakdown || null;
+  }
+
+  function getWeightedMatchScore(match) {
+    const breakdown = getCompatibilityBreakdown(match);
+    if (!breakdown) {
+      return Math.max(0, Math.min(100, Math.round(Number(match?.match_score || match?.score || 0))));
+    }
+
+    const weights = { ...DEFAULT_MATCH_WEIGHTS, ...(breakdown.weights || {}) };
+    const contribution = (key) =>
+      (Number(breakdown[key] || 0) * Number(weights[key] || 0)) / 100;
+
+    return Math.max(0, Math.min(100, Math.round(
+      contribution('product_compatibility') +
+      contribution('trade_region_compatibility') +
+      contribution('volume_range_compatibility') +
+      contribution('random_compatibility')
+    )));
+  }
+
+  function getWeightedCompatibilityRows(breakdown) {
+    if (!breakdown) return '';
+    const weights = { ...DEFAULT_MATCH_WEIGHTS, ...(breakdown.weights || {}) };
+    const weighted = (key) => Math.round((Number(breakdown[key] || 0) * Number(weights[key] || 0)) / 100);
+    return `
+      <span>Products: <strong>${weighted('product_compatibility')}/${Number(weights.product_compatibility || 0)}</strong></span>
+      <span>Regions: <strong>${weighted('trade_region_compatibility')}/${Number(weights.trade_region_compatibility || 0)}</strong></span>
+      <span>Volume: <strong>${weighted('volume_range_compatibility')}/${Number(weights.volume_range_compatibility || 0)}</strong></span>
+      <span>Market fit: <strong>${weighted('random_compatibility')}/${Number(weights.random_compatibility || 0)}</strong></span>`;
+  }
+
   function renderLiveMatches(matches) {
     const card = getOverviewCard('Recent Matches');
     if (!card) return;
@@ -2527,7 +2621,8 @@ function resetDiscoverCards() {
       const name = company.company_name || company.name || 'Unnamed company';
       const country = company.location?.country || company.country || 'Unknown location';
       const industry = company.industry?.industry_name || company.industry || company.business_type || 'Trade';
-      const score = Math.max(0, Math.min(100, Number(match.match_score || match.score || 0)));
+      const score = getWeightedMatchScore(match);
+      const breakdown = getCompatibilityBreakdown(match);
       const item = document.createElement('div');
       item.className = 'match-item';
       item.innerHTML = `
@@ -2535,6 +2630,7 @@ function resetDiscoverCards() {
         <div class="match-info">
           <p class="match-name">${escapeHtml(name)}</p>
           <p class="match-meta"><i class="ri-map-pin-line"></i> ${escapeHtml(country)} &bull; ${escapeHtml(industry)}</p>
+          ${breakdown ? `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 10px;margin-top:6px;font-size:10.5px;color:var(--text-muted);">${getWeightedCompatibilityRows(breakdown)}</div>` : ''}
         </div>
         <div class="match-right"><span class="match-score">${score}%</span><span class="match-label">match</span></div>`;
       card.insertBefore(item, header.nextSibling);
@@ -2576,14 +2672,9 @@ function resetDiscoverCards() {
         : status === 'pending-received'
           ? `<button class="btn-ph-primary match-accept-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-checkbox-circle-line"></i> Accept Request</button><button class="btn-ph-secondary match-reject-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-close-circle-line"></i> Reject</button>`
           : `<button class="btn-ph-primary match-connect-btn" data-company-id="${companyId}"><i class="ri-add-line"></i> Connect</button>`;
-    const weights = breakdown?.weights || {};
-    const weighted = (key) => Math.round((Number(breakdown?.[key] || 0) * Number(weights[key] || 0)) / 100);
     const stats = breakdown
       ? `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0 2px;font-size:11px;color:var(--text-muted);">
-          <span>Products: <strong>${weighted('product_compatibility')}/${Number(weights.product_compatibility || 0)}</strong></span>
-          <span>Regions: <strong>${weighted('trade_region_compatibility')}/${Number(weights.trade_region_compatibility || 0)}</strong></span>
-          <span>Volume: <strong>${weighted('volume_range_compatibility')}/${Number(weights.volume_range_compatibility || 0)}</strong></span>
-          <span>Market fit: <strong>${weighted('random_compatibility')}/${Number(weights.random_compatibility || 0)}</strong></span>
+          ${getWeightedCompatibilityRows(breakdown)}
         </div>`
       : '';
 
@@ -2665,9 +2756,9 @@ function resetDiscoverCards() {
 
       cards.push(matchCardHtml({
         company,
-        score: `${Math.max(0, Math.min(100, Number(match.match_score || 0)))}% match`,
+        score: `${getWeightedMatchScore(match)}% match`,
         status,
-        breakdown: match.match_reasons?.compatibility_breakdown
+        breakdown: getCompatibilityBreakdown(match)
       }));
     });
 
@@ -3340,6 +3431,11 @@ function resetDiscoverCards() {
 
 document.getElementById('discBtnPass')?.addEventListener('click', () => {
   if (discIndex >= discCompanies.length) return;
+  const company = discCompanies[discIndex];
+  if (company.relationship_status === 'connected') {
+    showUserToast('You are already connected with this business.');
+    return;
+  }
   discPassed++; discSwipe('left'); showUserToast('Passed');
 });
 document.getElementById('discBtnConnect')?.addEventListener('click', () => {

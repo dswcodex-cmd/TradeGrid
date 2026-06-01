@@ -719,9 +719,28 @@ function onCountryChange(code) {
 
   // Update the dynamic registration document upload in Step 4
   updateRegDocUpload(code, cfg);
+  refreshRegistrationNumberFormatHint(code);
+  scheduleRegistrationNumberFormatValidation();
 
   // Smooth scroll to address fields
   setTimeout(() => fields.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+}
+
+async function refreshRegistrationNumberFormatHint(countryCode) {
+  const regNumberInput = document.getElementById('regNumber');
+  if (!countryCode || !regNumberInput) return;
+
+  try {
+    const response = await fetch(`http://localhost:5000/registration-validation/countries/${encodeURIComponent(countryCode)}`);
+    const data = await response.json().catch(() => ({}));
+    const country = data.data || data.country || data;
+
+    if (response.ok && country?.example) {
+      regNumberInput.placeholder = `e.g. ${country.example}`;
+    }
+  } catch (error) {
+    /* Keep the existing placeholder if country format metadata cannot load. */
+  }
 }
 
 /* ── Dynamic registration document upload ── */
@@ -753,6 +772,8 @@ function updateRegDocUpload(code, cfg) {
 let currentStep = 1;
 const totalSteps = 4;
 const uploadedFiles = { regdoc: null, tax: null, id: null, bank: null, licence: null, bbbee: null };
+let regValidationTimer = null;
+let regValidationRequestId = 0;
 
 /* ── Step Navigation ── */
 function goToStep(n) {
@@ -779,9 +800,10 @@ function goToStep(n) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function validateRegistrationNumberWithBackend() {
+async function validateRegistrationNumberFormat(message = 'Invalid format', shouldFocus = false) {
   const countryCode = valueOf('country');
   const regNumber = valueOf('regNumber');
+  const requestId = ++regValidationRequestId;
 
   if (!countryCode || !regNumber) return true;
 
@@ -794,20 +816,43 @@ async function validateRegistrationNumberWithBackend() {
     const data = await response.json().catch(() => ({}));
     const result = data.data || {};
 
+    if (requestId !== regValidationRequestId) return true;
+
     if (!response.ok || result.valid === false) {
-      const message = result.errors?.[0] ||
-        data.error ||
-        `Registration number must match ${result.format || 'the selected country format'}.`;
-      showErr('regNumber', `${message}${result.example ? ` Example: ${result.example}` : ''}`);
+      if (shouldFocus) showErrAndFocus('regNumber', message);
+      else showErr('regNumber', message);
       return false;
     }
 
     clearErr('regNumber');
     return true;
   } catch (error) {
-    showErr('regNumber', 'Could not validate the registration number right now. Please try again.');
+    if (requestId === regValidationRequestId) {
+      if (shouldFocus) showErrAndFocus('regNumber', message);
+      else showErr('regNumber', message);
+    }
     return false;
   }
+}
+
+async function validateRegistrationNumberWithBackend() {
+  return validateRegistrationNumberFormat('Invalid format', true);
+}
+
+function scheduleRegistrationNumberFormatValidation() {
+  clearTimeout(regValidationTimer);
+  regValidationTimer = setTimeout(() => {
+    const regNumber = valueOf('regNumber');
+    const countryCode = valueOf('country');
+
+    if (!regNumber) {
+      clearErr('regNumber');
+      return;
+    }
+
+    if (!countryCode) return;
+    validateRegistrationNumberFormat('Invalid format', false);
+  }, 300);
 }
 
 async function nextStep(from) {
@@ -827,6 +872,21 @@ function showErr(id, msg) {
   if (el) { if (msg) el.textContent = msg; el.classList.add('visible'); }
   if (inp) inp.classList.add('error');
 }
+
+function showErrAndFocus(id, msg) {
+  showErr(id, msg);
+  const inp = document.getElementById(id);
+  const target = inp?.closest('.form-group') || inp;
+
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  setTimeout(() => {
+    inp?.focus({ preventScroll: true });
+  }, 260);
+}
+
 function clearErr(id) {
   const el = document.getElementById(`err-${id}`);
   const inp = document.getElementById(id);
@@ -1431,4 +1491,11 @@ document.getElementById('signupForm').addEventListener('submit', async function(
   e.preventDefault();
   if (!validateStep(4)) return;
   await submitSignupApplication();
+});
+
+document.getElementById('regNumber')?.addEventListener('input', scheduleRegistrationNumberFormatValidation);
+document.getElementById('regNumber')?.addEventListener('blur', () => {
+  const regNumber = valueOf('regNumber');
+  const countryCode = valueOf('country');
+  if (regNumber && countryCode) validateRegistrationNumberFormat('Invalid format', true);
 });

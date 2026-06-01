@@ -321,10 +321,10 @@
             </div>
     
             <!-- Buttons -->
-            <div id="discActionRow" style="display:flex;align-items:center;justify-content:center;gap:20px;">
+            <div id="discActionRow" style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
               <button id="discBtnPass"
-                style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(220,38,38,0.25);background:var(--white);color:#dc2626;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:24px;"
-                title="Pass"><i class="ri-close-line"></i></button>
+                style="min-width:104px;height:42px;padding:0 16px;border-radius:9px;border:1px solid rgba(220,38,38,0.25);background:var(--white);color:#dc2626;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 4px 16px rgba(13,59,59,0.08);transition:all 0.2s;font-size:13px;font-weight:800;font-family:Inter,sans-serif;white-space:nowrap;"
+                title="Pass"><i class="ri-close-line"></i><span>Pass</span></button>
               <button id="discBtnProfile"
                 style="width:46px;height:46px;border-radius:50%;border:2px solid var(--border-strong);background:var(--white);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:18px;"
                 title="View Profile"><i class="ri-user-line"></i></button>
@@ -332,15 +332,12 @@
                 style="width:46px;height:46px;border-radius:50%;border:2px solid var(--border-strong);background:var(--white);color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:18px;"
                 title="Send Enquiry"><i class="ri-question-answer-line"></i></button>
               <button id="discBtnConnect"
-                style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(22,163,74,0.25);background:var(--white);color:#16a34a;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:24px;"
-                title="Connect"><i class="ri-team-line"></i></button>
+                style="min-width:124px;height:42px;padding:0 16px;border-radius:9px;border:1px solid rgba(22,163,74,0.25);background:var(--white);color:#16a34a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 4px 16px rgba(13,59,59,0.08);transition:all 0.2s;font-size:13px;font-weight:800;font-family:Inter,sans-serif;white-space:nowrap;"
+                title="Connect"><i class="ri-team-line"></i><span>Connect</span></button>
             </div>
     
-            <div style="display:flex;gap:24px;font-size:12px;font-weight:600;">
-              <span style="display:flex;align-items:center;gap:5px;color:#dc2626;"><i class="ri-close-circle-line"></i>
-                Pass</span>
-              <span style="display:flex;align-items:center;gap:5px;color:#16a34a;"><i class="ri-team-line"></i>
-                Connect</span>
+            <div id="discActionHint" style="display:flex;gap:10px;align-items:flex-start;justify-content:center;max-width:520px;text-align:center;font-size:12px;font-weight:600;color:var(--text-secondary);line-height:1.55;">
+              <span>Pass skips this company. Connect sends a request. Connected companies can be messaged directly.</span>
             </div>
     
             <!-- Empty state -->
@@ -348,10 +345,9 @@
               style="display:none;text-align:center;padding:48px 20px;width:100%;flex-direction:column;align-items:center;">
               <i class="ri-check-double-line"
                 style="font-size:52px;color:var(--accent);margin-bottom:16px;display:block;"></i>
-              <h3 style="font-size:20px;font-weight:800;color:var(--primary);margin-bottom:8px;">You've reviewed all
-                partners!</h3>
-              <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">Check your Matches page to see who
-                connected back.</p>
+              <h3 style="font-size:20px;font-weight:800;color:var(--primary);margin-bottom:8px;">You have reached the
+                end of the companies to discover</h3>
+              <p style="font-size:13px;color:var(--text-muted);margin-bottom:24px;max-width:440px;line-height:1.6;">There are no more available company cards in this review pass. Click <strong>Start Over</strong> to review any other available and unconnected companies again.</p>
               <div style="display:flex;gap:12px;justify-content:center;">
                 <button onclick="resetDiscoverCards()"
                   style="display:inline-flex;align-items:center;gap:7px;padding:12px 22px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-family:Inter,sans-serif;font-size:14px;font-weight:700;cursor:pointer;"><i
