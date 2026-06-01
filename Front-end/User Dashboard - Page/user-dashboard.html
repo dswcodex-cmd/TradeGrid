@@ -63,6 +63,10 @@
         <button class="topbar-search-btn" id="topbarSearchBtn">Search</button>
       </div>
       <div class="topbar-actions">
+        <button class="topbar-inquiry-btn" id="overviewInquiryBtn" type="button" title="Send Inquiry">
+          <i class="ri-question-answer-line"></i>
+          Inquiry
+        </button>
         <button class="topbar-btn" title="Notifications" id="notifBtn">
           <i class="ri-notification-3-line"></i>
           <span class="topbar-notif" id="notifCount" style="display:none;">0</span>
@@ -324,6 +328,9 @@
               <button id="discBtnProfile"
                 style="width:46px;height:46px;border-radius:50%;border:2px solid var(--border-strong);background:var(--white);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:18px;"
                 title="View Profile"><i class="ri-user-line"></i></button>
+              <button id="discBtnEnquire"
+                style="width:46px;height:46px;border-radius:50%;border:2px solid var(--border-strong);background:var(--white);color:var(--accent);cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:18px;"
+                title="Send Enquiry"><i class="ri-question-answer-line"></i></button>
               <button id="discBtnConnect"
                 style="width:60px;height:60px;border-radius:50%;border:2px solid rgba(22,163,74,0.25);background:var(--white);color:#16a34a;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(13,59,59,0.1);transition:all 0.2s;font-size:24px;"
                 title="Connect"><i class="ri-team-line"></i></button>
@@ -507,7 +514,10 @@
     <!-- PAGE: ANALYTICS -->
     <main class="page" id="page-analytics">
       <div class="page-inner">
-        <div class="page-title-row"><h2>Trade Analytics</h2><p>Your business performance on Trade Grid</p></div>
+        <div class="page-title-row analytics-title-row">
+          <div><h2>Trade Analytics</h2><p>Your business performance on Trade Grid</p></div>
+          <button class="btn-analytics-back" id="analyticsBackBtn" type="button"><i class="ri-arrow-left-line"></i> Back</button>
+        </div>
           <div class="analytics-controls">
 
             <div class="period-tabs">
@@ -516,7 +526,7 @@
                   <button class="period-tab" data-days="90">90 Days</button>
             </div>
 
-                <button class="btn-export-report">
+                <button class="btn-export-report" id="exportAnalyticsReport" type="button">
                   <i class="ri-download-line"></i> Export Report
                 </button> 
               </div>
@@ -528,12 +538,12 @@
     <i class="ri-subtract-line"></i> Loading
   </p>
 </div>
-          <div class="analytics-kpi"><span class="akpi-label">Match Rate</span><h2 class="akpi-value">67%</h2><p class="akpi-change up"><i class="ri-arrow-up-line"></i> +5% vs last period</p></div>
-          <div class="analytics-kpi"><span class="akpi-label">Response Rate</span><h2 class="akpi-value">84%</h2><p class="akpi-change down"><i class="ri-arrow-down-line"></i> -2% vs last period</p></div>
-          <div class="analytics-kpi"><span class="akpi-label">Active Deals</span><h2 class="akpi-value">3</h2><p class="akpi-change neutral"><i class="ri-subtract-line"></i> No change</p></div>
+          <div class="analytics-kpi"><span class="akpi-label">Connection Rate</span><h2 class="akpi-value" id="analyticsConnectionRate">0%</h2><p class="akpi-change neutral" id="analyticsConnectionRateChange"><i class="ri-subtract-line"></i> Loading</p></div>
+          <div class="analytics-kpi"><span class="akpi-label">Response Rate</span><h2 class="akpi-value" id="analyticsResponseRate">0%</h2><p class="akpi-change neutral" id="analyticsResponseRateChange"><i class="ri-subtract-line"></i> Loading</p></div>
+          <div class="analytics-kpi"><span class="akpi-label">Active Deals</span><h2 class="akpi-value" id="analyticsActiveDeals">0</h2><p class="akpi-change neutral" id="analyticsActiveDealsChange"><i class="ri-subtract-line"></i> Loading</p></div>
         </div>
         <div class="analytics-grid">
-          <div class="analytics-card"><h3>Profile Views — Last 7 Days</h3><div class="bar-chart-wrap"><div class="bar-chart"><div class="bar-col"><div class="bar" style="height:55%"></div><span>Mon</span></div><div class="bar-col"><div class="bar" style="height:78%"></div><span>Tue</span></div><div class="bar-col"><div class="bar" style="height:45%"></div><span>Wed</span></div><div class="bar-col"><div class="bar" style="height:90%"></div><span>Thu</span></div><div class="bar-col"><div class="bar" style="height:70%"></div><span>Fri</span></div><div class="bar-col"><div class="bar" style="height:38%"></div><span>Sat</span></div><div class="bar-col"><div class="bar" style="height:28%"></div><span>Sun</span></div></div></div></div>
+          <div class="analytics-card"><h3 id="profileViewsChartTitle">Profile Views - Last 7 Days</h3><div class="bar-chart-wrap"><div class="bar-chart" id="analyticsProfileViewsChart"><div class="bar-col"><div class="bar" style="height:55%"></div><span>Mon</span></div><div class="bar-col"><div class="bar" style="height:78%"></div><span>Tue</span></div><div class="bar-col"><div class="bar" style="height:45%"></div><span>Wed</span></div><div class="bar-col"><div class="bar" style="height:90%"></div><span>Thu</span></div><div class="bar-col"><div class="bar" style="height:70%"></div><span>Fri</span></div><div class="bar-col"><div class="bar" style="height:38%"></div><span>Sat</span></div><div class="bar-col"><div class="bar" style="height:28%"></div><span>Sun</span></div></div></div></div>
           <div class="analytics-card"><h3>Top Matching Industries</h3><div class="industry-breakdown"><div class="ind-row"><span>Electronics</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:72%"></div></div><span class="ind-pct">72%</span></div><div class="ind-row"><span>Manufacturing</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:58%"></div></div><span class="ind-pct">58%</span></div><div class="ind-row"><span>Agriculture</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:44%"></div></div><span class="ind-pct">44%</span></div><div class="ind-row"><span>Commodities</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:33%"></div></div><span class="ind-pct">33%</span></div><div class="ind-row"><span>Logistics</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:21%"></div></div><span class="ind-pct">21%</span></div></div></div>
           <div class="analytics-card">
   <h3>Match Activity</h3>

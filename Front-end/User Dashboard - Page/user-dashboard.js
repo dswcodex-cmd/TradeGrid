@@ -5,6 +5,14 @@
 // ── Page Navigation ──
 const navItems = document.querySelectorAll('.nav-item[data-page]');
 const pages    = document.querySelectorAll('.page');
+let previousPageBeforeAnalytics = 'overview';
+let activeAnalyticsDays = 7;
+let latestAnalyticsReportData = {
+  profileViews: null,
+  marketInsights: [],
+  matchStats: null,
+  partnerCountries: []
+};
 
 // ── Badge state ──
 // Matches: 3 new unread matches
@@ -88,6 +96,10 @@ function navigateTo(pageId) {
       window.location.href = '../Speed-dating-page/speed-date.html';
     }, 900);
     return;
+  }
+  const activePageId = document.querySelector('.page.active')?.id?.replace('page-', '');
+  if (pageId === 'analytics' && activePageId && activePageId !== 'analytics') {
+    previousPageBeforeAnalytics = activePageId;
   }
   pages.forEach(p => p.classList.remove('active'));
   navItems.forEach(n => n.classList.remove('active'));
@@ -464,9 +476,13 @@ function openProductEnquiryModal(product) {
       }
 
       try {
+        const companyId = modal.dataset.companyId;
+        const isCompanyEnquiry = Boolean(companyId);
         await dashboardJsonPost('/support/tickets', {
-          title: `Product enquiry: ${productName}`,
-          description: message,
+          title: `${isCompanyEnquiry ? 'Company' : 'Product'} enquiry: ${productName}`,
+          description: isCompanyEnquiry
+            ? `${message}\n\nRelated company ID: ${companyId}`
+            : message,
           category,
           priority: category === 'technical' ? 'high' : 'medium'
         });
@@ -481,10 +497,97 @@ function openProductEnquiryModal(product) {
   }
 
   modal.dataset.productName = product?.name || 'product';
+  modal.dataset.companyId = '';
   modal.querySelector('#enquiryProductLabel').textContent = `About ${product?.name || 'this product'}. Choose where this should go and add a short note.`;
   modal.querySelector('#productEnquiryMessage').value = `I would like to enquire about ${product?.name || 'this product'}.`;
   modal.style.display = 'flex';
 }
+
+function openCompanyEnquiryModal(companyId, companyName = 'this company') {
+  openProductEnquiryModal({
+    name: companyName
+  });
+  const modal = document.getElementById('productEnquiryModal');
+  if (!modal) return;
+
+  modal.dataset.companyId = String(companyId || '');
+  modal.dataset.productName = companyName;
+  modal.querySelector('#enquiryProductLabel').textContent = `About ${companyName}. Choose where this should go and add a short note.`;
+  modal.querySelector('#productEnquiryMessage').value = `I would like to enquire about trading with ${companyName}.`;
+}
+
+function openOverviewInquiryModal() {
+  let modal = document.getElementById('overviewInquiryModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'overviewInquiryModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(13,59,59,.38);display:none;align-items:center;justify-content:center;z-index:9200;padding:20px;';
+    modal.innerHTML = `
+      <div style="width:min(520px,100%);background:#fff;border-radius:22px;box-shadow:0 24px 70px rgba(13,59,59,.22);padding:24px;">
+        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px;">
+          <div>
+            <h3 style="margin:0;color:#0D3B3B;font-size:20px;">Send inquiry</h3>
+            <p style="margin:6px 0 0;color:#5f7373;font-size:13px;line-height:1.5;">Ask the employee team about account status, verification, approvals, or platform support.</p>
+          </div>
+          <button id="closeOverviewInquiry" style="border:0;background:#eef6f6;width:34px;height:34px;border-radius:50%;cursor:pointer;"><i class="ri-close-line"></i></button>
+        </div>
+        <label style="display:block;margin:16px 0 7px;color:#0D3B3B;font-size:12px;font-weight:700;">Topic</label>
+        <select id="overviewInquiryTopic" style="width:100%;box-sizing:border-box;border:1px solid #d7e7e7;border-radius:12px;padding:11px 12px;font-family:inherit;background:#fff;color:#0D3B3B;">
+          <option value="account">Account status or approval</option>
+          <option value="verification">Verification documents</option>
+          <option value="general">General platform support</option>
+        </select>
+        <label style="display:block;margin:16px 0 7px;color:#0D3B3B;font-size:12px;font-weight:700;">Message</label>
+        <textarea id="overviewInquiryMessage" rows="5" style="width:100%;box-sizing:border-box;border:1px solid #d7e7e7;border-radius:14px;padding:13px;font-family:inherit;resize:vertical;" placeholder="Tell the employee team what you need help with..."></textarea>
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+          <button id="cancelOverviewInquiry" style="border:1px solid #d7e7e7;background:#fff;border-radius:12px;padding:10px 16px;cursor:pointer;">Cancel</button>
+          <button id="submitOverviewInquiry" style="border:0;background:#0D3B3B;color:#fff;border-radius:12px;padding:10px 18px;cursor:pointer;font-weight:700;">Send inquiry</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    const close = () => { modal.style.display = 'none'; };
+    modal.querySelector('#closeOverviewInquiry').addEventListener('click', close);
+    modal.querySelector('#cancelOverviewInquiry').addEventListener('click', close);
+    modal.addEventListener('click', (event) => {
+      if (event.target === modal) close();
+    });
+    modal.querySelector('#submitOverviewInquiry').addEventListener('click', async () => {
+      const topic = modal.querySelector('#overviewInquiryTopic')?.value || 'account';
+      const messageInput = modal.querySelector('#overviewInquiryMessage');
+      const message = messageInput.value.trim();
+
+      if (!message) {
+        showUserToast('Please add a short inquiry message.');
+        return;
+      }
+
+      const labels = {
+        account: 'Account status or approval',
+        verification: 'Verification documents',
+        general: 'General platform support'
+      };
+
+      try {
+        await dashboardJsonPost('/support/tickets', {
+          title: `User inquiry: ${labels[topic] || 'Support request'}`,
+          description: message,
+          category: topic,
+          priority: topic === 'verification' ? 'high' : 'medium'
+        });
+        close();
+        showUserToast('Your inquiry was sent to the employee team.');
+      } catch (error) {
+        showUserToast(friendlyDashboardError('Could not send the inquiry right now. Please try again.'));
+      }
+    });
+  }
+
+  modal.querySelector('#overviewInquiryTopic').value = 'account';
+  modal.querySelector('#overviewInquiryMessage').value = 'Hi, I would like help with my account status or pending approval.';
+  modal.style.display = 'flex';
+}
+
+document.getElementById('overviewInquiryBtn')?.addEventListener('click', openOverviewInquiryModal);
 
 function renderProductDetail(p) {
   const el = document.getElementById('productDetailContent');
@@ -537,7 +640,7 @@ const mashaKB = [
   { patterns:['verify','document','license'], response:'To complete verification, go to Verification in the sidebar and upload your remaining documents. Our team reviews within 48 hours.' },
   { patterns:['match','partner','find','connect'], response:'Visit the Discover page to find new trading partners, or check Matches for your AI-curated suggestions!' },
   { patterns:['message','chat','contact'], response:'Head to the Messages section to chat with your trading partners directly.' },
-  { patterns:['analytic','insight','stat'], response:'Your Analytics page shows profile views, match rates, and trending market data.' },
+  { patterns:['analytic','insight','stat'], response:'Your Analytics page shows profile views, connection rates, and trending market data.' },
   { patterns:['image','photo','picture','camera','product search'], response:'Use the camera button inside the search bar to search by product image! Upload a photo and I will identify the product and show trade details.' },
   { patterns:['payment','pay','send money','transfer'], response:'Use the green payment button in the Messages chat to send a secure business payment to your trading partner!' },
   { patterns:['hello','hi','hey','howzit'], response:"Hi there! I'm Masha. I can help you navigate Trade Grid — verification, matches, messages, image search, payments, anything!" },
@@ -2031,6 +2134,7 @@ function normalizeDiscoverCompany(company) {
 
   return {
     company_id: company.company_id || company.id,
+    relationship_status: company.relationship_status || company.connection_status || 'available',
     avatar: initials,
     name,
     sub: company.sub || `${country} · ${industry} · ${type}`,
@@ -2246,6 +2350,16 @@ function discRenderCard() {
   document.getElementById('discCardMarkets').textContent  = c.markets;
   document.getElementById('discCardProducts').textContent = c.products;
   document.getElementById('discCardTags').innerHTML       = c.tags.map(t => `<span style="padding:4px 12px;border-radius:20px;background:var(--accent-light);border:1px solid rgba(15,163,177,0.2);font-size:11px;font-weight:600;color:var(--accent);">${t}</span>`).join('');
+  const connectBtn = document.getElementById('discBtnConnect');
+  if (connectBtn) {
+    if (c.relationship_status === 'connected') {
+      connectBtn.innerHTML = '<i class="ri-message-3-line"></i> Message';
+    } else if (c.relationship_status === 'pending') {
+      connectBtn.innerHTML = '<i class="ri-time-line"></i> Pending';
+    } else {
+      connectBtn.innerHTML = '<i class="ri-check-line"></i> Connect';
+    }
+  }
   document.getElementById('remainingCount').textContent   = (discCompanies.length - discIndex) + ' companies remaining';
   document.getElementById('statViewed').textContent       = discIndex;
   document.getElementById('statConnected').textContent    = discConnected;
@@ -2462,12 +2576,14 @@ function resetDiscoverCards() {
         : status === 'pending-received'
           ? `<button class="btn-ph-primary match-accept-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-checkbox-circle-line"></i> Accept Request</button><button class="btn-ph-secondary match-reject-btn" data-source-company-id="${sourceCompanyId || companyId}" data-company-id="${companyId}"><i class="ri-close-circle-line"></i> Reject</button>`
           : `<button class="btn-ph-primary match-connect-btn" data-company-id="${companyId}"><i class="ri-add-line"></i> Connect</button>`;
+    const weights = breakdown?.weights || {};
+    const weighted = (key) => Math.round((Number(breakdown?.[key] || 0) * Number(weights[key] || 0)) / 100);
     const stats = breakdown
       ? `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:12px 0 2px;font-size:11px;color:var(--text-muted);">
-          <span>Products: <strong>${Number(breakdown.product_compatibility || 0)}%</strong></span>
-          <span>Regions: <strong>${Number(breakdown.trade_region_compatibility || 0)}%</strong></span>
-          <span>Volume: <strong>${Number(breakdown.volume_range_compatibility || 0)}%</strong></span>
-          <span>Market fit: <strong>${Number(breakdown.random_compatibility || 0)}%</strong></span>
+          <span>Products: <strong>${weighted('product_compatibility')}/${Number(weights.product_compatibility || 0)}</strong></span>
+          <span>Regions: <strong>${weighted('trade_region_compatibility')}/${Number(weights.trade_region_compatibility || 0)}</strong></span>
+          <span>Volume: <strong>${weighted('volume_range_compatibility')}/${Number(weights.volume_range_compatibility || 0)}</strong></span>
+          <span>Market fit: <strong>${weighted('random_compatibility')}/${Number(weights.random_compatibility || 0)}</strong></span>
         </div>`
       : '';
 
@@ -2480,6 +2596,7 @@ function resetDiscoverCards() {
         ${stats}
         <div class="ph-actions">
           ${action}
+          <button class="btn-ph-secondary match-enquiry-btn" data-company-id="${companyId}"><i class="ri-question-answer-line"></i> Enquire</button>
           <button class="btn-ph-secondary match-profile-btn" data-company-id="${companyId}"><i class="ri-user-line"></i> View Profile</button>
         </div>
       </div>`;
@@ -2647,6 +2764,15 @@ function resetDiscoverCards() {
         const card = button.closest('.placeholder-card');
         const companyName = card?.querySelector('h4')?.textContent || 'company';
         await openDiscoverCompanyProfile(companyId, companyName);
+      });
+    });
+
+    grid.querySelectorAll('.match-enquiry-btn').forEach(button => {
+      button.addEventListener('click', () => {
+        const companyId = Number(button.dataset.companyId);
+        const card = button.closest('.placeholder-card');
+        const companyName = card?.querySelector('h4')?.textContent || 'company';
+        openCompanyEnquiryModal(companyId, companyName);
       });
     });
   }
@@ -2828,9 +2954,15 @@ function resetDiscoverCards() {
     const insights = Array.from(counts.entries())
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5);
+    latestAnalyticsReportData.marketInsights = insights.map(([label, count]) => ({ label, count }));
 
     if (!insights.length) {
       setCardEmpty(card, 'No market insight data yet. Add products, regions, and industry details to your profile.');
+      const analyticsBreakdown = document.querySelector('#analyticsIndustryBreakdown') ||
+        document.querySelector('#page-analytics .industry-breakdown');
+      if (analyticsBreakdown) {
+        analyticsBreakdown.innerHTML = '<p style="font-size:12px;color:var(--text-muted);line-height:1.6;">No industry signals yet.</p>';
+      }
       return;
     }
 
@@ -2845,6 +2977,15 @@ function resetDiscoverCards() {
         <div class="insight-bar-track"><div class="insight-bar" style="width:${pct}%"></div></div>`;
       card.insertBefore(item, header.nextSibling);
     });
+
+    const analyticsBreakdown = document.querySelector('#analyticsIndustryBreakdown') ||
+      document.querySelector('#page-analytics .industry-breakdown');
+    if (analyticsBreakdown) {
+      analyticsBreakdown.innerHTML = insights.map(([label, count]) => {
+        const pct = Math.round((count / max) * 100);
+        return `<div class="ind-row"><span>${escapeHtml(label)}</span><div class="ind-bar-wrap"><div class="ind-bar" style="width:${pct}%"></div></div><span class="ind-pct">${count}</span></div>`;
+      }).join('');
+    }
   }
 
   function updateKpi(label, value, note) {
@@ -2883,9 +3024,60 @@ function resetDiscoverCards() {
     updateKpi('Deals in Progress', total, detail);
   }
 
-  function updateProfileViewsKpi(statsResponse) {
+  function renderProfileViewsChart(statsData = {}, days = activeAnalyticsDays) {
+    const chart = document.querySelector('#analyticsProfileViewsChart') ||
+      document.querySelector('#page-analytics .bar-chart');
+    const title = document.getElementById('profileViewsChartTitle');
+    if (title) title.textContent = `Profile Views - Last ${days} Days`;
+    if (!chart) return;
+
+    const dailyCounts = new Map();
+    (statsData.recent_views || []).forEach((view) => {
+      const date = new Date(view.viewed_at);
+      if (Number.isNaN(date.getTime())) return;
+      const key = date.toLocaleDateString('en-CA');
+      dailyCounts.set(key, (dailyCounts.get(key) || 0) + 1);
+    });
+
+    const bucketCount = days <= 7 ? 7 : days <= 30 ? 10 : 12;
+    const bucketSize = Math.ceil(days / bucketCount);
+    const buckets = Array.from({ length: bucketCount }, (_, index) => {
+      const startOffset = days - (bucketSize * (index + 1));
+      const endOffset = days - (bucketSize * index) - 1;
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - Math.max(0, endOffset));
+      const end = new Date();
+      end.setHours(0, 0, 0, 0);
+      end.setDate(end.getDate() - Math.max(0, startOffset));
+      return { start, end, count: 0 };
+    });
+
+    dailyCounts.forEach((count, key) => {
+      const date = new Date(`${key}T00:00:00`);
+      const bucket = buckets.find(item => date >= item.start && date <= item.end);
+      if (bucket) bucket.count += count;
+    });
+
+    const max = Math.max(1, ...buckets.map(bucket => bucket.count));
+    chart.innerHTML = buckets.map((bucket) => {
+      const height = bucket.count ? Math.max(12, Math.round((bucket.count / max) * 100)) : 3;
+      const label = days <= 7
+        ? bucket.end.toLocaleDateString([], { weekday: 'short' }).slice(0, 3)
+        : bucket.end.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      return `<div class="bar-col" title="${bucket.count} view${bucket.count === 1 ? '' : 's'}"><small>${bucket.count}</small><div class="bar" style="height:${height}%"></div><span>${label}</span></div>`;
+    }).join('');
+  }
+
+  function updateProfileViewsKpi(statsResponse, days = activeAnalyticsDays) {
     if (!statsResponse.ok) {
       updateKpi('Profile Views', 0, 'No profile views yet');
+      const analyticsViews = document.getElementById('analyticsProfileViews');
+      const analyticsChange = document.getElementById('analyticsProfileViewsChange');
+      if (analyticsViews) analyticsViews.textContent = '0';
+      if (analyticsChange) analyticsChange.innerHTML = '<i class="ri-subtract-line"></i> No profile views yet';
+      latestAnalyticsReportData.profileViews = null;
+      renderProfileViewsChart({}, days);
       return;
     }
 
@@ -2897,7 +3089,109 @@ function resetDiscoverCards() {
         ? `${change} this week`
         : 'No change this week';
     updateKpi('Profile Views', total, detail);
+
+    const analyticsViews = document.getElementById('analyticsProfileViews');
+    const analyticsChange = document.getElementById('analyticsProfileViewsChange');
+    if (analyticsViews) analyticsViews.textContent = total;
+    if (analyticsChange) {
+      analyticsChange.className = `akpi-change ${change > 0 ? 'up' : change < 0 ? 'down' : 'neutral'}`;
+      analyticsChange.innerHTML = `<i class="${change > 0 ? 'ri-arrow-up-line' : change < 0 ? 'ri-arrow-down-line' : 'ri-subtract-line'}"></i> ${detail}`;
+    }
+
+    latestAnalyticsReportData.profileViews = { ...statsResponse.data, days };
+    renderProfileViewsChart(statsResponse.data, days);
   }
+
+  async function loadProfileViewsForPeriod(days) {
+    activeAnalyticsDays = Number(days) || 7;
+    document.querySelectorAll('#page-analytics .period-tab').forEach(button => {
+      button.classList.toggle('active', Number(button.dataset.days) === activeAnalyticsDays);
+    });
+    const response = await dashboardRequest(`/profile/views/stats?days=${activeAnalyticsDays}`);
+    updateProfileViewsKpi(response, activeAnalyticsDays);
+  }
+
+  function exportAnalyticsReport() {
+    const companyName = document.querySelector('.sidebar-user-name')?.textContent?.trim() || 'Trade Grid User';
+    const generatedAt = new Date().toLocaleString();
+    const profileViews = latestAnalyticsReportData.profileViews;
+    const matchStats = latestAnalyticsReportData.matchStats || {};
+    const marketInsights = latestAnalyticsReportData.marketInsights || [];
+    const countries = latestAnalyticsReportData.partnerCountries || [];
+
+    const value = (id) => document.getElementById(id)?.textContent?.trim() || '0';
+    const reportHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Trade Analytics Report</title>
+  <style>
+    body { font-family: Inter, Arial, sans-serif; color:#0D3B3B; margin:32px; line-height:1.5; }
+    h1 { margin:0 0 4px; font-size:26px; }
+    h2 { margin-top:28px; font-size:18px; }
+    .meta { color:#5f7373; font-size:13px; margin-bottom:24px; }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td { border:1px solid #d7e7e7; padding:10px; text-align:left; font-size:13px; }
+    th { background:#eef6f6; }
+    .grid { display:grid; grid-template-columns:repeat(4, 1fr); gap:12px; }
+    .card { border:1px solid #d7e7e7; border-radius:10px; padding:14px; }
+    .label { color:#5f7373; font-size:12px; }
+    .big { font-size:22px; font-weight:800; margin-top:4px; }
+  </style>
+</head>
+<body>
+  <h1>Trade Analytics Report</h1>
+  <div class="meta">${escapeHtml(companyName)} - Generated ${escapeHtml(generatedAt)}</div>
+  <div class="grid">
+    <div class="card"><div class="label">Profile Views</div><div class="big">${escapeHtml(value('analyticsProfileViews'))}</div></div>
+    <div class="card"><div class="label">Connection Rate</div><div class="big">${escapeHtml(value('analyticsConnectionRate'))}</div></div>
+    <div class="card"><div class="label">Response Rate</div><div class="big">${escapeHtml(value('analyticsResponseRate'))}</div></div>
+    <div class="card"><div class="label">Active Deals</div><div class="big">${escapeHtml(value('analyticsActiveDeals'))}</div></div>
+  </div>
+  <h2>Profile Views - Last ${escapeHtml(profileViews?.days || activeAnalyticsDays)} Days</h2>
+  <p>Total profile views: ${escapeHtml(profileViews?.total || 0)}. Views this week: ${escapeHtml(profileViews?.this_week || 0)}. Change this week: ${escapeHtml(profileViews?.change_this_week || 0)}.</p>
+  <h2>Match Activity</h2>
+  <table><tbody>
+    <tr><th>Total Active Matches</th><td>${escapeHtml(matchStats.total_active_matches || value('analyticsTotalMatches'))}</td></tr>
+    <tr><th>Matches This Week</th><td>${escapeHtml(matchStats.matches_this_week || value('analyticsWeeklyMatches'))}</td></tr>
+    <tr><th>Deals In Progress</th><td>${escapeHtml(matchStats.deals_in_progress || value('analyticsDealsProgress'))}</td></tr>
+    <tr><th>Deals Completed</th><td>${escapeHtml(matchStats.completed_deals || value('analyticsCompletedDeals'))}</td></tr>
+  </tbody></table>
+  <h2>Market Insights</h2>
+  <table><thead><tr><th>Signal</th><th>Weight</th></tr></thead><tbody>
+    ${marketInsights.length ? marketInsights.map(item => `<tr><td>${escapeHtml(item.label)}</td><td>${escapeHtml(item.count)}</td></tr>`).join('') : '<tr><td colspan="2">No market insights available yet.</td></tr>'}
+  </tbody></table>
+  <h2>Top Partner Countries</h2>
+  <table><thead><tr><th>Country</th><th>Partners</th></tr></thead><tbody>
+    ${countries.length ? countries.map(item => `<tr><td>${escapeHtml(item.country)}</td><td>${escapeHtml(item.matches)}</td></tr>`).join('') : '<tr><td colspan="2">No partner countries available yet.</td></tr>'}
+  </tbody></table>
+</body>
+</html>`;
+
+    const blob = new Blob([reportHtml], { type: 'application/msword' });
+    try {
+      localStorage.setItem('tradegridLastAnalyticsReport', reportHtml);
+    } catch (error) {
+      /* Browser storage can be unavailable or full; the download still works. */
+    }
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `trade-analytics-report-${new Date().toISOString().slice(0, 10)}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    showUserToast('Trade analytics report downloaded.');
+  }
+
+  document.querySelectorAll('#page-analytics .period-tab').forEach(button => {
+    button.addEventListener('click', () => loadProfileViewsForPeriod(button.dataset.days));
+  });
+  document.getElementById('analyticsBackBtn')?.addEventListener('click', () => {
+    navigateTo(previousPageBeforeAnalytics || 'overview');
+  });
+  document.getElementById('exportAnalyticsReport')?.addEventListener('click', exportAnalyticsReport);
 
   async function hydrateOverviewFromBackend() {
     try {
@@ -2996,8 +3290,8 @@ function resetDiscoverCards() {
         return notificationsResponse;
       });
 
-      const profileViewsPromise = dashboardRequest('/profile/views/stats').then(profileViewsResponse => {
-        updateProfileViewsKpi(profileViewsResponse);
+      const profileViewsPromise = dashboardRequest(`/profile/views/stats?days=${activeAnalyticsDays}`).then(profileViewsResponse => {
+        updateProfileViewsKpi(profileViewsResponse, activeAnalyticsDays);
         return profileViewsResponse;
       });
 
@@ -3058,6 +3352,18 @@ document.getElementById('discBtnConnect')?.addEventListener('click', () => {
     return;
   }
 
+  if (company.relationship_status === 'connected') {
+    openConversationFromMatch(company.company_id)
+      .then(() => showUserToast(`Conversation opened with ${name}.`))
+      .catch(error => showUserToast(error.message || 'Could not open conversation'));
+    return;
+  }
+
+  if (company.relationship_status === 'pending') {
+    showUserToast(`A request with ${name} is already pending.`);
+    return;
+  }
+
   window.TradeGridAPI?.connect({
     company_id: company.company_id,
     notes: 'Connection request sent from Discover'
@@ -3075,6 +3381,11 @@ document.getElementById('discBtnProfile')?.addEventListener('click', () => {
   if (discIndex >= discCompanies.length) return;
   const company = discCompanies[discIndex];
   openDiscoverCompanyProfile(company.company_id, company.name);
+});
+document.getElementById('discBtnEnquire')?.addEventListener('click', () => {
+  if (discIndex >= discCompanies.length) return;
+  const company = discCompanies[discIndex];
+  openCompanyEnquiryModal(company.company_id, company.name);
 });
 
 // Keyboard support for discover page
@@ -3106,17 +3417,54 @@ async function loadMatchStats() {
       throw new Error(data.error || "Could not load match stats");
     }
 
-    document.getElementById("totalMatches").textContent =
-      data.total_active_matches;
+    const totalActive = Number(data.total_active_matches || 0);
+    const weekly = Number(data.matches_this_week || 0);
+    const inProgress = Number(data.deals_in_progress || 0);
+    const completed = Number(data.completed_deals || 0);
+    latestAnalyticsReportData.matchStats = {
+      total_active_matches: totalActive,
+      matches_this_week: weekly,
+      deals_in_progress: inProgress,
+      completed_deals: completed
+    };
+    const totalKnown = totalActive + completed;
+    const connectionRate = totalKnown ? Math.round((totalActive / totalKnown) * 100) : 0;
 
-    document.getElementById("weeklyMatches").textContent =
-      data.matches_this_week;
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
 
-    document.getElementById("dealsProgress").textContent =
-      data.deals_in_progress;
+    setText("totalMatches", totalActive);
+    setText("weeklyMatches", weekly);
+    setText("dealsProgress", inProgress);
+    setText("completedDeals", completed);
+    setText("analyticsTotalMatches", totalActive);
+    setText("analyticsWeeklyMatches", weekly);
+    setText("analyticsDealsProgress", inProgress);
+    setText("analyticsCompletedDeals", completed);
+    setText("analyticsConnectionRate", `${connectionRate}%`);
+    setText("analyticsActiveDeals", inProgress);
 
-    document.getElementById("completedDeals").textContent =
-      data.completed_deals;
+    const connectionChange = document.getElementById("analyticsConnectionRateChange");
+    if (connectionChange) {
+      connectionChange.className = "akpi-change neutral";
+      connectionChange.innerHTML = `<i class="ri-link"></i> ${totalActive} active connection${totalActive === 1 ? "" : "s"}`;
+    }
+
+    const responseRate = document.getElementById("analyticsResponseRate");
+    const responseRateChange = document.getElementById("analyticsResponseRateChange");
+    if (responseRate) responseRate.textContent = totalActive ? "100%" : "0%";
+    if (responseRateChange) {
+      responseRateChange.className = "akpi-change neutral";
+      responseRateChange.innerHTML = `<i class="ri-message-3-line"></i> Based on connected partners`;
+    }
+
+    const activeDealsChange = document.getElementById("analyticsActiveDealsChange");
+    if (activeDealsChange) {
+      activeDealsChange.className = "akpi-change neutral";
+      activeDealsChange.innerHTML = `<i class="ri-briefcase-line"></i> ${completed} completed`;
+    }
 
   } catch (error) {
     console.error(error);
@@ -3153,6 +3501,7 @@ async function loadTopPartnerCountries() {
     }
 
     const countries = data.countries || [];
+    latestAnalyticsReportData.partnerCountries = countries;
 
     if (!countries.length) {
       container.innerHTML = `

@@ -779,8 +779,40 @@ function goToStep(n) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function nextStep(from) {
+async function validateRegistrationNumberWithBackend() {
+  const countryCode = valueOf('country');
+  const regNumber = valueOf('regNumber');
+
+  if (!countryCode || !regNumber) return true;
+
+  try {
+    const response = await fetch('http://localhost:5000/registration-validation/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ countryCode, regNumber })
+    });
+    const data = await response.json().catch(() => ({}));
+    const result = data.data || {};
+
+    if (!response.ok || result.valid === false) {
+      const message = result.errors?.[0] ||
+        data.error ||
+        `Registration number must match ${result.format || 'the selected country format'}.`;
+      showErr('regNumber', `${message}${result.example ? ` Example: ${result.example}` : ''}`);
+      return false;
+    }
+
+    clearErr('regNumber');
+    return true;
+  } catch (error) {
+    showErr('regNumber', 'Could not validate the registration number right now. Please try again.');
+    return false;
+  }
+}
+
+async function nextStep(from) {
   if (!validateStep(from)) return;
+  if (from === 2 && !(await validateRegistrationNumberWithBackend())) return;
   if (from < totalSteps) goToStep(from + 1);
 }
 
@@ -1259,6 +1291,7 @@ async function buildSignupPayload() {
   return {
     company_name: valueOf('businessName'),
     registration_number: valueOf('regNumber'),
+    country_code: valueOf('country'),
     email: valueOf('businessEmail'),
     Password: valueOf('password'),
     business_type: valueOf('entityType') || checkedValue('entityType'),

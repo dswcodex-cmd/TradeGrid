@@ -1,5 +1,11 @@
 let adminApiPromise = null;
 let currentAdminProfile = null;
+let adminDashboardData = {
+  companies: [],
+  matches: [],
+  verificationDocs: [],
+  supportTickets: []
+};
 
 function loadAdminApi() {
   if (!adminApiPromise) {
@@ -33,7 +39,7 @@ function prepareAdminLoadingState() {
 
   const tbody = document.querySelector('#user-management tbody');
   if (tbody) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#7a9a9a;">Loading companies...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#7a9a9a;">Loading companies...</td></tr>';
   }
 
   const requestsTab = document.getElementById('employee-requests');
@@ -64,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initToast();
   initMasha();
   initAdminSettings();
+  initQuickActions();
   injectLogoutIcon();
   loadAdminDashboardData();
 });
@@ -107,6 +114,12 @@ async function loadAdminDashboardData() {
       const verificationDocs = verificationResponse.ok ? (verificationResponse.data?.documents || verificationResponse.data?.verification_documents || []) : [];
       const supportTickets = supportResponse.ok ? (supportResponse.data?.tickets || supportResponse.data?.support_tickets || []) : [];
       const openSupportTickets = supportTickets.filter(ticket => ticket.status !== 'closed' && ticket.status !== 'resolved');
+      adminDashboardData = {
+        companies,
+        matches: companyMatches,
+        verificationDocs,
+        supportTickets
+      };
 
       statCards[0].textContent = companies.length;
       statCards[1].textContent = companies.filter(company => company.account_status === 'active').length;
@@ -114,6 +127,7 @@ async function loadAdminDashboardData() {
       statCards[3].textContent = supportTickets.length;
       renderAdminCompanies(companies);
       renderAdminEmployeeRequests(supportTickets);
+      renderPendingVerificationSummary(verificationDocs);
       initUserActions();
       initRequestButtons();
 
@@ -152,24 +166,63 @@ function formatDate(value) {
   return new Date(value).toISOString().slice(0, 10);
 }
 
+function escapeAdminHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function renderAdminCompanies(companies) {
   const tbody = document.querySelector('#user-management tbody');
   if (!tbody) return;
 
   if (!companies.length) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding:16px;text-align:center;color:#7a9a9a;">No companies found.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:16px;text-align:center;color:#7a9a9a;">No companies found.</td></tr>';
     return;
   }
 
   tbody.innerHTML = companies.map((company) => `
     <tr data-company-id="${company.company_id}">
-      <td>${company.company_name}<small>${company.email || 'No email'}</small></td>
-      <td>${company.location?.country || 'N/A'}</td>
-      <td><span class="status ${(company.account_status || 'active').toLowerCase()}">${company.account_status || 'active'}</span></td>
+      <td>${escapeAdminHtml(company.company_name)}<small>${escapeAdminHtml(company.email || 'No email')}</small></td>
+      <td>${escapeAdminHtml(company.location?.country || 'N/A')}</td>
+      <td>${escapeAdminHtml(company.trade_type || company.business_type || 'N/A')}</td>
+      <td><span class="status ${(company.account_status || 'active').toLowerCase()}">${escapeAdminHtml(company.account_status || 'active')}</span></td>
       <td>${formatDate(company.created_at)}</td>
-      <td>⋮</td>
+      <td>...</td>
     </tr>
   `).join('');
+}
+
+function renderPendingVerificationSummary(documents = []) {
+  const card = Array.from(document.querySelectorAll('.right-panel .card-box'))
+    .find(item => item.querySelector('h3')?.textContent.trim() === 'Pending Verifications');
+  if (!card) return;
+
+  card.querySelectorAll('.pending-item').forEach(item => item.remove());
+  const viewAll = card.querySelector('.view-all');
+  const pendingDocs = documents
+    .filter(doc => String(doc.status || '').toLowerCase() === 'pending')
+    .slice(0, 4);
+
+  if (!pendingDocs.length) {
+    const empty = document.createElement('div');
+    empty.className = 'pending-item';
+    empty.innerHTML = '<div class="pending-info"><p>No pending verifications</p><span>All submitted documents are reviewed</span></div>';
+    card.insertBefore(empty, viewAll || null);
+    return;
+  }
+
+  pendingDocs.forEach(doc => {
+    const item = document.createElement('div');
+    item.className = 'pending-item';
+    item.innerHTML = `
+      <div class="pending-icon"><i class="ri-time-line"></i></div>
+      <div class="pending-info"><p>${escapeAdminHtml(doc.company?.company_name || 'Unknown Company')}</p><span>${escapeAdminHtml(doc.document_type || 'Verification document')}</span><span class="pending-date">${formatDate(doc.submitted_at || doc.created_at)}</span></div>`;
+    card.insertBefore(item, viewAll || null);
+  });
 }
 
 function renderAdminEmployeeRequests(tickets) {
@@ -282,13 +335,15 @@ function initUserActions() {
       }
       const menu = document.createElement('div');
       menu.className = 'action-menu';
-      menu.style.cssText = `position:absolute;right:8px;top:100%;margin-top:4px;background:#fff;border:1px solid rgba(13,59,59,0.12);border-radius:12px;box-shadow:0 8px 24px rgba(13,59,59,0.14);z-index:300;min-width:180px;padding:6px;font-family:'Inter',sans-serif;`;
+      menu.style.cssText = `position:absolute;right:8px;top:100%;margin-top:4px;background:#fff;border:1px solid rgba(13,59,59,0.12);border-radius:12px;box-shadow:0 8px 24px rgba(13,59,59,0.14);z-index:300;min-width:210px;padding:6px;font-family:'Inter',sans-serif;`;
       const isSuspended = status.toLowerCase() === 'suspended';
+      const isSoftDeleted = status.toLowerCase() === 'soft_deleted';
       const items = [
         { icon:'ri-eye-line',    label:'View Details',   fn: () => viewUserDetails(company, email, status, country) },
         { icon:'ri-edit-line',   label:'Edit Profile',   fn: () => editUser(company) },
-        { icon: isSuspended?'ri-checkbox-circle-line':'ri-forbid-line', label: isSuspended?'Reinstate Account':'Suspend Account', fn: () => isSuspended?reinstateUser(companyId, company,row):suspendUser(companyId, company,row), danger: !isSuspended },
-        { icon:'ri-delete-bin-line', label:'Delete Account', fn: () => deleteUser(companyId, company, row), danger: true },
+        { icon: (isSuspended || isSoftDeleted)?'ri-checkbox-circle-line':'ri-forbid-line', label: (isSuspended || isSoftDeleted)?'Reinstate Account':'Suspend Account', fn: () => (isSuspended || isSoftDeleted)?reinstateUser(companyId, company,row):suspendUser(companyId, company,row), danger: !(isSuspended || isSoftDeleted) },
+        { icon:'ri-delete-back-2-line', label:'Soft Delete Account', fn: () => softDeleteUser(companyId, company, row), danger: true },
+        { icon:'ri-delete-bin-line', label:'Permanently Delete', fn: () => deleteUser(companyId, company, row), danger: true },
       ];
       items.forEach(item => {
         const btn = document.createElement('button');
@@ -372,6 +427,43 @@ async function confirmReinstate() {
   closeModal(); showToast(`${company.name} reinstated successfully`, 'ri-checkbox-circle-line');
   loadAdminDashboardData();
 }
+
+function softDeleteUser(companyId, company, row) {
+  createModal('Soft Delete Account', `<p style="font-size:13px;color:#4a6464;line-height:1.6;">Soft delete <strong style="color:#0D3B3B;">${escapeAdminHtml(company)}</strong>? The company will be hidden from the platform and blocked from login, but its records remain recoverable.</p>`,
+    [{ label:'Cancel', fn:'closeModal()' }, { label:'Soft Delete', fn:'confirmSoftDelete()', primary:true }]);
+  window._pendingCompany = { id: companyId, name: company };
+  window._pendingRow = row;
+}
+
+async function confirmSoftDelete() {
+  const company = window._pendingCompany;
+  if (!company?.id) { showToast('No company selected', 'ri-error-warning-line'); return; }
+
+  const { updateCompany } = await loadAdminApi();
+  const response = await updateCompany(company.id, {
+    account_status: 'soft_deleted',
+    profile_visibility: false,
+    suspension_reason: 'Soft deleted by admin'
+  });
+
+  if (!response.ok) {
+    showToast(response.data?.error || response.data?.message || response.error || 'Could not soft delete account', 'ri-error-warning-line');
+    return;
+  }
+
+  const row = window._pendingRow;
+  if (row) {
+    const badge = row.querySelector('.status');
+    if (badge) {
+      badge.className = 'status soft_deleted';
+      badge.textContent = 'soft_deleted';
+    }
+  }
+  closeModal();
+  showToast(`${company.name} was soft deleted`, 'ri-delete-back-2-line');
+  loadAdminDashboardData();
+}
+
 function deleteUser(companyId, company, row) {
   createModal('Delete Account', `<div style="display:flex;gap:14px;align-items:flex-start;margin-bottom:16px;"><div style="width:40px;height:40px;background:rgba(220,38,38,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="ri-error-warning-line" style="color:#dc2626;font-size:20px;"></i></div><div><p style="font-size:14px;font-weight:700;color:#0D3B3B;margin-bottom:6px;">This action cannot be undone.</p><p style="font-size:13px;color:#4a6464;line-height:1.6;">Permanently deleting <strong>${company}</strong> will remove all their data, matches, and messages within 24 hours.</p></div></div><div style="background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.15);border-radius:10px;padding:12px;"><p style="font-size:12px;color:#dc2626;font-weight:500;">Type DELETE to confirm:</p><input id="deleteConfirm" type="text" placeholder="DELETE" style="margin-top:8px;width:100%;padding:8px 12px;border:1px solid rgba(220,38,38,0.3);border-radius:8px;font-family:'Inter',sans-serif;font-size:13px;outline:none;background:#fff;"></div>`,
     [{ label:'Cancel', fn:'closeModal()' }, { label:'Delete Account', fn:'confirmDelete()', primary:true }]);
@@ -588,6 +680,95 @@ function initLogout() {
 }
 function confirmLogout() { closeModal(); showToast('Logging out...','ri-logout-box-r-line'); setTimeout(()=>{window.location.href='../Login - Page/login.html';},1000); }
 
+function countBy(items, getKey) {
+  return items.reduce((map, item) => {
+    const key = getKey(item) || 'Unknown';
+    map.set(key, (map.get(key) || 0) + 1);
+    return map;
+  }, new Map());
+}
+
+function openAdminAnalytics() {
+  const { companies, matches, verificationDocs, supportTickets } = adminDashboardData;
+  const active = companies.filter(company => company.account_status === 'active').length;
+  const pending = companies.filter(company => company.account_status === 'pending').length;
+  const suspended = companies.filter(company => company.account_status === 'suspended').length;
+  const softDeleted = companies.filter(company => company.account_status === 'soft_deleted').length;
+  const verifiedDocs = verificationDocs.filter(doc => doc.status === 'approved').length;
+  const pendingDocs = verificationDocs.filter(doc => doc.status === 'pending').length;
+  const openReports = supportTickets.filter(ticket => !['closed', 'resolved'].includes(String(ticket.status || '').toLowerCase())).length;
+  const activeRate = companies.length ? Math.round((active / companies.length) * 100) : 0;
+  const matchDensity = companies.length ? (matches.length / companies.length).toFixed(1) : '0.0';
+  const topCountries = Array.from(countBy(companies, company => company.location?.country).entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  const topIndustries = Array.from(countBy(companies, company => company.industry?.industry_name || company.business_type).entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  createModal('Platform Analytics', `
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:16px;">
+      ${[
+        ['Total companies', companies.length],
+        ['Active companies', `${active} (${activeRate}%)`],
+        ['Pending approval', pending],
+        ['Suspended / soft deleted', suspended + softDeleted],
+        ['Total matches', matches.length],
+        ['Matches per company', matchDensity],
+        ['Pending documents', pendingDocs],
+        ['Open reports', openReports]
+      ].map(([label, value]) => `<div style="background:#F0FAFB;border-radius:12px;padding:14px;"><p style="font-size:11px;color:#7a9a9a;text-transform:uppercase;font-weight:700;">${label}</p><h4 style="margin-top:5px;color:#0D3B3B;font-size:22px;">${value}</h4></div>`).join('')}
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+      <div><h4 style="font-size:13px;color:#0D3B3B;margin-bottom:8px;">Top Countries</h4>${topCountries.length ? topCountries.map(([name, count]) => `<p style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #e7f0f0;"><span>${escapeAdminHtml(name)}</span><strong>${count}</strong></p>`).join('') : '<p style="font-size:12px;color:#7a9a9a;">No country data yet.</p>'}</div>
+      <div><h4 style="font-size:13px;color:#0D3B3B;margin-bottom:8px;">Top Industries</h4>${topIndustries.length ? topIndustries.map(([name, count]) => `<p style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #e7f0f0;"><span>${escapeAdminHtml(name)}</span><strong>${count}</strong></p>`).join('') : '<p style="font-size:12px;color:#7a9a9a;">No industry data yet.</p>'}</div>
+    </div>
+    <p style="font-size:12px;color:#7a9a9a;margin-top:14px;">Document progress: ${verifiedDocs} approved, ${pendingDocs} pending.</p>
+  `, [{ label:'Close', fn:'closeModal()' }]);
+}
+
+function openAdminReports() {
+  const tickets = adminDashboardData.supportTickets;
+  createModal('Company Reports', tickets.length ? `
+    <div style="display:flex;flex-direction:column;gap:10px;max-height:56vh;overflow:auto;">
+      ${tickets.map(ticket => `
+        <div style="border:1px solid #e2eeee;border-radius:12px;padding:12px;background:#fbfefe;">
+          <div style="display:flex;justify-content:space-between;gap:12px;">
+            <strong style="color:#0D3B3B;font-size:13px;">${escapeAdminHtml(ticket.title)}</strong>
+            <span style="font-size:11px;color:#7a9a9a;">${escapeAdminHtml(ticket.status || 'open')}</span>
+          </div>
+          <p style="font-size:12px;color:#4a6464;margin:6px 0;">${escapeAdminHtml(ticket.description || 'No description')}</p>
+          <p style="font-size:11px;color:#7a9a9a;">${escapeAdminHtml(ticket.company?.company_name || 'Unknown Company')} - ${escapeAdminHtml(ticket.category || 'general')} - ${formatDate(ticket.created_at)}</p>
+        </div>
+      `).join('')}
+    </div>
+  ` : '<p style="font-size:13px;color:#4a6464;">No reports or support tickets have been submitted yet.</p>', [{ label:'Close', fn:'closeModal()' }, { label:'Open Requests', fn:"closeModal();document.querySelector('.tabs button:nth-child(2)').click()", primary:true }]);
+}
+
+function openManageUsers() {
+  const userTab = document.querySelector('.tabs button:first-child');
+  if (userTab) switchTab(userTab, 'user-management');
+  document.querySelector('#user-management .search')?.focus();
+  showToast('Manage users loaded with company details and actions', 'ri-user-settings-line');
+}
+
+function openPlatformSettings() {
+  document.getElementById('adminSettingsBackdrop')?.classList.add('open');
+}
+
+function initQuickActions() {
+  document.querySelectorAll('[data-quick-action]').forEach(item => {
+    item.style.cursor = 'pointer';
+    item.addEventListener('click', () => {
+      const action = item.dataset.quickAction;
+      if (action === 'analytics') openAdminAnalytics();
+      if (action === 'users') openManageUsers();
+      if (action === 'reports') openAdminReports();
+      if (action === 'settings') openPlatformSettings();
+    });
+  });
+}
+
 window.switchTab = switchTab;
 window.closeModal = closeModal;
 window.editUser = editUser;
@@ -596,6 +777,8 @@ window.suspendUser = suspendUser;
 window.confirmSuspend = confirmSuspend;
 window.reinstateUser = reinstateUser;
 window.confirmReinstate = confirmReinstate;
+window.softDeleteUser = softDeleteUser;
+window.confirmSoftDelete = confirmSoftDelete;
 window.deleteUser = deleteUser;
 window.confirmDelete = confirmDelete;
 window.sendReply = sendReply;

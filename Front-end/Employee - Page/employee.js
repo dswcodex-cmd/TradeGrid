@@ -6,6 +6,7 @@ let pushedToAdmin    = new Set();
 let selectedPriorities = new Set();
 let selectedStatuses   = new Set();
 let currentStaffProfile = null;
+const employeeDocumentUrls = new Map();
 
 // ─── DOM References ───
 const viewBtns          = document.querySelectorAll('.view-btn');
@@ -77,9 +78,9 @@ async function loadEmployeeDashboardData() {
 
     const statCards = document.querySelectorAll('.stats .card h1');
     if (statCards.length >= 3) {
-      statCards[0].textContent = supportTickets.length;
+      statCards[0].textContent = companies.filter(company => String(company.account_status || '').toLowerCase() === 'pending').length;
       statCards[1].textContent = verificationDocs.filter(doc => doc.status === 'approved').length;
-      statCards[2].textContent = matchedCompanies.filter(match => match.status === 'active').length;
+      statCards[2].textContent = verificationDocs.filter(doc => String(doc.status || '').toLowerCase() === 'pending').length;
     }
 
     const unreadBadge = document.querySelector('.unread-badge');
@@ -133,12 +134,15 @@ function renderDocumentList(documents, reviewable = false) {
   return documents.map((doc) => {
     const docId = doc.verification_document_id || doc.document_id || doc.id;
     const status = String(doc.status || 'pending').toLowerCase();
+    if (docId && doc.file_url) {
+      employeeDocumentUrls.set(String(docId), doc.file_url);
+    }
     const reviewButtons = reviewable ? `
       <button class="btn-secondary doc-review-btn" data-document-id="${docId}" data-status="approved"><i class="ri-check-line"></i> Approve</button>
       <button class="btn-secondary doc-review-btn" data-document-id="${docId}" data-status="rejected"><i class="ri-close-line"></i> Reject</button>
     ` : '';
     const fileAction = doc.file_url
-      ? `<a class="btn-secondary" href="${doc.file_url}" target="_blank" rel="noopener"><i class="ri-file-search-line"></i> View file</a>`
+      ? `<button class="btn-secondary doc-view-btn" data-document-id="${docId}"><i class="ri-file-search-line"></i> View file</button>`
       : '<span class="empty-state" style="font-size:12px;">No file preview available</span>';
 
     return `
@@ -191,6 +195,30 @@ function renderEmployeeTasks(verificationDocs) {
 
   tasksBody.innerHTML = `${assignedMarkup || '<div class="empty-tab" data-tab-content="assigned"><p class="empty-state">No assigned tasks.</p></div>'}${pendingMarkup}${completedMarkup}`;
   bindVerificationReviewActions();
+}
+
+function openEmployeeDocument(documentId) {
+  const fileUrl = employeeDocumentUrls.get(String(documentId));
+  if (!fileUrl) {
+    window.alert('No document file is available for preview.');
+    return;
+  }
+
+  if (!fileUrl.startsWith('data:')) {
+    window.open(fileUrl, '_blank', 'noopener');
+    return;
+  }
+
+  const [meta, base64] = fileUrl.split(',');
+  const mimeType = meta.match(/data:(.*?);base64/)?.[1] || 'application/pdf';
+  const binary = atob(base64 || '');
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  const blobUrl = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
+  window.open(blobUrl, '_blank', 'noopener');
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
 }
 
 function showCompanyReviewModal(company) {
@@ -247,6 +275,13 @@ function bindVerificationReviewActions() {
 
   tasksBody.dataset.verificationBound = 'true';
   tasksBody.addEventListener('click', async (event) => {
+    const viewBtn = event.target.closest('.doc-view-btn');
+    if (viewBtn) {
+      event.stopPropagation();
+      openEmployeeDocument(viewBtn.dataset.documentId);
+      return;
+    }
+
     const reviewBtn = event.target.closest('.doc-review-btn');
     if (reviewBtn) {
       event.stopPropagation();

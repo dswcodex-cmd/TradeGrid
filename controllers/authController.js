@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import twilio from "twilio";
 import prisma from "../prismaClient.js";
+import { validateCompanyReg } from "./validationService.js";
 
 const twilioAccountSid = process.env.TWILIO_ASID || process.env.TWILIO_ACCOUNT_SID;
 
@@ -81,6 +82,7 @@ export const signup = async (req, res) => {
     const {
       company_name,
       registration_number,
+      country_code,
       email,
       Password,
       password,
@@ -103,6 +105,7 @@ export const signup = async (req, res) => {
     const normalizedEmail = normalizeEmail(email);
     const rawPassword = Password || password;
     const normalizedRegistrationNumber = String(registration_number || "").trim();
+    const normalizedCountryCode = String(country_code || onboarding?.address?.country || "").trim().toUpperCase();
     const companyName = String(company_name || "").trim();
     const businessType = String(business_type || "").trim();
 
@@ -119,6 +122,16 @@ export const signup = async (req, res) => {
       return res.status(400).json({
         error: "Invalid email or password format"
       });
+    }
+
+    if (normalizedCountryCode) {
+      const registrationValidation = validateCompanyReg(normalizedCountryCode, normalizedRegistrationNumber);
+      if (!registrationValidation.valid) {
+        return res.status(400).json({
+          error: registrationValidation.errors?.[0] || "Invalid registration number for the selected country",
+          validation: registrationValidation
+        });
+      }
     }
 
     const existingUser = await prisma.company.findFirst({
@@ -254,6 +267,7 @@ export const login = async (req, res) => {
     });
 
     if (user) {
+      const accountStatus = String(user.account_status || "").toLowerCase();
       const isMatch = await bcrypt.compare(rawPassword, user.Password);
 
       if (!isMatch) {
@@ -264,17 +278,17 @@ export const login = async (req, res) => {
         return res.status(403).json({ message: "Verify your email before logging in" });
       }
 
-      if (user.account_status === "pending") {
+      if (accountStatus === "pending") {
         return res.status(403).json({
           message: "Your account is pending approval. You will receive an email once your account is activated."
         });
       }
 
-      if (user.account_status !== "active") {
+      if (accountStatus !== "active") {
         return res.status(403).json({
           message: user.suspension_reason
-            ? `Account ${user.account_status}: ${user.suspension_reason}`
-            : `Your account is ${user.account_status}`
+            ? `Account ${accountStatus}: ${user.suspension_reason}`
+            : `Your account is ${accountStatus}`
         });
       }
 
@@ -296,7 +310,7 @@ export const login = async (req, res) => {
           company_id: user.company_id,
           company_name: user.company_name,
           email: user.email,
-          account_status: user.account_status
+          account_status: accountStatus
         }
       });
     }

@@ -391,6 +391,12 @@ tbody td:last-child:hover { color: var(--primary); }
   border: 1px solid rgba(220,38,38,0.2);
 }
 
+.status.soft_deleted {
+  background: rgba(75,85,99,0.1);
+  color: #4b5563;
+  border: 1px solid rgba(75,85,99,0.2);
+}
+
 /* ============================================================
    RIGHT PANEL
    ============================================================ */

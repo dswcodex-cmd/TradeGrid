@@ -486,6 +486,8 @@ export const updateAdminCompany = async (req, res) => {
       pending: "pending",
       suspend: "suspended",
       suspended: "suspended",
+      soft_delete: "soft_deleted",
+      soft_deleted: "soft_deleted",
       underreview: "under_review",
       under_review: "under_review"
     };
@@ -495,10 +497,10 @@ export const updateAdminCompany = async (req, res) => {
     const normalizedStatus = requestedStatus
       ? statusAliases[requestedStatus] || requestedStatus
       : undefined;
-    const allowedStatuses = new Set(["active", "pending", "suspended", "under_review"]);
+    const allowedStatuses = new Set(["active", "pending", "suspended", "soft_deleted", "under_review"]);
 
     if (normalizedStatus && !allowedStatuses.has(normalizedStatus)) {
-      return res.status(400).json({ error: "account_status must be active, pending, suspended, or under_review" });
+      return res.status(400).json({ error: "account_status must be active, pending, suspended, soft_deleted, or under_review" });
     }
 
     const updatedCompany = await prisma.company.update({

@@ -7,9 +7,10 @@ const groqProductIdentifier = productIdentifierKey
   ? new Groq({ apiKey: productIdentifierKey })
   : null;
 
-const serializePublicCompany = (company) => ({
+const serializePublicCompany = (company, relationshipStatus = "available") => ({
   company_id: company.company_id,
   company_name: company.company_name,
+  relationship_status: relationshipStatus,
   business_type: company.business_type,
   company_description: company.company_description,
   annual_trade_volume: company.show_trade_volume ? company.annual_trade_volume : null,
@@ -169,7 +170,7 @@ const buildCompanySearchOr = (terms) => terms.flatMap((term) => [
   }
 ]);
 
-const getUnavailableDiscoverCompanyIds = async (current_company_id) => {
+const getDiscoverRelationshipData = async (current_company_id) => {
   const [matches, requests] = await Promise.all([
     prisma.companyMatches.findMany({
       where: {
@@ -200,13 +201,34 @@ const getUnavailableDiscoverCompanyIds = async (current_company_id) => {
     })
   ]);
 
-  return [
-    ...new Set([
-      current_company_id,
-      ...matches.flatMap((match) => [match.company1_id, match.company2_id]),
-      ...requests.flatMap((request) => [request.source_company_id, request.target_company_id])
-    ])
-  ];
+  const relationshipStatus = new Map();
+
+  matches.forEach((match) => {
+    const otherId = Number(match.company1_id) === Number(current_company_id)
+      ? match.company2_id
+      : match.company1_id;
+    relationshipStatus.set(Number(otherId), "connected");
+  });
+
+  requests.forEach((request) => {
+    const otherId = Number(request.source_company_id) === Number(current_company_id)
+      ? request.target_company_id
+      : request.source_company_id;
+    if (!relationshipStatus.has(Number(otherId))) {
+      relationshipStatus.set(Number(otherId), request.status || "pending");
+    }
+  });
+
+  return {
+    relationshipStatus,
+    unavailableCompanyIds: [
+      ...new Set([
+        current_company_id,
+        ...matches.flatMap((match) => [match.company1_id, match.company2_id]),
+        ...requests.flatMap((request) => [request.source_company_id, request.target_company_id])
+      ])
+    ]
+  };
 };
 
 export const discoverCompanies = async (req, res) => {
@@ -221,13 +243,14 @@ export const discoverCompanies = async (req, res) => {
       desired_product,
       region
     } = req.query;
-    const unavailableCompanyIds = await getUnavailableDiscoverCompanyIds(current_company_id);
     const searchTerms = expandSearchTerms(search);
+    const { relationshipStatus, unavailableCompanyIds } = await getDiscoverRelationshipData(current_company_id);
+    const excludedCompanyIds = searchTerms.length ? [current_company_id] : unavailableCompanyIds;
 
     const companies = await prisma.company.findMany({
       where: {
         company_id: {
-          notIn: unavailableCompanyIds
+          notIn: excludedCompanyIds
         },
         account_status: "active",
         profile_visibility: true,
@@ -325,7 +348,9 @@ export const discoverCompanies = async (req, res) => {
     });
 
     return res.status(200).json({
-      companies: companies.map(serializePublicCompany)
+      companies: companies.map((company) =>
+        serializePublicCompany(company, relationshipStatus.get(Number(company.company_id)) || "available")
+      )
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });

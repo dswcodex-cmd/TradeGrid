@@ -486,7 +486,11 @@ export const getMyMatchActivityStats = async (req, res) => {
 export const getMyProfileViewStats = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
+    const selectedDays = Math.min(90, Math.max(7, Number(req.query.days) || 7));
     const now = new Date();
+    const selectedStart = new Date(now);
+    selectedStart.setHours(0, 0, 0, 0);
+    selectedStart.setDate(now.getDate() - (selectedDays - 1));
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - 7);
     const previousWeekStart = new Date(now);
@@ -517,9 +521,12 @@ export const getMyProfileViewStats = async (req, res) => {
         }
       }),
       prisma.profileView.findMany({
-        where: { viewed_company_id: current_company_id },
+        where: {
+          viewed_company_id: current_company_id,
+          viewed_at: { gte: selectedStart }
+        },
         orderBy: { viewed_at: "desc" },
-        take: 10,
+        take: 500,
         include: {
           viewer_company: {
             select: {
@@ -534,6 +541,7 @@ export const getMyProfileViewStats = async (req, res) => {
 
     return res.status(200).json({
       total,
+      selected_days: selectedDays,
       this_week: thisWeek,
       previous_week: previousWeek,
       change_this_week: thisWeek - previousWeek,
