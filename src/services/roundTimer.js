@@ -7,7 +7,7 @@ export const startRoundTimer = ({
   eventId,
   companyAId,
   companyBId,
-  durationSeconds = 180
+  durationSeconds = 6000
 }) => {
   clearMatchTimer(matchId);
 
