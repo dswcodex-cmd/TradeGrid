@@ -157,6 +157,32 @@ function toggleSidebar() { sidebar.classList.contains('open') ? closeSidebar() :
 sidebarToggle.addEventListener('click', (e) => { e.stopPropagation(); toggleSidebar(); });
 mainWrapper.addEventListener('click', () => { if (sidebar.classList.contains('open')) closeSidebar(); });
 
+const DASHBOARD_SESSION_TIMEOUT_SECONDS = 600;
+let dashboardSessionTimer = null;
+
+function logoutUser() {
+  try {
+    ['token', 'companyToken', 'userToken'].forEach(key => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+  } catch (error) {
+    // Storage can be unavailable in some browser privacy modes.
+  }
+
+  window.location.href = '../Login - Page/login.html';
+}
+
+function resetDashboardSessionTimer() {
+  clearTimeout(dashboardSessionTimer);
+  dashboardSessionTimer = setTimeout(logoutUser, DASHBOARD_SESSION_TIMEOUT_SECONDS * 1000);
+}
+
+['click', 'mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel'].forEach(eventName => {
+  window.addEventListener(eventName, resetDashboardSessionTimer, { passive: true });
+});
+resetDashboardSessionTimer();
+
 // ── Logout Modal ──
 function createLogoutModal() {
   if (document.getElementById('logoutModal')) return;
@@ -180,7 +206,7 @@ function createLogoutModal() {
   document.getElementById('btnLogoutCancel').addEventListener('click', closeModal);
   backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); });
   document.getElementById('btnLogoutConfirm').addEventListener('click', () => {
-    window.location.href = '../Login - Page/login.html';
+    logoutUser();
   });
 }
 createLogoutModal();

@@ -3,6 +3,8 @@ import prisma from "../prismaClient.js";
 const FRIDAY_INDEX = 5;
 const PULSE_TITLE_PREFIX = "Pulse Network";
 const PULSE_INDUSTRY = "Cross-industry";
+const PULSE_ROUND_DURATION_SECONDS = 600;
+const PULSE_BREAK_DURATION_SECONDS = 120;
 const isPulseBypassEnabled = () => process.env.PULSE_DEV_BYPASS === "true";
 
 const getJohannesburgParts = () => {
@@ -95,11 +97,17 @@ const ensureWeeklyPulseEvent = async () => {
   if (existing) {
     const targetStatus = isPulseOpenNow() ? "LIVE" : "UPCOMING";
 
-    if (existing.status !== targetStatus) {
+    if (
+      existing.status !== targetStatus ||
+      existing.round_duration_secs !== PULSE_ROUND_DURATION_SECONDS ||
+      existing.break_duration_secs !== PULSE_BREAK_DURATION_SECONDS
+    ) {
       return prisma.event.update({
         where: { id: existing.id },
         data: {
-          status: targetStatus
+          status: targetStatus,
+          round_duration_secs: PULSE_ROUND_DURATION_SECONDS,
+          break_duration_secs: PULSE_BREAK_DURATION_SECONDS
         }
       });
     }
@@ -115,8 +123,8 @@ const ensureWeeklyPulseEvent = async () => {
       event_date: fridayStart,
       status: isPulseOpenNow() ? "LIVE" : "UPCOMING",
       total_rounds: 12,
-      round_duration_secs: 180,
-      break_duration_secs: 120
+      round_duration_secs: PULSE_ROUND_DURATION_SECONDS,
+      break_duration_secs: PULSE_BREAK_DURATION_SECONDS
     }
   });
 };
@@ -522,8 +530,8 @@ export const createAdminEvent = async (req, res) => {
       event_date,
       status = "UPCOMING",
       total_rounds = 12,
-      round_duration_secs = 180,
-      break_duration_secs = 120
+      round_duration_secs = PULSE_ROUND_DURATION_SECONDS,
+      break_duration_secs = PULSE_BREAK_DURATION_SECONDS
     } = req.body;
 
     if (!title || !industry || !event_date) {

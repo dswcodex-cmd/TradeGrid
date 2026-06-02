@@ -1,13 +1,15 @@
 import prisma from "../../prismaClient.js";
 import { clearMatchTimer, setMatchTimer } from "./eventQueueService.js";
 
+const DEFAULT_ROUND_DURATION_SECONDS = 600;
+
 export const startRoundTimer = ({
   io,
   matchId,
   eventId,
   companyAId,
   companyBId,
-  durationSeconds = 6000
+  durationSeconds = DEFAULT_ROUND_DURATION_SECONDS
 }) => {
   clearMatchTimer(matchId);
 
