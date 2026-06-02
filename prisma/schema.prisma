@@ -1,0 +1,423 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Admin {
+  admin_id                        Int                    @id @default(autoincrement())
+  full_name                       String
+  email                           String                 @unique
+  password_hash                   String
+  role                            String                 @default("employee")
+  is_active                       Boolean                @default(true)
+  created_at                      DateTime               @default(now())
+  updated_at                      DateTime               @updatedAt
+  last_login_at                   DateTime?
+  assigned_support_tickets        SupportTicket[]        @relation("AssignedSupportTickets")
+  support_ticket_messages         SupportTicketMessage[]
+  reviewed_verification_documents VerificationDocument[] @relation("VerificationReviewedBy")
+}
+
+model Company {
+  company_id              Int                      @id @default(autoincrement())
+  company_name            String
+  registration_number     String                   @unique
+  business_type           String
+  trade_type              TradeType                @default(BOTH)
+  number_of_employees     Int?
+  year_established        Int?
+  company_description     String?
+  created_at              DateTime                 @default(now())
+  industry_id             Int?
+  location_id             Int?
+  Password                String
+  email                   String                   @unique
+  email_verified_at       DateTime?
+  is_email_verified       Boolean                  @default(false)
+  address                 String?
+  annual_trade_volume     String?
+  looking_for_description String?
+  phone                   String?
+  profile_visibility      Boolean                  @default(true)
+  show_trade_volume       Boolean                  @default(false)
+  website                 String?
+  notify_new_matches      Boolean                  @default(true)
+  notify_new_messages     Boolean                  @default(true)
+  notify_verification     Boolean                  @default(true)
+  notify_weekly_digest    Boolean                  @default(false)
+  account_status          String                   @default("active")
+  admin_notes             String?
+  suspended_at            DateTime?
+  suspension_reason       String?
+  iec_number              String?
+  abn_number              String?
+  gst_number              String?
+  industry                Industry?                @relation(fields: [industry_id], references: [industry_id])
+  location                Location?                @relation(fields: [location_id], references: [location_id])
+  desired_products        CompanyDesiredProducts[]
+  event_registrations     Registration[]
+  lobby_messages          LobbyMessage[]
+  matches                 CompanyMatches[]         @relation("Company1")
+  matched_with            CompanyMatches[]         @relation("Company2")
+  scheduled_matches_as_a  ScheduledMatch[]         @relation("ScheduledMatchCompanyA")
+  scheduled_matches_as_b  ScheduledMatch[]         @relation("ScheduledMatchCompanyB")
+  scheduled_match_reviews MatchOutcome[]           @relation("CompanyMatchOutcomes")
+  products                CompanyProducts[]
+  regions                 CompanyRegions[]
+  targets                 CompanyTargets[]         @relation("SourceCompany")
+  target_of               CompanyTargets[]         @relation("TargetCompany")
+  watchlist_items         CompanyWatchlist[]
+  conversations_started   Conversation[]           @relation("ConversationCompany1")
+  conversations_joined    Conversation[]           @relation("ConversationCompany2")
+  enquiries_received      Enquiry[]                @relation("EnquiryRecipient")
+  enquiries_sent          Enquiry[]                @relation("EnquirySender")
+  messages_received       Message[]                @relation("MessageReceiver")
+  messages_sent           Message[]                @relation("MessageSender")
+  notifications           Notification[]           @relation("CompanyNotifications")
+  triggered_notifications Notification[]           @relation("RelatedCompanyNotifications")
+  payments_sent           Payment[]                @relation("PayerCompany")
+  payments_received       Payment[]                @relation("RecipientCompany")
+  support_tickets         SupportTicket[]
+  support_ticket_messages SupportTicketMessage[]
+  verification_documents  VerificationDocument[]
+  profile_views_received  ProfileView[]            @relation("ViewedCompanyProfileViews")
+  profile_views_made      ProfileView[]            @relation("ViewerCompanyProfileViews")
+}
+
+enum TradeType {
+  IMPORTER
+  EXPORTER
+  BOTH
+}
+
+model Industry {
+  industry_id   Int       @id @default(autoincrement())
+  industry_name String    @unique
+  companies     Company[]
+}
+
+model Location {
+  location_id Int       @id @default(autoincrement())
+  country     String
+  companies   Company[]
+}
+
+model Product {
+  product_id           Int                      @id @default(autoincrement())
+  product_name         String                   @unique
+  desired_by_companies CompanyDesiredProducts[]
+  companies            CompanyProducts[]
+  watchlisted_by       CompanyWatchlist[]
+  enquiries            Enquiry[]
+}
+
+model CompanyProducts {
+  company_id Int
+  product_id Int
+  company    Company @relation(fields: [company_id], references: [company_id])
+  product    Product @relation(fields: [product_id], references: [product_id])
+
+  @@id([company_id, product_id])
+}
+
+model CompanyDesiredProducts {
+  company_id Int
+  product_id Int
+  company    Company @relation(fields: [company_id], references: [company_id])
+  product    Product @relation(fields: [product_id], references: [product_id])
+
+  @@id([company_id, product_id])
+}
+
+model CompanyWatchlist {
+  company_id Int
+  product_id Int
+  created_at DateTime @default(now())
+  company    Company  @relation(fields: [company_id], references: [company_id])
+  product    Product  @relation(fields: [product_id], references: [product_id])
+
+  @@id([company_id, product_id])
+}
+
+model Region {
+  region_id   Int              @id @default(autoincrement())
+  region_name String           @unique
+  companies   CompanyRegions[]
+}
+
+model CompanyRegions {
+  company_id Int
+  region_id  Int
+  company    Company @relation(fields: [company_id], references: [company_id])
+  region     Region  @relation(fields: [region_id], references: [region_id])
+
+  @@id([company_id, region_id])
+}
+
+model CompanyTargets {
+  source_company_id Int
+  target_company_id Int
+  status            String?  @default("pending")
+  notes             String?
+  created_at        DateTime @default(now())
+  source            Company  @relation("SourceCompany", fields: [source_company_id], references: [company_id])
+  target            Company  @relation("TargetCompany", fields: [target_company_id], references: [company_id])
+
+  @@id([source_company_id, target_company_id])
+}
+
+model CompanyMatches {
+  company1_id Int
+  company2_id Int
+  matched_at  DateTime @default(now())
+  match_type  String?
+  status            String   @default("active")
+  deal_started_at   DateTime?
+  deal_completed_at DateTime?
+  company1    Company  @relation("Company1", fields: [company1_id], references: [company_id])
+  company2    Company  @relation("Company2", fields: [company2_id], references: [company_id])
+
+  @@id([company1_id, company2_id])
+}
+
+model Notification {
+  notification_id    Int      @id @default(autoincrement())
+  company_id         Int
+  type               String
+  message            String?
+  related_company_id Int?
+  created_at         DateTime @default(now())
+  is_read            Boolean  @default(false)
+  payment_id         Int?
+  company            Company  @relation("CompanyNotifications", fields: [company_id], references: [company_id])
+  payment            Payment? @relation(fields: [payment_id], references: [payment_id])
+  related_company    Company? @relation("RelatedCompanyNotifications", fields: [related_company_id], references: [company_id])
+}
+
+model Payment {
+  payment_id                 Int            @id @default(autoincrement())
+  payer_company_id           Int
+  recipient_company_id       Int
+  amount                     Int
+  currency                   String
+  status                     String         @default("pending")
+  stripe_checkout_session_id String?        @unique
+  stripe_payment_intent_id   String?        @unique
+  description                String?
+  created_at                 DateTime       @default(now())
+  updated_at                 DateTime       @updatedAt
+  paid_at                    DateTime?
+  paystack_access_code       String?
+  paystack_authorization_url String?
+  paystack_reference         String?        @unique
+  notifications              Notification[]
+  payer_company              Company        @relation("PayerCompany", fields: [payer_company_id], references: [company_id])
+  recipient_company          Company        @relation("RecipientCompany", fields: [recipient_company_id], references: [company_id])
+}
+
+model Conversation {
+  conversation_id Int       @id @default(autoincrement())
+  company1_id     Int
+  company2_id     Int
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  last_message_at DateTime?
+  company1        Company   @relation("ConversationCompany1", fields: [company1_id], references: [company_id])
+  company2        Company   @relation("ConversationCompany2", fields: [company2_id], references: [company_id])
+  messages        Message[]
+
+  @@unique([company1_id, company2_id])
+}
+
+model Message {
+  message_id          Int          @id @default(autoincrement())
+  conversation_id     Int
+  sender_company_id   Int
+  receiver_company_id Int
+  content             String
+  is_read             Boolean      @default(false)
+  created_at          DateTime     @default(now())
+  conversation        Conversation @relation(fields: [conversation_id], references: [conversation_id])
+  receiver_company    Company      @relation("MessageReceiver", fields: [receiver_company_id], references: [company_id])
+  sender_company      Company      @relation("MessageSender", fields: [sender_company_id], references: [company_id])
+}
+
+model Enquiry {
+  enquiry_id           Int      @id @default(autoincrement())
+  sender_company_id    Int
+  recipient_company_id Int
+  product_id           Int?
+  message              String
+  status               String   @default("pending")
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+  product              Product? @relation(fields: [product_id], references: [product_id])
+  recipient_company    Company  @relation("EnquiryRecipient", fields: [recipient_company_id], references: [company_id])
+  sender_company       Company  @relation("EnquirySender", fields: [sender_company_id], references: [company_id])
+}
+
+model Event {
+  id                  String           @id @default(uuid())
+  title               String
+  industry            String
+  description         String?
+  event_date          DateTime
+  status              EventStatus      @default(UPCOMING)
+  total_rounds        Int              @default(12)
+  round_duration_secs Int              @default(180)
+  break_duration_secs Int              @default(120)
+  current_round       Int              @default(0)
+  created_at          DateTime         @default(now())
+  registrations       Registration[]
+  matches             ScheduledMatch[]
+  messages            LobbyMessage[]
+}
+
+enum EventStatus {
+  UPCOMING
+  LIVE
+  CLOSED
+}
+
+model Registration {
+  id                 String            @id @default(uuid())
+  company_id         Int
+  event_id           String
+  offering           String?
+  target_markets     String[]
+  session_preference SessionPreference @default(FULL_DAY)
+  status             UserEventStatus   @default(CONNECTED)
+  registered_at      DateTime          @default(now())
+  company            Company           @relation(fields: [company_id], references: [company_id])
+  event              Event             @relation(fields: [event_id], references: [id])
+
+  @@unique([company_id, event_id])
+}
+
+enum SessionPreference {
+  FULL_DAY
+  MORNING
+  AFTERNOON
+}
+
+enum UserEventStatus {
+  CONNECTED
+  WAITING
+  MATCHED
+  IN_MEETING
+  POST_MATCH
+  DONE
+}
+
+model ScheduledMatch {
+  id                  String         @id @default(uuid())
+  event_id            String
+  company_a_id        Int
+  company_b_id        Int
+  round_number        Int?
+  compatibility_score Int?
+  twilio_room_name    String?
+  started_at          DateTime?
+  ended_at            DateTime?
+  created_at          DateTime       @default(now())
+  event               Event          @relation(fields: [event_id], references: [id])
+  company_a           Company        @relation("ScheduledMatchCompanyA", fields: [company_a_id], references: [company_id])
+  company_b           Company        @relation("ScheduledMatchCompanyB", fields: [company_b_id], references: [company_id])
+  outcomes            MatchOutcome[]
+}
+
+model MatchOutcome {
+  id         String         @id @default(uuid())
+  match_id   String
+  company_id Int
+  decision   Decision
+  notes      String?
+  rating     Int?
+  created_at DateTime       @default(now())
+  match      ScheduledMatch @relation(fields: [match_id], references: [id])
+  company    Company        @relation("CompanyMatchOutcomes", fields: [company_id], references: [company_id])
+
+  @@unique([match_id, company_id])
+}
+
+enum Decision {
+  YES
+  NO
+  MAYBE
+}
+
+model LobbyMessage {
+  id         String   @id @default(uuid())
+  event_id   String
+  company_id Int
+  message    String
+  created_at DateTime @default(now())
+  event      Event    @relation(fields: [event_id], references: [id])
+  company    Company  @relation(fields: [company_id], references: [company_id])
+}
+
+model VerificationDocument {
+  verification_document_id Int       @id @default(autoincrement())
+  company_id               Int
+  document_type            String
+  file_name                String?
+  file_url                 String?
+  notes                    String?
+  status                   String    @default("pending")
+  submitted_at             DateTime  @default(now())
+  reviewed_at              DateTime?
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+  review_notes             String?
+  reviewed_by_admin_id     Int?
+  company                  Company   @relation(fields: [company_id], references: [company_id])
+  reviewed_by_admin        Admin?    @relation("VerificationReviewedBy", fields: [reviewed_by_admin_id], references: [admin_id])
+}
+
+model ProfileView {
+  profile_view_id  Int      @id @default(autoincrement())
+  viewed_company_id Int
+  viewer_company_id Int?
+  viewed_at        DateTime @default(now())
+  viewer_ip        String?
+  user_agent       String?
+  viewed_company   Company  @relation("ViewedCompanyProfileViews", fields: [viewed_company_id], references: [company_id])
+  viewer_company   Company? @relation("ViewerCompanyProfileViews", fields: [viewer_company_id], references: [company_id])
+
+  @@index([viewed_company_id, viewed_at])
+  @@index([viewer_company_id, viewed_at])
+}
+
+model SupportTicket {
+  support_ticket_id Int                    @id @default(autoincrement())
+  company_id        Int
+  assigned_admin_id Int?
+  title             String
+  description       String
+  category          String
+  priority          String                 @default("medium")
+  status            String                 @default("open")
+  assigned_role     String
+  created_at        DateTime               @default(now())
+  updated_at        DateTime               @updatedAt
+  resolved_at       DateTime?
+  assigned_admin    Admin?                 @relation("AssignedSupportTickets", fields: [assigned_admin_id], references: [admin_id])
+  company           Company                @relation(fields: [company_id], references: [company_id])
+  messages          SupportTicketMessage[]
+}
+
+model SupportTicketMessage {
+  support_ticket_message_id Int           @id @default(autoincrement())
+  support_ticket_id         Int
+  company_id                Int?
+  admin_id                  Int?
+  sender_type               String
+  message                   String
+  created_at                DateTime      @default(now())
+  admin                     Admin?        @relation(fields: [admin_id], references: [admin_id])
+  company                   Company?      @relation(fields: [company_id], references: [company_id])
+  support_ticket            SupportTicket @relation(fields: [support_ticket_id], references: [support_ticket_id])
+}

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trade Grid Employee Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.2.0/remixicon.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="employee.css">
+  <link rel="stylesheet" href="../Assets/darkmode-pages.css">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="logo">
+      <span>🌐</span>
+      <div>
+        <h2>Trade Grid Employee</h2>
+        <p>Verification &amp; Support Team</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <i class="ri-notification-3-line"></i>
+      <i class="ri-settings-3-line"></i>
+      <button class="logout" id="logoutBtn"><i class="ri-logout-box-r-line"></i> Logout</button>
+    </div>
+  </header>
+
+  <!-- DASHBOARD -->
+  <main class="container">
+
+    <!-- STATS -->
+    <section class="stats">
+      <div class="card">
+        <div class="icon"><i class="ri-task-line"></i></div>
+        <h1>12</h1>
+        <span>Companies To Approve</span>
+      </div>
+      <div class="card">
+        <div class="icon" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.15);color:#16a34a">
+          <i class="ri-checkbox-circle-line"></i>
+        </div>
+        <h1>8</h1>
+        <span>Completed Today</span>
+      </div>
+      <div class="card">
+        <div class="icon" style="background:rgba(220,38,38,0.1);border-color:rgba(220,38,38,0.15);color:#dc2626">
+          <i class="ri-error-warning-line"></i>
+        </div>
+        <h1>4</h1>
+        <span>Pending Review</span>
+      </div>
+    </section>
+
+    <!-- MAIN GRID -->
+    <section class="grid">
+
+      <!-- LEFT PANEL -->
+      <div class="left-panel">
+        <div class="tabs">
+          <button class="view-btn active" data-view="tasks">
+            <i class="ri-file-text-line"></i> My Tasks
+          </button>
+          <button class="view-btn" data-view="messages">
+            <i class="ri-message-3-line"></i> User Messages
+            <span class="unread-badge">2</span>
+          </button>
+        </div>
+
+        <!-- TASKS VIEW -->
+        <div id="tasksView" class="view-content">
+          <div id="taskTabs">
+            <div class="sub-tabs">
+              <button class="tab active" data-tab="assigned">Assigned</button>
+              <button class="tab" data-tab="pending">Pending</button>
+              <button class="tab" data-tab="completed">Completed</button>
+            </div>
+          </div>
+
+          <div class="search-row">
+            <div class="search-wrap">
+              <i class="ri-search-line search-icon"></i>
+              <input type="text" id="searchInput" class="search" placeholder="Search tasks..." />
+            </div>
+          </div>
+
+          <div class="panel-body" id="tasksBody">
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-header">
+                <div class="task-info">
+                  <h4>Verify Business License — Global Exports Ltd</h4>
+                  <p class="task-meta"><i class="ri-building-2-line"></i> Global Exports Ltd &bull; <i class="ri-file-text-line"></i> Document Verification</p>
+                </div>
+                <i class="ri-arrow-right-s-line task-arrow"></i>
+              </div>
+              <div class="task-footer">
+                <div class="task-badges">
+                  <span class="status high">High Priority</span>
+                  <span class="status inprogress">In Progress</span>
+                </div>
+                <span class="task-due"><i class="ri-time-line"></i> Due 2026-04-02</span>
+              </div>
+            </div>
+
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-header">
+                <div class="task-info">
+                  <h4>Review Trade Compliance — Asian Trade Co</h4>
+                  <p class="task-meta"><i class="ri-building-2-line"></i> Asian Trade Co &bull; <i class="ri-file-text-line"></i> Compliance Check</p>
+                </div>
+                <i class="ri-arrow-right-s-line task-arrow"></i>
+              </div>
+              <div class="task-footer">
+                <div class="task-badges">
+                  <span class="status medium">Medium Priority</span>
+                  <span class="status assigned-badge">Assigned</span>
+                </div>
+                <span class="task-due"><i class="ri-time-line"></i> Due 2026-04-03</span>
+              </div>
+            </div>
+
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-header">
+                <div class="task-info">
+                  <h4>Identity Verification — Euro Import Solutions</h4>
+                  <p class="task-meta"><i class="ri-building-2-line"></i> Euro Import Solutions &bull; <i class="ri-file-text-line"></i> Identity Check</p>
+                </div>
+                <i class="ri-arrow-right-s-line task-arrow"></i>
+              </div>
+              <div class="task-footer">
+                <div class="task-badges">
+                  <span class="status high">High Priority</span>
+                  <span class="status inprogress">In Progress</span>
+                </div>
+                <span class="task-due"><i class="ri-time-line"></i> Due 2026-04-02</span>
+              </div>
+            </div>
+
+            <div class="task-card" data-tab-content="assigned">
+              <div class="task-header">
+                <div class="task-info">
+                  <h4>Market Analysis Report — Middle East Trading</h4>
+                  <p class="task-meta"><i class="ri-building-2-line"></i> Middle East Trading &bull; <i class="ri-file-text-line"></i> Research</p>
+                </div>
+                <i class="ri-arrow-right-s-line task-arrow"></i>
+              </div>
+              <div class="task-footer">
+                <div class="task-badges">
+                  <span class="status low">Low Priority</span>
+                  <span class="status assigned-badge">Assigned</span>
+                </div>
+                <span class="task-due"><i class="ri-time-line"></i> Due 2026-04-05</span>
+              </div>
+            </div>
+
+            <div class="empty-tab" data-tab-content="pending" style="display:none;">
+              <p class="empty-state">No pending tasks.</p>
+            </div>
+            <div class="empty-tab" data-tab-content="completed" style="display:none;">
+              <p class="empty-state">No completed tasks.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- MESSAGES VIEW -->
+        <div id="messagesView" class="view-content" style="display:none;">
+          <div id="messagesHeader">
+            <h2 class="panel-title">User Messages</h2>
+          </div>
+
+          <div class="search-row">
+            <div class="search-wrap">
+              <i class="ri-search-line search-icon"></i>
+              <input type="text" id="msgSearchInput" class="search" placeholder="Search messages..." />
+            </div>
+            <div class="filter-wrap">
+              <button class="filter-btn" id="filterBtn" aria-label="Filter">
+                <i class="ri-filter-3-line"></i>
+              </button>
+              <div class="filter-dropdown hidden" id="filterDropdown">
+                <div class="filter-header">
+                  <span>Filter Messages</span>
+                  <button class="close-filter" id="closeFilter"><i class="ri-close-line"></i></button>
+                </div>
+                <div class="filter-section">
+                  <div class="filter-section-title">Priority</div>
+                  <label class="filter-check"><input type="checkbox" value="High" class="priority-filter"> High</label>
+                  <label class="filter-check"><input type="checkbox" value="Medium" class="priority-filter"> Medium</label>
+                  <label class="filter-check"><input type="checkbox" value="Low" class="priority-filter"> Low</label>
+                </div>
+                <div class="filter-section">
+                  <div class="filter-section-title">Status</div>
+                  <label class="filter-check"><input type="checkbox" value="Unread" class="status-filter"> Unread</label>
+                  <label class="filter-check"><input type="checkbox" value="Read" class="status-filter"> Read</label>
+                </div>
+                <button class="clear-filters hidden" id="clearFilters">Clear All Filters</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-body" id="messagesBody">
+            <div class="msg-card unread" data-priority="High" data-status="Unread" data-user="Global Exports Ltd" data-subject="Verification document rejected - Need clarification" data-text="My business license was rejected but I don't understand why.">
+              <div class="request-header">
+                <div class="request-title-row">
+                  <h4>Verification document rejected — Need clarification <span class="unread-dot"></span></h4>
+                  <span class="priority high">High Priority</span>
+                </div>
+                <p class="request-meta"><i class="ri-mail-line"></i> <strong>Global Exports Ltd</strong> &bull; contact@globalexports.com &bull; 2026-04-01 15:45</p>
+              </div>
+              <p class="request-body">My business license was rejected but I don't understand why. The document is valid and up to date. Can you please review it again or let me know what's missing?</p>
+              <div class="request-actions">
+                <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button>
+                <button class="btn-push" data-id="1"><i class="ri-arrow-up-circle-line"></i> Push to Admin</button>
+                <button class="btn-secondary btn-mark-read">Mark as Read</button>
+              </div>
+            </div>
+
+            <div class="msg-card unread" data-priority="Medium" data-status="Unread" data-user="Asian Trade Co" data-subject="How long does verification take?" data-text="I submitted all my documents 3 days ago and haven't heard back.">
+              <div class="request-header">
+                <div class="request-title-row">
+                  <h4>How long does verification take? <span class="unread-dot"></span></h4>
+                  <span class="priority medium">Medium Priority</span>
+                </div>
+                <p class="request-meta"><i class="ri-mail-line"></i> <strong>Asian Trade Co</strong> &bull; info@asiantrade.jp &bull; 2026-04-01 14:20</p>
+              </div>
+              <p class="request-body">I submitted all my documents 3 days ago and haven't heard back. I have an urgent trade deal that requires my account to be verified. What's the typical timeline?</p>
+              <div class="request-actions">
+                <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button>
+                <button class="btn-push" data-id="2"><i class="ri-arrow-up-circle-line"></i> Push to Admin</button>
+                <button class="btn-secondary btn-mark-read">Mark as Read</button>
+              </div>
+            </div>
+
+            <div class="msg-card" data-priority="Medium" data-status="Read" data-user="Euro Import Solutions" data-subject="Unable to upload tax certificate" data-text="I'm trying to upload my tax certificate for verification but keep getting an error message.">
+              <div class="request-header">
+                <div class="request-title-row">
+                  <h4>Unable to upload tax certificate</h4>
+                  <span class="priority medium">Medium Priority</span>
+                </div>
+                <p class="request-meta"><i class="ri-mail-line"></i> <strong>Euro Import Solutions</strong> &bull; hello@euroimport.de &bull; 2026-04-01 13:10</p>
+              </div>
+              <p class="request-body">I'm trying to upload my tax certificate for verification but keep getting an error message. The file is a PDF and under 5MB. Can you help?</p>
+              <div class="request-actions">
+                <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button>
+                <button class="btn-push" data-id="3"><i class="ri-arrow-up-circle-line"></i> Push to Admin</button>
+              </div>
+            </div>
+
+            <div class="msg-card" data-priority="Low" data-status="Read" data-user="Middle East Trading" data-subject="Request to update company information" data-text="We recently changed our company address and business registration number.">
+              <div class="request-header">
+                <div class="request-title-row">
+                  <h4>Request to update company information</h4>
+                  <span class="priority low">Low Priority</span>
+                </div>
+                <p class="request-meta"><i class="ri-mail-line"></i> <strong>Middle East Trading</strong> &bull; contact@metrade.ae &bull; 2026-04-01 11:30</p>
+              </div>
+              <p class="request-body">We recently changed our company address and business registration number. How do I update this information on my verified profile?</p>
+              <div class="request-actions">
+                <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button>
+                <button class="btn-push" data-id="4"><i class="ri-arrow-up-circle-line"></i> Push to Admin</button>
+              </div>
+            </div>
+
+            <div class="msg-card" data-priority="High" data-status="Read" data-user="Latin America Exports" data-subject="Account suspended - Appeal request" data-text="My account was suspended for suspicious activity but this must be a mistake.">
+              <div class="request-header">
+                <div class="request-title-row">
+                  <h4>Account suspended — Appeal request</h4>
+                  <span class="priority high">High Priority</span>
+                </div>
+                <p class="request-meta"><i class="ri-mail-line"></i> <strong>Latin America Exports</strong> &bull; info@laexports.br &bull; 2026-04-01 09:15</p>
+              </div>
+              <p class="request-body">My account was suspended for suspicious activity but this must be a mistake. I only use one account and all my documents are legitimate. Please review my case.</p>
+              <div class="request-actions">
+                <button class="btn-reply"><i class="ri-send-plane-line"></i> Reply to User</button>
+                <button class="btn-secondary">Assign to Task</button>
+                <button class="btn-push" data-id="5"><i class="ri-arrow-up-circle-line"></i> Push to Admin</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="right-panel">
+        <div class="card-box">
+          <h3>Recent Activity</h3>
+          <div class="pending-item">
+            <div class="pending-icon" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.2);color:#16a34a"><i class="ri-checkbox-circle-line"></i></div>
+            <div class="pending-info"><p>Completed verification</p><span>Tech Import Corp</span><span class="pending-date">2 hours ago</span></div>
+          </div>
+          <div class="pending-item">
+            <div class="pending-icon" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.2);color:#16a34a"><i class="ri-checkbox-circle-line"></i></div>
+            <div class="pending-info"><p>Updated document status</p><span>Global Trade Partners</span><span class="pending-date">4 hours ago</span></div>
+          </div>
+          <div class="pending-item">
+            <div class="pending-icon" style="background:rgba(22,163,74,0.1);border-color:rgba(22,163,74,0.2);color:#16a34a"><i class="ri-checkbox-circle-line"></i></div>
+            <div class="pending-info"><p>Approved business license</p><span>International Exports Inc</span><span class="pending-date">5 hours ago</span></div>
+          </div>
+          <button class="view-all">View All Activity</button>
+        </div>
+
+        <div class="card-box">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><i class="ri-file-text-line"></i> Documentation</li>
+            <li><i class="ri-message-2-line"></i> Team Chat</li>
+            <li><i class="ri-error-warning-line"></i> Report Issue</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MASHA AI WIDGET -->
+  <button class="masha-fab" id="mashaFab" aria-label="Open Masha AI">
+    <span class="fab-dot"></span>
+    <i class="ri-robot-line icon-open"></i>
+    <i class="ri-close-line icon-close"></i>
+  </button>
+
+  <div class="masha-window" id="mashaWindow">
+    <div class="masha-header">
+      <div class="masha-avatar"><i class="ri-robot-2-line"></i></div>
+      <div class="masha-header-info">
+        <div class="masha-name">Masha AI</div>
+        <div class="masha-status"><div class="masha-status-dot"></div>Online · Employee Assistant</div>
+      </div>
+      <div class="masha-header-actions">
+        <button class="masha-header-btn" id="mashaClear" title="Clear chat"><i class="ri-delete-bin-line"></i></button>
+        <button class="masha-header-btn" id="mashaMinimize" title="Close"><i class="ri-subtract-line"></i></button>
+      </div>
+    </div>
+    <div class="masha-chips" id="mashaChips">
+      <button class="masha-chip" data-msg="How do I complete a verification task?">Complete verification</button>
+      <button class="masha-chip" data-msg="How do I push a message to admin?">Push to admin</button>
+      <button class="masha-chip" data-msg="How do I reply to a user message?">Reply to user</button>
+      <button class="masha-chip" data-msg="How do I assign a message to a task?">Assign to task</button>
+    </div>
+    <div class="masha-messages" id="mashaMessages"></div>
+    <div class="masha-input-area">
+      <textarea class="masha-textarea" id="mashaInput" placeholder="Ask Masha anything..." rows="1"></textarea>
+      <button class="masha-send" id="mashaSend"><i class="ri-send-plane-fill"></i></button>
+    </div>
+    <div class="masha-powered">Powered by <span>Masha AI</span> · Employee Panel</div>
+  </div>
+
+  <!-- Dark mode patch must come before employee.js -->
+  <script type="module" src="employFetches.js"></script>
+  <script src="employee-darkmode-patch.js"></script>
+  <script type="module" src="employee.js"></script>
+  <script src="employee-masha.js"></script>
+</body>
+</html>

@@ -1,0 +1,199 @@
+/* ============================================================
+   TRADE GRID — darkmode-pages.css
+   Dark mode overrides for all internal pages (login, admin,
+   employee, user-dashboard). Included alongside each page's
+   own CSS. Theme is set from the landing page settings panel.
+   ============================================================ */
+
+/* ── Login page ── */
+body.dark-mode .form-panel        { background: #041e45; }
+body.dark-mode .brand-logo        { color: #e2eaf5; }
+body.dark-mode .form-heading h1   { color: #e2eaf5; }
+body.dark-mode .form-heading p    { color: #7ea8cc; }
+body.dark-mode .form-group label  { color: #B5EAF0; }
+body.dark-mode .form-group input  { background: #031a3d; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+body.dark-mode .form-group input::placeholder { color: #4a6888; }
+body.dark-mode .form-group input:focus { border-color: #0FA3B1; background: #041e45; }
+body.dark-mode .back-link         { color: #7ea8cc; }
+body.dark-mode .back-link:hover   { color: #e2eaf5; }
+body.dark-mode .signup-prompt     { color: #7ea8cc; }
+body.dark-mode .btn-submit        { background: #0FA3B1; }
+body.dark-mode .btn-submit:hover  { background: #0d8a96; }
+body.dark-mode .forgot-link       { color: #0FA3B1; }
+body.dark-mode .visual-panel {
+  background: linear-gradient(145deg, #010e24 0%, #011635 45%, #021f4a 100%);
+}
+
+/* ── Admin page ── */
+body.dark-mode .header            { background: #010e24; border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .container         { background: #011635; }
+body.dark-mode body               { background: #011635; color: #e2eaf5; }
+/* Admin — cards */
+body.dark-mode .stats .card,
+body.dark-mode .left-panel,
+body.dark-mode .card-box          { background: #041e45; border-color: rgba(100,160,220,0.12); box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+body.dark-mode .stats .card h1,
+body.dark-mode .card-box h3       { color: #e2eaf5; }
+body.dark-mode .stats .card span  { color: #7ea8cc; }
+/* Admin — table */
+body.dark-mode table              { color: #e2eaf5; }
+body.dark-mode thead th           { color: #7ea8cc; border-bottom-color: rgba(100,160,220,0.15); }
+body.dark-mode tbody tr           { border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode tbody tr:hover     { background: rgba(100,160,220,0.05); }
+body.dark-mode tbody td           { color: #e2eaf5; }
+body.dark-mode tbody td small     { color: #7ea8cc; }
+/* Admin — tabs & buttons */
+body.dark-mode .tabs button:not(.active) { color: #7ea8cc; }
+body.dark-mode .tabs button.active       { background: #0FA3B1; border-color: #0FA3B1; }
+body.dark-mode .search            { background: #031a3d; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+body.dark-mode .search::placeholder { color: #4a6888; }
+/* Admin — request cards */
+body.dark-mode .request-card      { background: #031a3d; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .request-title-row h4 { color: #e2eaf5; }
+body.dark-mode .request-meta      { color: #7ea8cc; }
+body.dark-mode .request-body      { color: #7ea8cc; }
+body.dark-mode .pending-item .pending-info p { color: #e2eaf5; }
+body.dark-mode .pending-item .pending-info span { color: #7ea8cc; }
+/* Admin — masha */
+body.dark-mode .masha-window      { background: #041e45; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .masha-chips       { background: #031a3d; border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .masha-chip        { background: rgba(100,160,220,0.07); border-color: rgba(100,160,220,0.15); color: #e2eaf5; }
+body.dark-mode .masha-messages    { background: #041e45; }
+body.dark-mode .msg-row.bot .msg-bubble { background: #031a3d; color: #e2eaf5; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .masha-textarea    { background: #031a3d; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+body.dark-mode .masha-powered     { background: #041e45; }
+body.dark-mode .masha-send        { background: #0FA3B1; }
+body.dark-mode .masha-send:hover  { background: #0d8a96; }
+
+/* ── Employee page ── */
+body.dark-mode .left-panel        { background: #041e45; border-color: rgba(100,160,220,0.12); }
+body.dark-mode .task-card,
+body.dark-mode .msg-card,
+body.dark-mode .request-card      { background: #031a3d; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .task-info h4      { color: #e2eaf5; }
+body.dark-mode .task-meta         { color: #7ea8cc; }
+body.dark-mode .assign-panel,
+body.dark-mode .reply-panel       { background: #031a3d; border-color: rgba(15,163,177,0.25); }
+body.dark-mode .reply-textarea,
+body.dark-mode .assign-new-input  { background: #041e45; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+body.dark-mode .reply-template-btn { background: #041e45; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+body.dark-mode .sub-tabs          { background: rgba(100,160,220,0.08); }
+body.dark-mode .tab.active        { background: #041e45; color: #e2eaf5; }
+body.dark-mode .tab:not(.active)  { color: #7ea8cc; }
+body.dark-mode .filter-dropdown,
+body.dark-mode .emp-filter-dropdown { background: #041e45; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .filter-header,
+body.dark-mode .emp-filter-header { color: #e2eaf5; }
+body.dark-mode .filter-check,
+body.dark-mode .emp-filter-check  { color: #7ea8cc; }
+body.dark-mode .emp-modal         { background: #041e45; }
+body.dark-mode .emp-modal-header h3 { color: #e2eaf5; }
+body.dark-mode .emp-modal-body    { color: #7ea8cc; }
+body.dark-mode .settings-sections { color: #e2eaf5; }
+body.dark-mode .settings-row-info p { color: #e2eaf5; }
+body.dark-mode .settings-row-info span { color: #7ea8cc; }
+body.dark-mode .settings-info-label { color: #7ea8cc; }
+body.dark-mode .settings-info-value { color: #e2eaf5; }
+body.dark-mode .settings-section  { border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .settings-row      { border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .panel-title       { color: #e2eaf5; }
+
+/* ── User dashboard page ── */
+body.dark-mode .sidebar           { background: #010e24; }
+body.dark-mode .main-wrapper      { background: #011635; }
+body.dark-mode .topbar            { background: #041e45; border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .topbar-search     { background: #031a3d; border-color: rgba(100,160,220,0.2); }
+body.dark-mode .topbar-search input { color: #e2eaf5; }
+body.dark-mode .topbar-btn        { background: #031a3d; border-color: rgba(100,160,220,0.15); color: #7ea8cc; }
+body.dark-mode .topbar-menu-btn   { background: #031a3d; border-color: rgba(100,160,220,0.2); color: #7ea8cc; }
+body.dark-mode .kpi-card,
+body.dark-mode .dash-card,
+body.dark-mode .placeholder-card,
+body.dark-mode .analytics-card,
+body.dark-mode .analytics-kpi,
+body.dark-mode .settings-card,
+body.dark-mode .profile-section-card,
+body.dark-mode .verif-table-card,
+body.dark-mode .verif-info-card,
+body.dark-mode .card-box          { background: #041e45; border-color: rgba(100,160,220,0.12); }
+body.dark-mode .kpi-value,
+body.dark-mode .akpi-value        { color: #e2eaf5; }
+body.dark-mode .match-name        { color: #e2eaf5; }
+body.dark-mode .match-meta,
+body.dark-mode .kpi-label,
+body.dark-mode .akpi-label        { color: #7ea8cc; }
+body.dark-mode .msg-preview       { border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .msg-preview-name  { color: #e2eaf5; }
+body.dark-mode .msg-preview-text  { color: #7ea8cc; }
+body.dark-mode .verif-item p      { color: #e2eaf5; }
+body.dark-mode .verif-item span   { color: #7ea8cc; }
+body.dark-mode .welcome-banner    { background: linear-gradient(135deg, #010e24 0%, #021f4a 100%); }
+body.dark-mode .msg-list-panel,
+body.dark-mode .msg-chat-panel    { background: #041e45; border-color: rgba(100,160,220,0.12); }
+body.dark-mode .msg-list-search   { background: #031a3d; border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .msg-list-search input { color: #e2eaf5; }
+body.dark-mode .msg-list-item     { border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .msg-list-item:hover { background: rgba(100,160,220,0.05); }
+body.dark-mode .ml-top span:first-child { color: #e2eaf5; }
+body.dark-mode .chat-bubble.them  { background: #031a3d; border-color: rgba(100,160,220,0.15); color: #e2eaf5; }
+body.dark-mode .msg-chat-header   { background: #031a3d; border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .msg-chat-input    { background: #031a3d; border-top-color: rgba(100,160,220,0.1); }
+body.dark-mode .msg-chat-input input { background: #041e45; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+body.dark-mode .notif-panel       { background: #041e45; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .notif-body p      { color: #e2eaf5; }
+body.dark-mode .notif-body span   { color: #7ea8cc; }
+body.dark-mode .page              { background: #011635; }
+/* User dashboard — settings */
+body.dark-mode .setting-row p     { color: #e2eaf5; }
+body.dark-mode .setting-row span  { color: #7ea8cc; }
+body.dark-mode .setting-row       { border-bottom-color: rgba(100,160,220,0.1); }
+/* User dashboard — masha */
+body.dark-mode .masha-window      { background: #041e45; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .masha-win-messages { background: #041e45; }
+body.dark-mode .masha-msg-row.bot .masha-msg-bubble { background: #031a3d; border-color: rgba(100,160,220,0.15); color: #e2eaf5; }
+body.dark-mode .masha-win-input   { background: #031a3d; border-top-color: rgba(100,160,220,0.1); }
+body.dark-mode .masha-win-input input { background: #041e45; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+/* User dashboard — logout modal */
+body.dark-mode .logout-modal      { background: #041e45; }
+body.dark-mode .logout-modal h3   { color: #e2eaf5; }
+body.dark-mode .logout-modal p    { color: #7ea8cc; }
+/* User dashboard — payment modal */
+body.dark-mode .payment-modal     { background: #041e45; }
+body.dark-mode .payment-modal-body { background: #041e45; }
+body.dark-mode .payment-recipient { background: rgba(22,163,74,0.06); }
+body.dark-mode .payment-recipient-info p { color: #e2eaf5; }
+body.dark-mode .payment-currency-select,
+body.dark-mode .payment-amount-input,
+body.dark-mode .payment-ref-input { background: #031a3d; border-color: rgba(100,160,220,0.2); color: #e2eaf5; }
+/* User dashboard — analytics */
+body.dark-mode .bar               { background: linear-gradient(180deg, #0FA3B1, rgba(15,163,177,0.3)); }
+body.dark-mode .act-stat          { background: #031a3d; }
+body.dark-mode .act-stat h4       { color: #e2eaf5; }
+body.dark-mode .c-name            { color: #e2eaf5; }
+/* User dashboard — profile */
+body.dark-mode .pd-value          { color: #e2eaf5; }
+body.dark-mode .profile-about-text { color: #7ea8cc; }
+/* User dashboard — img search panel */
+body.dark-mode .img-search-panel  { background: #041e45; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .img-search-header { background: #031a3d; border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .img-upload-zone   { border-color: rgba(15,163,177,0.3); background: rgba(15,163,177,0.03); }
+body.dark-mode .img-result-card   { background: #031a3d; border-color: rgba(100,160,220,0.15); }
+body.dark-mode .result-product-name { color: #e2eaf5; }
+body.dark-mode .result-product-desc { color: #7ea8cc; }
+
+/* ── Dark mode toggle row inside Settings panels ──
+   (admin settings modal + employee settings modal + user dashboard settings page) */
+body.dark-mode .admin-settings-modal,
+body.dark-mode .emp-settings-modal { background: #041e45; }
+body.dark-mode .admin-settings-header h3,
+body.dark-mode .emp-modal-header h3 { color: #e2eaf5; }
+body.dark-mode .admin-settings-section,
+body.dark-mode .settings-section  { border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .admin-settings-row,
+body.dark-mode .settings-row      { border-bottom-color: rgba(100,160,220,0.1); }
+body.dark-mode .admin-settings-row-info p { color: #e2eaf5; }
+body.dark-mode .admin-settings-row-info span,
+body.dark-mode .admin-settings-section-title { color: #7ea8cc; }
+body.dark-mode .admin-info-label  { color: #7ea8cc; }
+body.dark-mode .admin-info-value  { color: #e2eaf5; }
+body.dark-mode .admin-info-row    { border-bottom-color: rgba(100,160,220,0.1); }
