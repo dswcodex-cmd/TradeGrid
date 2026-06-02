@@ -19,7 +19,7 @@
     //   return window.location.origin.replace(/\/$/, "");
     // }
 
-    return "http://localhost:5000";
+    return "";
   }
 
   async function request(path, options = {}) {

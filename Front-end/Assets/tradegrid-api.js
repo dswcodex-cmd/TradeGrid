@@ -2,7 +2,7 @@
    The pages use these helpers when backend routes are available and gracefully
    fall back to their static demo data when they are not. */
 (function () {
-  const DEFAULT_BASE = 'http://localhost:5000';
+  const DEFAULT_BASE = '';
   function readStorage(key) {
     try {
       return window.localStorage?.getItem(key);

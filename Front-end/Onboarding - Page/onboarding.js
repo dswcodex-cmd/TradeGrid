@@ -731,7 +731,7 @@ async function refreshRegistrationNumberFormatHint(countryCode) {
   if (!countryCode || !regNumberInput) return;
 
   try {
-    const response = await fetch(`http://localhost:5000/registration-validation/countries/${encodeURIComponent(countryCode)}`);
+    const response = await fetch(`/registration-validation/countries/${encodeURIComponent(countryCode)}`);
     const data = await response.json().catch(() => ({}));
     const country = data.data || data.country || data;
 
@@ -808,7 +808,7 @@ async function validateRegistrationNumberFormat(message = 'Invalid format', shou
   if (!countryCode || !regNumber) return true;
 
   try {
-    const response = await fetch('http://localhost:5000/registration-validation/validate', {
+    const response = await fetch('/registration-validation/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ countryCode, regNumber })
@@ -1433,7 +1433,7 @@ async function submitSignupApplication() {
 
   try {
     const payload = await buildSignupPayload();
-    const response = await fetch('http://localhost:5000/auth/signup', {
+    const response = await fetch('/auth/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1445,7 +1445,7 @@ async function submitSignupApplication() {
     }
 
     try {
-      await fetch('http://localhost:5000/auth/send-email-verification', {
+      await fetch('/auth/send-email-verification', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: payload.email })

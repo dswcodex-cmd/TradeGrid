@@ -214,7 +214,7 @@ function getDashboardToken() {
   }
 }
 
-const DASHBOARD_API_BASE = 'http://localhost:5000';
+const DASHBOARD_API_BASE = '';
 
 function friendlyDashboardError(fallback = 'Something went wrong. Please try again in a moment.') {
   return fallback;
@@ -385,7 +385,7 @@ btnRunImgSearch.addEventListener('click', async () => {
     const [meta, base64] = imgPreview.src.split(',');
     const mimeType = meta.match(/data:(.*?);base64/)?.[1] || 'image/jpeg';
     const token = getDashboardToken();
-    const response = await fetch('http://localhost:5000/discover/image-search', {
+    const response = await fetch('/discover/image-search', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -695,7 +695,7 @@ async function mashaSendMsg() {
   mashaInput.value = '';
   mashaSend.disabled = true;
   try {
-    const response = await fetch('http://localhost:5000/chat/api', {
+    const response = await fetch('/chat/api', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userMessage: text, history: historyForRequest })
@@ -790,7 +790,7 @@ async function notificationRequest(path, options = {}) {
   if (!token) return { ok: false, status: 401, data: { error: 'Login required' } };
 
   try {
-    const response = await fetch(`http://localhost:5000${path}`, {
+    const response = await fetch(path, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
@@ -959,7 +959,7 @@ topbarSearchBtn.addEventListener('click', async () => {
   try {
     const params = new URLSearchParams({ search: q });
     const token = getDashboardToken();
-    const response = await fetch(`http://localhost:5000/discover?${params.toString()}`, {
+    const response = await fetch(`/discover?${params.toString()}`, {
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})
@@ -1100,7 +1100,7 @@ function escapeProfileHtml(value) {
 
 async function profileApi(path, options = {}) {
   const token = getDashboardToken();
-  const response = await fetch(`http://localhost:5000${path}`, {
+  const response = await fetch(path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -1439,7 +1439,7 @@ async function viewDocument(docId) {
 
   try {
     if (Number.isFinite(Number(docId))) {
-      const response = await fetch(`http://localhost:5000/verification/${docId}`, {
+      const response = await fetch(`/verification/${docId}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(getDashboardToken() ? { Authorization: `Bearer ${getDashboardToken()}` } : {})
@@ -1509,7 +1509,7 @@ async function handleVerifUpload(docId, file) {
   try {
     const token = getDashboardToken();
     const hasBackendId = Number.isFinite(Number(doc.id));
-    const response = await fetch(`http://localhost:5000/verification${hasBackendId ? `/${doc.id}` : ''}`, {
+    const response = await fetch(`/verification${hasBackendId ? `/${doc.id}` : ''}`, {
       method: hasBackendId ? 'PATCH' : 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1581,7 +1581,7 @@ let preferredConversationId = null;
 
 async function messageApiRequest(path, options = {}) {
   const token = getDashboardToken();
-  const response = await fetch('http://localhost:5000' + path, {
+  const response = await fetch(path, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -2025,7 +2025,7 @@ if (discSearchBtn) {
       if (industry !== 'All Industries') params.set('industry', industry);
       if (country !== 'All Countries') params.set('country', country);
       if (type !== 'All Types') params.set('business_type', type);
-      const response = await fetch(`http://localhost:5000/discover?${params.toString()}`, {
+      const response = await fetch(`/discover?${params.toString()}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(getDashboardToken() ? { Authorization: `Bearer ${getDashboardToken()}` } : {})
@@ -2229,7 +2229,7 @@ function applyDiscoverResults(companies, label, isSearchResult = true) {
 
 async function loadAllDiscoverCompanies() {
   try {
-    const response = await fetch('http://localhost:5000/discover', {
+    const response = await fetch('/discover', {
       headers: {
         'Content-Type': 'application/json',
         ...(getDashboardToken() ? { Authorization: `Bearer ${getDashboardToken()}` } : {})
@@ -2317,7 +2317,7 @@ async function openDiscoverCompanyProfile(companyId, fallbackName = 'company') {
   }
 
   try {
-    const response = await fetch(`http://localhost:5000/discover/${companyId}`, {
+    const response = await fetch(`/discover/${companyId}`, {
       headers: {
         'Content-Type': 'application/json',
         ...(getDashboardToken() ? { Authorization: `Bearer ${getDashboardToken()}` } : {})
@@ -2457,7 +2457,7 @@ function resetDiscoverCards() {
 //   LIVE OVERVIEW DATA — backend-connected dashboard sections
 // ============================================================
 (function () {
-  const API_BASE = 'http://localhost:5000';
+  const API_BASE = '';
 
   function getDashboardToken() {
     try {
@@ -3496,7 +3496,7 @@ document.addEventListener('keydown', (e) => {
 async function loadMatchStats() {
   try {
     const response = await fetch(
-      "http://localhost:5000/profile/matches/stats",
+      "/profile/matches/stats",
       {
         headers: {
           "Content-Type": "application/json",
@@ -3581,7 +3581,7 @@ async function loadTopPartnerCountries() {
     const token = rawToken.replace(/^Bearer\s+/i, "");
 
     const response = await fetch(
-      "http://localhost:5000/profile/matches/top-countries",
+      "/profile/matches/top-countries",
       {
         headers: {
           "Content-Type": "application/json",

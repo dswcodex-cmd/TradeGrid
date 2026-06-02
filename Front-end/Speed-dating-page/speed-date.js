@@ -67,7 +67,7 @@ function getApiBase() {
     return window.location.origin.replace(/\/$/, "");
   }
 
-  return "http://localhost:5000";
+  return "";
 }
 
 function getEventIdFromUrl() {

@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5000/admin";
+const BASE_URL = "/admin";
 
 
 // reusable helper
@@ -30,7 +30,7 @@ async function apiRequest(endpoint, method = "GET", body = null, requiresAuth = 
     }
 
     const response = await fetch(
-        `http://localhost:5000/admin${endpoint}`,
+        `/admin${endpoint}`,
         options
     );
 

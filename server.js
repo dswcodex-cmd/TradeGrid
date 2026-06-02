@@ -61,29 +61,26 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
-        "http://localhost:5000",
-        "http://127.0.0.1:5000",
-        "https://sdk.twilio.com"
+        "https://sdk.twilio.com",
+        "https://cdn.jsdelivr.net",
+        "https://unpkg.com"
       ],
       scriptSrcElem: [
         "'self'",
-        "http://localhost:5000",
-        "http://127.0.0.1:5000",
-        "https://sdk.twilio.com"
+        "https://sdk.twilio.com",
+        "https://cdn.jsdelivr.net",
+        "https://unpkg.com"
       ],
       connectSrc: [
         "'self'",
-        "http://localhost:5000",
-        "http://127.0.0.1:5000",
-        "ws://localhost:5000",
-        "ws://127.0.0.1:5000",
         "wss://*.twilio.com",
         "https://*.twilio.com"
       ],
       imgSrc: [
         "'self'",
         "data:",
-        "blob:"
+        "blob:",
+        "https://images.unsplash.com"
       ],
       mediaSrc: [
         "'self'",
@@ -170,5 +167,5 @@ const PORT = process.env.PORT || 5000;
 registerEventSocket(io);
 
 server.listen(PORT, () => {
-  console.log(`Server running on port http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

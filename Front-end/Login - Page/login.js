@@ -70,7 +70,7 @@ async function loginWithBackend(e) {
   }
 
   try {
-    const response = await fetch('http://localhost:5000/auth/login', {
+    const response = await fetch('/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, Password: password })
@@ -177,7 +177,7 @@ async function sendForgotCode(event) {
   }
 
   try {
-    const response = await fetch('http://localhost:5000/auth/forgot-password/send-code', {
+    const response = await fetch('/auth/forgot-password/send-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email })
@@ -230,7 +230,7 @@ async function resetForgotPassword(event) {
   }
 
   try {
-    const response = await fetch('http://localhost:5000/auth/forgot-password/reset', {
+    const response = await fetch('/auth/forgot-password/reset', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, code, newPassword })
