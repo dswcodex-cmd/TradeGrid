@@ -661,7 +661,7 @@ function mashaAddMsg(text, sender) {
   avatar.innerHTML = sender === 'bot' ? '<i class="ri-robot-2-line"></i>' : '<i class="ri-user-3-line"></i>';
   const bubble = document.createElement('div');
   bubble.className = 'masha-msg-bubble';
-  bubble.textContent = text;
+  bubble.innerHTML = DOMPurify.sanitize(marked.parse(text));
   if (sender === 'bot') { row.appendChild(avatar); row.appendChild(bubble); }
   else                  { row.appendChild(bubble); row.appendChild(avatar); }
   mashaMessages.appendChild(row);
