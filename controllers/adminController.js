@@ -40,7 +40,7 @@ const serializeVerificationDocument = (document) => ({
   reviewed_by_admin_id: document.reviewed_by_admin_id,
   document_type: document.document_type,
   file_name: document.file_name,
-  file_url: document.file_url,
+  file_url: document.file_url ?? null,
   notes: document.notes,
   status: document.status,
   review_notes: document.review_notes,
@@ -66,6 +66,37 @@ const serializeVerificationDocument = (document) => ({
     : null
 });
 
+const verificationDocumentListSelect = {
+  verification_document_id: true,
+  company_id: true,
+  reviewed_by_admin_id: true,
+  document_type: true,
+  file_name: true,
+  notes: true,
+  status: true,
+  review_notes: true,
+  submitted_at: true,
+  reviewed_at: true,
+  created_at: true,
+  updated_at: true,
+  company: {
+    select: {
+      company_id: true,
+      company_name: true,
+      email: true,
+      registration_number: true,
+      notify_verification: true
+    }
+  },
+  reviewed_by_admin: {
+    select: {
+      admin_id: true,
+      full_name: true,
+      email: true,
+      role: true
+    }
+  }
+};
 const parseBooleanFilter = (value) => {
   if (value === undefined) {
     return undefined;
@@ -746,10 +777,7 @@ export const getAdminVerificationDocuments = async (req, res) => {
         ...(status ? { status } : {}),
         ...(numericCompanyId ? { company_id: numericCompanyId } : {})
       },
-      include: {
-        company: true,
-        reviewed_by_admin: true
-      },
+      select: verificationDocumentListSelect,
       orderBy: {
         submitted_at: "desc"
       }
@@ -797,9 +825,14 @@ export const reviewVerificationDocument = async (req, res) => {
 
     const existingDocument = await prisma.verificationDocument.findUnique({
       where: { verification_document_id },
-      include: {
-        company: true,
-        reviewed_by_admin: true
+      select: {
+        company_id: true,
+        document_type: true,
+        company: {
+          select: {
+            notify_verification: true
+          }
+        }
       }
     });
 
@@ -815,10 +848,7 @@ export const reviewVerificationDocument = async (req, res) => {
         reviewed_by_admin_id: req.admin.admin_id,
         reviewed_at: normalizedStatus === "pending" ? null : new Date()
       },
-      include: {
-        company: true,
-        reviewed_by_admin: true
-      }
+      select: verificationDocumentListSelect
     });
 
     if (existingDocument.company?.notify_verification) {

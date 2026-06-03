@@ -82,7 +82,7 @@ async function sendGridOtp(email, purpose) {
   if (!sendgridApiKey || !sendgridFromEmail) return null;
 
   const code = saveEmailOtp(email, purpose);
-  const subject = purpose === "password_reset"
+  const subject = String(purpose).startsWith("password_reset")
     ? "Trade Grid password reset code"
     : "Trade Grid email verification code";
   const text = `Your Trade Grid verification code is ${code}. It expires in 10 minutes.`;
@@ -239,6 +239,22 @@ const getOrCreateLocation = async (country) => {
 
 const serializeMetadata = (payload) => JSON.stringify(payload, null, 2);
 
+async function findPasswordResetAccount(email) {
+  const [admin, company] = await Promise.all([
+    prisma.admin.findUnique({ where: { email } }),
+    prisma.company.findUnique({ where: { email } })
+  ]);
+
+  if (admin) {
+    return { accountType: "admin", account: admin, purpose: "password_reset_admin" };
+  }
+
+  if (company) {
+    return { accountType: "company", account: company, purpose: "password_reset_company" };
+  }
+
+  return null;
+}
 export const signup = async (req, res) => {
     console.log("Signup");
   try {
@@ -630,18 +646,21 @@ export const sendPasswordResetCode = async (req, res) => {
       return res.status(400).json({ error: "email is required" });
     }
 
-    const user = await prisma.company.findUnique({
-      where: { email: normalizedEmail }
-    });
+    const resetAccount = await findPasswordResetAccount(normalizedEmail);
 
-    if (!user) {
-      return res.status(404).json({ error: "No company account found for this email" });
+    if (!resetAccount) {
+      return res.status(404).json({ error: "No Trade Grid account found for this email" });
     }
 
-    const verification = await sendEmailOtp(normalizedEmail, "password_reset");
+    if (resetAccount.accountType === "admin" && !resetAccount.account.is_active) {
+      return res.status(403).json({ error: "Admin account is inactive" });
+    }
+
+    const verification = await sendEmailOtp(normalizedEmail, resetAccount.purpose);
 
     return res.status(200).json({
       message: "Password reset code sent",
+      account_type: resetAccount.accountType,
       status: verification.status,
       delivery: verification.delivery,
       ...(verification.dev_code ? { dev_code: verification.dev_code } : {}),
@@ -667,15 +686,17 @@ export const resetPasswordWithCode = async (req, res) => {
       });
     }
 
-    const user = await prisma.company.findUnique({
-      where: { email: normalizedEmail }
-    });
+    const resetAccount = await findPasswordResetAccount(normalizedEmail);
 
-    if (!user) {
-      return res.status(404).json({ error: "No company account found for this email" });
+    if (!resetAccount) {
+      return res.status(404).json({ error: "No Trade Grid account found for this email" });
     }
 
-    const isApproved = await verifyEmailOtp(normalizedEmail, "password_reset", code);
+    if (resetAccount.accountType === "admin" && !resetAccount.account.is_active) {
+      return res.status(403).json({ error: "Admin account is inactive" });
+    }
+
+    const isApproved = await verifyEmailOtp(normalizedEmail, resetAccount.purpose, code);
 
     if (!isApproved) {
       return res.status(400).json({
@@ -686,13 +707,21 @@ export const resetPasswordWithCode = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await prisma.company.update({
-      where: { email: normalizedEmail },
-      data: { Password: hashedPassword }
-    });
+    if (resetAccount.accountType === "admin") {
+      await prisma.admin.update({
+        where: { admin_id: resetAccount.account.admin_id },
+        data: { password_hash: hashedPassword }
+      });
+    } else {
+      await prisma.company.update({
+        where: { email: normalizedEmail },
+        data: { Password: hashedPassword }
+      });
+    }
 
     return res.status(200).json({
-      message: "Password reset successfully"
+      message: "Password reset successfully",
+      account_type: resetAccount.accountType
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
