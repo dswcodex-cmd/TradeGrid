@@ -33,7 +33,7 @@ app.use(express.static(path.join(__dirname, "Front-end")));
 app.use(express.static(path.join(__dirname, "Front-end", "Login - Page")));
 
 app.get("/", (req, res)=>{
-  res.sendFile(path.join(__dirname, "Front-end", "Login - Page", "login.html"))
+  res.sendFile(path.join(__dirname, "Front-end", "New Landing - Page", "landing.html"))
 })
 
 const server = http.createServer(app);

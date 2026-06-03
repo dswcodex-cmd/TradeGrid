@@ -144,14 +144,21 @@ async function sendEmailOtp(email, purpose) {
   try {
     const sendgridResult = await sendGridOtp(email, purpose);
     if (sendgridResult) return sendgridResult;
+    providerErrors.push("SendGrid: SENDGRID_FROM_EMAIL is missing");
   } catch (error) {
     providerErrors.push(`SendGrid: ${error.message}`);
   }
 
-  try {
-    return await sendTwilioVerifyEmail(email);
-  } catch (error) {
-    providerErrors.push(`Twilio Verify: ${error.message}`);
+  const useTwilioEmailVerify =
+    envValue("USE_TWILIO_EMAIL_VERIFY").toLowerCase() === "true" ||
+    envValue("TWILIO_EMAIL_VERIFY_ENABLED").toLowerCase() === "true";
+
+  if (useTwilioEmailVerify) {
+    try {
+      return await sendTwilioVerifyEmail(email);
+    } catch (error) {
+      providerErrors.push(`Twilio Verify: ${error.message}`);
+    }
   }
 
   const code = saveEmailOtp(email, purpose);
@@ -300,6 +307,22 @@ export const signup = async (req, res) => {
     });
 
     if (existingUser) {
+      if (
+        normalizeEmail(existingUser.email) === normalizedEmail &&
+        !existingUser.is_email_verified
+      ) {
+        return res.status(200).json({
+          message: "Signup already exists. Continue email verification.",
+          user: {
+            company_id: existingUser.company_id,
+            company_name: existingUser.company_name,
+            email: existingUser.email,
+            is_email_verified: existingUser.is_email_verified,
+            account_status: existingUser.account_status
+          }
+        });
+      }
+
       return res.status(400).json({ message: "Company already registered" });
     }
 
@@ -548,7 +571,8 @@ export const sendEmailVerification = async (req, res) => {
       message: "Verification email sent",
       status: verification.status,
       delivery: verification.delivery,
-      ...(verification.dev_code ? { dev_code: verification.dev_code } : {})
+      ...(verification.dev_code ? { dev_code: verification.dev_code } : {}),
+      ...(verification.warning ? { warning: verification.warning } : {})
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
@@ -620,7 +644,8 @@ export const sendPasswordResetCode = async (req, res) => {
       message: "Password reset code sent",
       status: verification.status,
       delivery: verification.delivery,
-      ...(verification.dev_code ? { dev_code: verification.dev_code } : {})
+      ...(verification.dev_code ? { dev_code: verification.dev_code } : {}),
+      ...(verification.warning ? { warning: verification.warning } : {})
     });
   } catch (error) {
     return res.status(500).json({ error: error.message });
