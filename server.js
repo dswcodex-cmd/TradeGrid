@@ -30,7 +30,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.static(path.join(__dirname, "Front-end")));
-app.use(express.static(path.join(__dirname, "Front-end", "Login - Page")));
+app.use(express.static(path.join(__dirname, "Front-end", "New Landing - Page")));
 
 app.get("/", (req, res)=>{
   res.sendFile(path.join(__dirname, "Front-end", "New Landing - Page", "landing.html"))

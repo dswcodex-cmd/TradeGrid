@@ -374,6 +374,29 @@ export const deleteMyProfile = async (req, res) => {
           ]
         }
       }),
+      prisma.matchOutcome.deleteMany({
+        where: {
+          OR: [
+            { company_id: current_company_id },
+            { match: { company_a_id: current_company_id } },
+            { match: { company_b_id: current_company_id } }
+          ]
+        }
+      }),
+      prisma.scheduledMatch.deleteMany({
+        where: {
+          OR: [
+            { company_a_id: current_company_id },
+            { company_b_id: current_company_id }
+          ]
+        }
+      }),
+      prisma.registration.deleteMany({
+        where: { company_id: current_company_id }
+      }),
+      prisma.lobbyMessage.deleteMany({
+        where: { company_id: current_company_id }
+      }),
       prisma.companyProducts.deleteMany({
         where: { company_id: current_company_id }
       }),
@@ -381,6 +404,31 @@ export const deleteMyProfile = async (req, res) => {
         where: { company_id: current_company_id }
       }),
       prisma.companyRegions.deleteMany({
+        where: { company_id: current_company_id }
+      }),
+      prisma.companyWatchlist.deleteMany({
+        where: { company_id: current_company_id }
+      }),
+      prisma.verificationDocument.deleteMany({
+        where: { company_id: current_company_id }
+      }),
+      prisma.profileView.deleteMany({
+        where: {
+          OR: [
+            { viewed_company_id: current_company_id },
+            { viewer_company_id: current_company_id }
+          ]
+        }
+      }),
+      prisma.supportTicketMessage.deleteMany({
+        where: {
+          OR: [
+            { company_id: current_company_id },
+            { support_ticket: { company_id: current_company_id } }
+          ]
+        }
+      }),
+      prisma.supportTicket.deleteMany({
         where: { company_id: current_company_id }
       }),
       prisma.payment.deleteMany({

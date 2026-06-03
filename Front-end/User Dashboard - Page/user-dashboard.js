@@ -1041,6 +1041,82 @@ topbarSearchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') to
 
 document.getElementById('avatarBtn').addEventListener('click', () => navigateTo('profile'));
 
+function openDeleteProfileModal() {
+  let backdrop = document.getElementById('deleteProfileModalBackdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.className = 'tg-modal-backdrop';
+    backdrop.id = 'deleteProfileModalBackdrop';
+    backdrop.innerHTML = `
+      <div class="tg-modal" role="dialog" aria-modal="true" aria-labelledby="deleteProfileTitle">
+        <div class="tg-modal-icon danger"><i class="ri-delete-bin-6-line"></i></div>
+        <h3 id="deleteProfileTitle">Delete your business profile?</h3>
+        <p>This permanently removes your company profile, verification documents, matches, conversations, payments, and account access from Trade Grid.</p>
+        <ul class="tg-modal-list">
+          <li><i class="ri-error-warning-line"></i> This action cannot be undone</li>
+          <li><i class="ri-error-warning-line"></i> Your current login session will end</li>
+        </ul>
+        <div class="tg-modal-actions">
+          <button type="button" class="tg-modal-btn" id="btnCancelDeleteProfile">Cancel</button>
+          <button type="button" class="tg-modal-btn danger" id="btnConfirmDeleteProfile"><i class="ri-delete-bin-line"></i> Delete profile</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) backdrop.classList.remove('open');
+    });
+    document.getElementById('btnCancelDeleteProfile')?.addEventListener('click', () => backdrop.classList.remove('open'));
+    document.getElementById('btnConfirmDeleteProfile')?.addEventListener('click', deleteMyProfile);
+  }
+  backdrop.classList.add('open');
+}
+
+async function deleteMyProfile() {
+  const button = document.getElementById('btnConfirmDeleteProfile');
+  if (button) {
+    button.disabled = true;
+    button.innerHTML = '<i class="ri-loader-4-line"></i> Deleting...';
+  }
+
+  try {
+    const token = getDashboardToken();
+    const response = await fetch('/profile/me', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      }
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Could not delete your profile.');
+    }
+
+    ['token', 'companyToken', 'userToken', 'tradegridUser'].forEach(key => {
+      try { localStorage.removeItem(key); } catch { /* Ignore storage restrictions. */ }
+    });
+    try {
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('tradegrid-discover-seen:'))
+        .forEach(key => localStorage.removeItem(key));
+    } catch {
+      /* Ignore storage restrictions. */
+    }
+    showUserToast('Profile deleted successfully.');
+    setTimeout(() => {
+      window.location.href = '../New Landing - Page/landing.html';
+    }, 700);
+  } catch (error) {
+    showUserToast(error.message || 'Could not delete your profile.');
+    if (button) {
+      button.disabled = false;
+      button.innerHTML = '<i class="ri-delete-bin-line"></i> Delete profile';
+    }
+  }
+}
+
+document.getElementById('btnDeleteProfile')?.addEventListener('click', openDeleteProfileModal);
+
 // ============================================================
 //   BUSINESS PROFILE — Edit functionality
 // ============================================================
@@ -2195,6 +2271,7 @@ speedConnectionsBtn?.addEventListener('click', () => {
 //   DISCOVER — Swipe card interface
 // ============================================================
 let discCompanies = [];
+const DISCOVER_FREE_LIMIT = 10;
 
 const discTips = [
   'Companies with a match score above 75% are 3× more likely to respond.',
@@ -2206,6 +2283,107 @@ const discTips = [
 
 let discIndex = 0, discConnected = 0, discPassed = 0;
 let discoverHasActiveSearch = false;
+
+function getDiscoverUsageKey() {
+  const companyId = getStoredCompanyId?.() || 'guest';
+  return `tradegrid-discover-seen:${companyId}`;
+}
+
+function getDiscoverSeenIds() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(getDiscoverUsageKey()) || '[]').map(String));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveDiscoverSeenIds(ids) {
+  try {
+    localStorage.setItem(getDiscoverUsageKey(), JSON.stringify([...ids].slice(0, 500)));
+  } catch {
+    /* Ignore storage restrictions. */
+  }
+}
+
+function getDiscoverUsageCount() {
+  return getDiscoverSeenIds().size;
+}
+
+function getDiscoverCompanyUsageId(company) {
+  return String(company?.company_id || company?.name || company?.avatar || '');
+}
+
+function canRevealDiscoverCompany(company) {
+  const usageId = getDiscoverCompanyUsageId(company);
+  const seen = getDiscoverSeenIds();
+  return seen.has(usageId) || seen.size < DISCOVER_FREE_LIMIT;
+}
+
+function markDiscoverCompanyRevealed(company) {
+  const usageId = getDiscoverCompanyUsageId(company);
+  if (!usageId) return;
+  const seen = getDiscoverSeenIds();
+  if (!seen.has(usageId)) {
+    seen.add(usageId);
+    saveDiscoverSeenIds(seen);
+  }
+}
+
+function showDiscoverUpgradeModal() {
+  let backdrop = document.getElementById('discoverUpgradeModalBackdrop');
+  if (!backdrop) {
+    backdrop = document.createElement('div');
+    backdrop.className = 'tg-modal-backdrop';
+    backdrop.id = 'discoverUpgradeModalBackdrop';
+    backdrop.innerHTML = `
+      <div class="tg-modal" role="dialog" aria-modal="true" aria-labelledby="discoverUpgradeTitle">
+        <div class="tg-modal-icon"><i class="ri-vip-crown-line"></i></div>
+        <h3 id="discoverUpgradeTitle">Unlock more Discover partners</h3>
+        <p>You have viewed your 10 free Discover companies. Upgrade your Trade Grid plan to keep exploring new verified businesses and expand your partner pipeline.</p>
+        <ul class="tg-modal-list">
+          <li><i class="ri-check-line"></i> Unlimited Discover company cards</li>
+          <li><i class="ri-check-line"></i> Better matching and analytics access</li>
+          <li><i class="ri-check-line"></i> Priority visibility with trade partners</li>
+        </ul>
+        <div class="tg-modal-actions">
+          <button type="button" class="tg-modal-btn" id="btnDiscoverUpgradeLater">Maybe later</button>
+          <button type="button" class="tg-modal-btn primary" id="btnDiscoverUpgradePlan"><i class="ri-arrow-up-circle-line"></i> View upgrade</button>
+        </div>
+      </div>`;
+    document.body.appendChild(backdrop);
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) backdrop.classList.remove('open');
+    });
+    document.getElementById('btnDiscoverUpgradeLater')?.addEventListener('click', () => backdrop.classList.remove('open'));
+    document.getElementById('btnDiscoverUpgradePlan')?.addEventListener('click', () => {
+      backdrop.classList.remove('open');
+      showUserToast('Upgrade plans are coming soon. Contact support for early access.');
+    });
+  }
+  backdrop.classList.add('open');
+}
+
+function discShowUpgradeLimitState() {
+  document.getElementById('discMatchCard').style.display = 'none';
+  document.getElementById('discCardGhost').style.display = 'none';
+  document.getElementById('discActionRow').style.display = 'flex';
+  setDiscoverActionsDisabled(true);
+  const empty = document.getElementById('discEmptyState');
+  if (empty) {
+    empty.style.display = 'flex';
+    const title = empty.querySelector('h3');
+    const copy = empty.querySelector('p');
+    if (title) title.textContent = 'You have reached your free Discover limit';
+    if (copy) copy.innerHTML = 'You have viewed 10 companies on your current plan. Upgrade your Trade Grid account to discover more verified partners.';
+  }
+  const remaining = document.getElementById('remainingCount');
+  if (remaining) remaining.textContent = 'Discover limit reached';
+  const actionHint = document.getElementById('discActionHint');
+  if (actionHint) {
+    actionHint.style.display = 'flex';
+    actionHint.querySelector('span').textContent = 'Upgrade to continue discovering more companies.';
+  }
+}
 
 function normalizeDiscoverCompany(company) {
   const name = company.company_name || company.name || company.companyName || company.businessName || 'Trade Partner';
@@ -2429,6 +2607,12 @@ async function openDiscoverCompanyProfile(companyId, fallbackName = 'company') {
 function discRenderCard() {
   if (discIndex >= discCompanies.length) { discShowEmpty(); return; }
   const c = discCompanies[discIndex];
+  if (!canRevealDiscoverCompany(c)) {
+    discShowUpgradeLimitState();
+    showDiscoverUpgradeModal();
+    return;
+  }
+  markDiscoverCompanyRevealed(c);
   document.getElementById('discCardAvatar').textContent   = c.avatar;
   document.getElementById('discCardName').textContent     = c.name;
   document.getElementById('discCardSub').innerHTML        = c.sub.replace(/·/g, '&bull;');
@@ -2483,8 +2667,9 @@ function discRenderCard() {
         : 'Pass skips this company. Connect sends a request. Use profile or enquiry if you need more context first.';
     actionHint.querySelector('span').textContent = hintText;
   }
-  document.getElementById('remainingCount').textContent   = (discCompanies.length - discIndex) + ' companies remaining';
-  document.getElementById('statViewed').textContent       = discIndex;
+  const usageCount = getDiscoverUsageCount();
+  document.getElementById('remainingCount').textContent   = Math.max(0, DISCOVER_FREE_LIMIT - usageCount) + ' free Discover views left';
+  document.getElementById('statViewed').textContent       = usageCount;
   document.getElementById('statConnected').textContent    = discConnected;
   document.getElementById('statPassed').textContent       = discPassed;
   const pct = Math.round((discIndex / discCompanies.length) * 100);
@@ -2519,6 +2704,13 @@ function discShowEmpty() {
   document.getElementById('discMatchCard').style.display  = 'none';
   document.getElementById('discCardGhost').style.display  = 'none';
   document.getElementById('discActionRow').style.display  = 'flex';
+  const empty = document.getElementById('discEmptyState');
+  if (empty) {
+    const title = empty.querySelector('h3');
+    const copy = empty.querySelector('p');
+    if (title) title.textContent = 'You have reached the end of the companies to discover';
+    if (copy) copy.innerHTML = 'There are no more available company cards in this review pass. Click <strong>Start Over</strong> to review any other available and unconnected companies again.';
+  }
   const passBtn = document.getElementById('discBtnPass');
   const connectBtn = document.getElementById('discBtnConnect');
   if (passBtn) {
