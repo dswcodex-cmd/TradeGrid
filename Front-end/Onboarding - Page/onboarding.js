@@ -12,6 +12,18 @@
    regAuthority: name of the business registration authority
    regDoc: label for the required registration document upload
 ══════════════════════════════════════════════════════ */
+const TRADEGRID_API_BASE = (() => {
+  const liveServerPorts = new Set(['5500', '5501', '5502']);
+  if (window.location.protocol === 'file:' || liveServerPorts.has(window.location.port)) {
+    return 'http://localhost:5000';
+  }
+  return '';
+})();
+
+function apiUrl(path) {
+  return `${TRADEGRID_API_BASE}${path}`;
+}
+
 const COUNTRY_CONFIG = {
   ZA: {
     suburb: true, suburbLabel: 'Suburb / Area',
@@ -573,7 +585,7 @@ const COUNTRY_CONFIG = {
     regAuthority: 'Department of Economic Development / Free Zone Authorities',
     regDoc: 'DED Trade Licence / Free Zone Certificate'
   },
-  SA_ARABIA: {
+  SA: {
     suburb: false,
     regionType: 'text', regionLabel: 'Region',
     regions: [],
@@ -731,7 +743,7 @@ async function refreshRegistrationNumberFormatHint(countryCode) {
   if (!countryCode || !regNumberInput) return;
 
   try {
-    const response = await fetch(`/registration-validation/countries/${encodeURIComponent(countryCode)}`);
+    const response = await fetch(apiUrl(`/registration-validation/countries/${encodeURIComponent(countryCode)}`));
     const data = await response.json().catch(() => ({}));
     const country = data.data || data.country || data;
 
@@ -808,7 +820,7 @@ async function validateRegistrationNumberFormat(message = 'Invalid format', shou
   if (!countryCode || !regNumber) return true;
 
   try {
-    const response = await fetch('/registration-validation/validate', {
+    const response = await fetch(apiUrl('/registration-validation/validate'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ countryCode, regNumber })
@@ -1433,7 +1445,7 @@ async function submitSignupApplication() {
 
   try {
     const payload = await buildSignupPayload();
-    const response = await fetch('/auth/signup', {
+    const response = await fetch(apiUrl('/auth/signup'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -1445,7 +1457,7 @@ async function submitSignupApplication() {
     }
 
     try {
-      await fetch('/auth/send-email-verification', {
+      await fetch(apiUrl('/auth/send-email-verification'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: payload.email })

@@ -101,6 +101,104 @@ export const COUNTRIES = {
 
   // ── Europe ───────────────────────────────────────────────────────────────────
 
+  ET: {
+    name: "Ethiopia", iso2: "ET", flag: "ET", region: "Africa",
+    format: "MT-YYYY-NNNNNN or NNNNNN",
+    example: "MT-2024-123456",
+    validate: patternValidator(/^(MT-)?\d{4}-?\d{5,8}$|^\d{6,10}$/, "Format: MT-YYYY-NNNNNN or 6-10 digits", "Ministry of Trade and Regional Integration"),
+  },
+
+  UG: {
+    name: "Uganda", iso2: "UG", flag: "UG", region: "Africa",
+    format: "800NNNNNNNNNN or NNNNNN",
+    example: "800123456789",
+    validate: patternValidator(/^(800\d{9}|\d{6,10})$/, "Format: 800NNNNNNNNNN or 6-10 digits", "Uganda Registration Services Bureau (URSB)"),
+  },
+
+  BW: {
+    name: "Botswana", iso2: "BW", flag: "BW", region: "Africa",
+    format: "COYYYY/NNNNN or BWNNNNNN",
+    example: "CO2024/12345",
+    validate: patternValidator(/^(CO\d{4}\/\d{4,6}|BW\d{5,8}|\d{5,8})$/, "Format: COYYYY/NNNNN, BWNNNNNN, or 5-8 digits", "Companies and Intellectual Property Authority (CIPA)"),
+  },
+
+  MZ: {
+    name: "Mozambique", iso2: "MZ", flag: "MZ", region: "Africa",
+    format: "NUIT NNNNNNNNN",
+    example: "400123456",
+    validate: patternValidator(/^\d{9}$/, "NUIT must be 9 digits", "Autoridade Tributaria de Mocambique"),
+  },
+
+  NA: {
+    name: "Namibia", iso2: "NA", flag: "NA", region: "Africa",
+    format: "CC/YYYY/NNNN or NNNNNN",
+    example: "CC/2024/1234",
+    validate: patternValidator(/^(CC\/\d{4}\/\d{3,6}|\d{5,10})$/, "Format: CC/YYYY/NNNN or 5-10 digits", "Business and Intellectual Property Authority (BIPA)"),
+  },
+
+  ZM: {
+    name: "Zambia", iso2: "ZM", flag: "ZM", region: "Africa",
+    format: "PACRA NNNNNN or NNNNNN",
+    example: "PACRA 123456",
+    validate: patternValidator(/^(PACRA\s?)?\d{5,10}$/, "Format: PACRA NNNNNN or 5-10 digits", "Patents and Companies Registration Agency (PACRA)"),
+  },
+
+  MW: {
+    name: "Malawi", iso2: "MW", flag: "MW", region: "Africa",
+    format: "MBRS-NNNNNN or NNNNNN",
+    example: "MBRS-123456",
+    validate: patternValidator(/^(MBRS-?)?\d{5,10}$/, "Format: MBRS-NNNNNN or 5-10 digits", "Malawi Business Registration System"),
+  },
+
+  SZ: {
+    name: "Eswatini", iso2: "SZ", flag: "SZ", region: "Africa",
+    format: "SZ-NNNNNN or NNNNNN",
+    example: "SZ-123456",
+    validate: patternValidator(/^(SZ-?)?\d{5,10}$/, "Format: SZ-NNNNNN or 5-10 digits", "Eswatini Companies Registry"),
+  },
+
+  LS: {
+    name: "Lesotho", iso2: "LS", flag: "LS", region: "Africa",
+    format: "LS-NNNNNN or NNNNNN",
+    example: "LS-123456",
+    validate: patternValidator(/^(LS-?)?\d{5,10}$/, "Format: LS-NNNNNN or 5-10 digits", "One Stop Business Facilitation Centre"),
+  },
+
+  RW: {
+    name: "Rwanda", iso2: "RW", flag: "RW", region: "Africa",
+    format: "TIN: NNNNNNNNN",
+    example: "123456789",
+    validate: patternValidator(/^\d{9}$/, "Rwandan TIN must be 9 digits", "Rwanda Development Board / Rwanda Revenue Authority"),
+  },
+
+  SN: {
+    name: "Senegal", iso2: "SN", flag: "SN", region: "Africa",
+    format: "NINEA NNNNNNNNN or SN-NNNNNN",
+    example: "123456789",
+    validate: patternValidator(/^(NINEA\s?)?\d{7,10}$|^SN-?\d{5,8}$/, "Format: NINEA NNNNNNNNN or SN-NNNNNN", "APIX / NINEA"),
+  },
+
+  CI: {
+    name: "Cote d'Ivoire", iso2: "CI", flag: "CI", region: "Africa",
+    format: "CI-ABJ-NNNNNN or RCCM-CI-NNNNN",
+    example: "CI-ABJ-123456",
+    validate: patternValidator(/^(CI-[A-Z]{2,4}-\d{5,8}|RCCM-CI-\d{5,8})$/, "Format: CI-ABJ-NNNNNN or RCCM-CI-NNNNN", "Registre du Commerce et du Credit Mobilier"),
+  },
+
+  CM: {
+    name: "Cameroon", iso2: "CM", flag: "CM", region: "Africa",
+    format: "RCCM/NN/NNNN or CM-NNNNNN",
+    example: "RCCM/24/123456",
+    validate: patternValidator(/^(RCCM\/\d{2}\/\d{5,8}|CM-?\d{5,8})$/, "Format: RCCM/NN/NNNN or CM-NNNNNN", "Registre du Commerce et du Credit Mobilier"),
+  },
+
+  MR: {
+    name: "Mauritius", iso2: "MR", flag: "MR", region: "Africa",
+    format: "C NNNNN or NNNNNNN",
+    example: "C123456",
+    validate: patternValidator(/^C?\d{5,8}$/, "Format: C NNNNN or 5-8 digits", "Corporate and Business Registration Department"),
+  },
+
   GB: {
     name: "United Kingdom", iso2: "GB", flag: "🇬🇧", region: "Europe",
     format: "NNNNNNNN or SC/NI/OC + NNNNNN",
@@ -216,6 +314,48 @@ export const COUNTRIES = {
 
   // ── Americas ─────────────────────────────────────────────────────────────────
 
+  DK: {
+    name: "Denmark", iso2: "DK", flag: "DK", region: "Europe",
+    format: "CVR: NNNNNNNN",
+    example: "12345678",
+    validate: patternValidator(/^\d{8}$/, "Danish CVR number must be 8 digits", "Central Business Register (CVR)"),
+  },
+
+  BE: {
+    name: "Belgium", iso2: "BE", flag: "BE", region: "Europe",
+    format: "BE NNNN.NNN.NNN",
+    example: "BE0123456789",
+    validate: patternValidator(/^(BE)?0?\d{9}$/, "Belgian enterprise number must be BE + 10 digits or 10 digits", "Crossroads Bank for Enterprises"),
+  },
+
+  NO: {
+    name: "Norway", iso2: "NO", flag: "NO", region: "Europe",
+    format: "Organisasjonsnummer: NNN NNN NNN",
+    example: "123456789",
+    validate: patternValidator(/^\d{9}$/, "Norwegian organisation number must be 9 digits", "Bronnoysund Register Centre"),
+  },
+
+  FI: {
+    name: "Finland", iso2: "FI", flag: "FI", region: "Europe",
+    format: "Y-tunnus: NNNNNNN-N",
+    example: "1234567-8",
+    validate: patternValidator(/^\d{7}-?\d$/, "Finnish Business ID must be NNNNNNN-N", "Finnish Patent and Registration Office"),
+  },
+
+  CH: {
+    name: "Switzerland", iso2: "CH", flag: "CH", region: "Europe",
+    format: "CHE-NNN.NNN.NNN",
+    example: "CHE-123.456.789",
+    validate: patternValidator(/^CHE-?\d{3}\.?\d{3}\.?\d{3}$/, "Swiss UID must be CHE-NNN.NNN.NNN", "Federal Statistical Office UID Register"),
+  },
+
+  AT: {
+    name: "Austria", iso2: "AT", flag: "AT", region: "Europe",
+    format: "FN NNNNNx",
+    example: "FN 123456a",
+    validate: patternValidator(/^FN\s?\d{5,6}[A-Z]?$/, "Austrian company register number must be FN NNNNNx", "Firmenbuch"),
+  },
+
   US: {
     name: "United States", iso2: "US", flag: "🇺🇸", region: "Americas",
     format: "EIN: NN-NNNNNNN",
@@ -280,6 +420,20 @@ export const COUNTRIES = {
   },
 
   // ── Asia-Pacific ─────────────────────────────────────────────────────────────
+
+  CL: {
+    name: "Chile", iso2: "CL", flag: "CL", region: "Americas",
+    format: "RUT: NN.NNN.NNN-N",
+    example: "76.123.456-7",
+    validate: patternValidator(/^\d{1,2}\.?\d{3}\.?\d{3}-?[\dK]$/, "Chilean RUT must be NN.NNN.NNN-N", "Servicio de Impuestos Internos"),
+  },
+
+  CO: {
+    name: "Colombia", iso2: "CO", flag: "CO", region: "Americas",
+    format: "NIT: NNNNNNNNN-N",
+    example: "900123456-7",
+    validate: patternValidator(/^\d{8,10}-?\d$/, "Colombian NIT must be 8-10 digits plus check digit", "Camara de Comercio / DIAN"),
+  },
 
   AU: {
     name: "Australia", iso2: "AU", flag: "🇦🇺", region: "Asia-Pacific",
@@ -376,6 +530,55 @@ export const COUNTRIES = {
 
   // ── Middle East ───────────────────────────────────────────────────────────────
 
+  KR: {
+    name: "South Korea", iso2: "KR", flag: "KR", region: "Asia-Pacific",
+    format: "NNN-NN-NNNNN",
+    example: "123-45-67890",
+    validate: patternValidator(/^\d{3}-?\d{2}-?\d{5}$/, "Korean business registration number must be NNN-NN-NNNNN", "National Tax Service"),
+  },
+
+  TH: {
+    name: "Thailand", iso2: "TH", flag: "TH", region: "Asia-Pacific",
+    format: "NNNNNNNNNNNNN",
+    example: "0105559123456",
+    validate: patternValidator(/^\d{13}$/, "Thai juristic person registration number must be 13 digits", "Department of Business Development"),
+  },
+
+  ID: {
+    name: "Indonesia", iso2: "ID", flag: "ID", region: "Asia-Pacific",
+    format: "NIB: NNNNNNNNNNNNN",
+    example: "1234567890123",
+    validate: patternValidator(/^\d{13}$/, "Indonesian NIB must be 13 digits", "Online Single Submission (OSS)"),
+  },
+
+  PK: {
+    name: "Pakistan", iso2: "PK", flag: "PK", region: "Asia-Pacific",
+    format: "CUIN: NNNNNNN or NTN: NNNNNNN-N",
+    example: "1234567",
+    validate: patternValidator(/^\d{7}(-?\d)?$/, "Pakistan CUIN/NTN must be 7 digits or 7 digits plus check digit", "SECP / Federal Board of Revenue"),
+  },
+
+  BD: {
+    name: "Bangladesh", iso2: "BD", flag: "BD", region: "Asia-Pacific",
+    format: "BIN: NNNNNNNNNNNNN or RJSC-NNNNNN",
+    example: "1234567890123",
+    validate: patternValidator(/^\d{13}$|^RJSC-?\d{5,8}$/, "Format: 13-digit BIN or RJSC-NNNNNN", "RJSC / National Board of Revenue"),
+  },
+
+  VN: {
+    name: "Vietnam", iso2: "VN", flag: "VN", region: "Asia-Pacific",
+    format: "MST: NNNNNNNNNN or NNNNNNNNNNNNN",
+    example: "0312345678",
+    validate: patternValidator(/^\d{10}(\d{3})?$/, "Vietnam tax/business code must be 10 or 13 digits", "Business Registration Office / Tax Department"),
+  },
+
+  PH: {
+    name: "Philippines", iso2: "PH", flag: "PH", region: "Asia-Pacific",
+    format: "SEC-YYYY-NNNNNN or NNN-NNN-NNN",
+    example: "SEC-2024-123456",
+    validate: patternValidator(/^(SEC-?\d{4}-?\d{5,8}|\d{3}-?\d{3}-?\d{3})$/, "Format: SEC-YYYY-NNNNNN or NNN-NNN-NNN", "Securities and Exchange Commission"),
+  },
+
   AE: {
     name: "UAE", iso2: "AE", flag: "🇦🇪", region: "Middle East",
     format: "DED/ADM/SHJ-NNNNNNNN",
@@ -387,6 +590,20 @@ export const COUNTRIES = {
       if (/^\d{7,15}$/.test(c)) return ok({ licenceNumber: c, note: "Unspecified emirate" });
       return fail("Format: PREFIX-NNNNNNNN (DED/ADM/SHJ/AJM/UAQ/RAK/FUJ) or 7–15 digit number");
     },
+  },
+
+  IL: {
+    name: "Israel", iso2: "IL", flag: "IL", region: "Middle East",
+    format: "NNNNNNNNN",
+    example: "512345678",
+    validate: patternValidator(/^\d{9}$/, "Israeli company number must be 9 digits", "Israeli Corporations Authority"),
+  },
+
+  TR: {
+    name: "Turkey", iso2: "TR", flag: "TR", region: "Middle East",
+    format: "MERSIS: NNNNNNNNNNNNNNNN or VKN: NNNNNNNNNN",
+    example: "0123456789012345",
+    validate: patternValidator(/^\d{10}$|^\d{16}$/, "Turkish VKN must be 10 digits or MERSIS must be 16 digits", "MERSIS / Revenue Administration"),
   },
 
   SA: {
@@ -404,3 +621,11 @@ export const COUNTRIES = {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function ok(meta)       { return { valid: true,  errors: [], meta }; }
 function fail(message)  { return { valid: false, errors: [message], meta: null }; }
+
+function patternValidator(pattern, message, authority) {
+  return (raw) => {
+    const value = String(raw || "").trim().toUpperCase().replace(/\s+/g, "");
+    if (!pattern.test(value)) return fail(message);
+    return ok({ registrationNumber: value, authority });
+  };
+}
