@@ -4,11 +4,17 @@ import twilio from "twilio";
 import prisma from "../prismaClient.js";
 import { validateCompanyReg } from "./validationService.js";
 
-const twilioAccountSid = process.env.TWILIO_ASID || process.env.TWILIO_ACCOUNT_SID;
+function envValue(name) {
+  return String(process.env[name] || "").trim();
+}
+
+const twilioAccountSid = envValue("TWILIO_ASID") || envValue("TWILIO_ACCOUNT_SID");
+const twilioAuthToken = envValue("TWILIO_AUTH_TOKEN");
+const twilioVerifyServiceSid = envValue("TWILIO_VERIFY_SERVICE_SID");
 
 const twilioClient = twilio(
   twilioAccountSid,
-  process.env.TWILIO_AUTH_TOKEN
+  twilioAuthToken
 );
 
 const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
@@ -20,8 +26,8 @@ function normalizeEmail(email) {
 function ensureTwilioVerifyConfigured() {
   if (
     !twilioAccountSid ||
-    !process.env.TWILIO_AUTH_TOKEN ||
-    !process.env.TWILIO_VERIFY_SERVICE_SID
+    !twilioAuthToken ||
+    !twilioVerifyServiceSid
   ) {
     throw new Error("Twilio email verification is not configured");
   }
@@ -64,45 +70,117 @@ function verifyStoredEmailOtp(email, purpose, code) {
   return true;
 }
 
-async function sendEmailOtp(email, purpose) {
+async function sendGridOtp(email, purpose) {
+  const sendgridApiKey = envValue("SENDGRID_API_KEY");
+  const sendgridFromEmail =
+    envValue("SENDGRID_FROM_EMAIL") ||
+    envValue("SENDGRID_SENDER_EMAIL") ||
+    envValue("FROM_EMAIL") ||
+    envValue("EMAIL_FROM") ||
+    envValue("MAIL_FROM");
+
+  if (!sendgridApiKey || !sendgridFromEmail) return null;
+
   const code = saveEmailOtp(email, purpose);
   const subject = purpose === "password_reset"
     ? "Trade Grid password reset code"
     : "Trade Grid email verification code";
   const text = `Your Trade Grid verification code is ${code}. It expires in 10 minutes.`;
-
-  if (process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM_EMAIL) {
-    const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.SENDGRID_API_KEY}`,
-        "Content-Type": "application/json"
+  const response = await fetch("https://api.sendgrid.com/v3/mail/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${sendgridApiKey}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      personalizations: [{ to: [{ email }] }],
+      from: {
+        email: sendgridFromEmail,
+        name: envValue("SENDGRID_FROM_NAME") || "Trade Grid"
       },
-      body: JSON.stringify({
-        personalizations: [{ to: [{ email }] }],
-        from: {
-          email: process.env.SENDGRID_FROM_EMAIL,
-          name: process.env.SENDGRID_FROM_NAME || "Trade Grid"
-        },
-        subject,
-        content: [{ type: "text/plain", value: text }]
-      })
-    });
+      subject,
+      content: [{ type: "text/plain", value: text }]
+    })
+  });
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      throw new Error(errorText || "Could not send email code");
-    }
-
-    return { delivery: "email", status: "pending" };
+  if (!response.ok) {
+    emailOtpStore.delete(emailOtpKey(email, purpose));
+    const errorText = await response.text().catch(() => "");
+    throw new Error(errorText || "Could not send email code with SendGrid");
   }
 
+  return { delivery: "sendgrid", status: "pending" };
+}
+
+async function sendTwilioVerifyEmail(email) {
+  ensureTwilioVerifyConfigured();
+
+  const verification = await twilioClient.verify.v2
+    .services(twilioVerifyServiceSid)
+    .verifications.create({
+      to: email,
+      channel: "email"
+    });
+
+  return { delivery: "twilio", status: verification.status };
+}
+
+async function verifyTwilioEmailCode(email, code) {
+  ensureTwilioVerifyConfigured();
+
+  const verificationCheck = await twilioClient.verify.v2
+    .services(twilioVerifyServiceSid)
+    .verificationChecks.create({
+      to: email,
+      code
+    });
+
+  return verificationCheck.status === "approved";
+}
+
+async function sendEmailOtp(email, purpose) {
+  const providerErrors = [];
+
+  try {
+    const sendgridResult = await sendGridOtp(email, purpose);
+    if (sendgridResult) return sendgridResult;
+  } catch (error) {
+    providerErrors.push(`SendGrid: ${error.message}`);
+  }
+
+  try {
+    return await sendTwilioVerifyEmail(email);
+  } catch (error) {
+    providerErrors.push(`Twilio Verify: ${error.message}`);
+  }
+
+  const code = saveEmailOtp(email, purpose);
   console.warn(`[TradeGrid OTP] ${purpose} code for ${email}: ${code}`);
+
+  if (envValue("NODE_ENV") === "production") {
+    throw new Error(
+      `Email verification delivery is not configured correctly. ${providerErrors.join(" | ")}`
+    );
+  }
+
   return {
     delivery: "development",
     status: "pending",
-    dev_code: process.env.NODE_ENV === "production" ? undefined : code
+    dev_code: code,
+    warning: providerErrors.join(" | ")
   };
+}
+
+async function verifyEmailOtp(email, purpose, code) {
+  if (verifyStoredEmailOtp(email, purpose, code)) {
+    return true;
+  }
+
+  try {
+    return await verifyTwilioEmailCode(email, code);
+  } catch {
+    return false;
+  }
 }
 
 const normalizeTradeType = (value) => {
@@ -486,7 +564,7 @@ export const verifyEmailCode = async (req, res) => {
       return res.status(400).json({ error: "email and code are required" });
     }
 
-    const isApproved = verifyStoredEmailOtp(normalizedEmail, "email_verification", code);
+    const isApproved = await verifyEmailOtp(normalizedEmail, "email_verification", code);
 
     if (!isApproved) {
       return res.status(400).json({
@@ -572,7 +650,7 @@ export const resetPasswordWithCode = async (req, res) => {
       return res.status(404).json({ error: "No company account found for this email" });
     }
 
-    const isApproved = verifyStoredEmailOtp(normalizedEmail, "password_reset", code);
+    const isApproved = await verifyEmailOtp(normalizedEmail, "password_reset", code);
 
     if (!isApproved) {
       return res.status(400).json({
