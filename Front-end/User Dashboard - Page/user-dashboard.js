@@ -982,6 +982,12 @@ topbarSearchBtn.addEventListener('click', async () => {
   if (!q) return;
   showUserToast('Searching for "' + q + '"...');
 
+  const matchesPage = document.getElementById('page-matches');
+  if (matchesPage?.classList.contains('active') && typeof window.searchMatchedCompanies === 'function') {
+    window.searchMatchedCompanies(q);
+    return;
+  }
+
   try {
     const params = new URLSearchParams({ search: q });
     const token = getDashboardToken();
@@ -2160,7 +2166,7 @@ function normalizeDiscoverCompany(company) {
 
   return {
     company_id: company.company_id || company.id,
-    relationship_status: company.relationship_status || company.connection_status || 'available',
+    relationship_status: String(company.relationship_status || company.connection_status || 'available').replace('-', '_').toLowerCase(),
     avatar: initials,
     name,
     sub: company.sub || `${country} · ${industry} · ${type}`,
@@ -2370,7 +2376,14 @@ function discRenderCard() {
   document.getElementById('discCardAvatar').textContent   = c.avatar;
   document.getElementById('discCardName').textContent     = c.name;
   document.getElementById('discCardSub').innerHTML        = c.sub.replace(/·/g, '&bull;');
-  document.getElementById('discCardScore').textContent    = c.score === 'N/A' ? 'Match pending' : c.score + ' match';
+  const statusLabels = {
+    connected: 'Connected',
+    pending_sent: 'Request sent',
+    pending_received: 'Request received',
+    pending: 'Pending',
+    accepted: 'Connected'
+  };
+  document.getElementById('discCardScore').textContent    = statusLabels[c.relationship_status] || (c.score === 'N/A' ? 'Available' : c.score + ' match');
   document.getElementById('discCardVolume').textContent   = c.volume;
   document.getElementById('discCardEst').textContent      = c.est;
   document.getElementById('discCardMarkets').textContent  = c.markets;
@@ -2379,8 +2392,8 @@ function discRenderCard() {
   const passBtn = document.getElementById('discBtnPass');
   const connectBtn = document.getElementById('discBtnConnect');
   const actionHint = document.getElementById('discActionHint');
-  const isConnected = c.relationship_status === 'connected';
-  const isPending = c.relationship_status === 'pending';
+  const isConnected = c.relationship_status === 'connected' || c.relationship_status === 'accepted';
+  const isPending = c.relationship_status === 'pending' || c.relationship_status === 'pending_sent' || c.relationship_status === 'pending_received';
   setDiscoverActionsDisabled(false);
   if (passBtn) {
     passBtn.disabled = isConnected;
@@ -2395,6 +2408,9 @@ function discRenderCard() {
     if (isConnected) {
       connectBtn.innerHTML = '<i class="ri-message-3-line"></i> Message';
       connectBtn.title = 'Open conversation';
+    } else if (c.relationship_status === 'pending_received') {
+      connectBtn.innerHTML = '<i class="ri-checkbox-circle-line"></i> Review';
+      connectBtn.title = 'Review request in Business Matches';
     } else if (isPending) {
       connectBtn.innerHTML = '<i class="ri-time-line"></i> Pending';
       connectBtn.title = 'Request pending';
@@ -2407,7 +2423,7 @@ function discRenderCard() {
     const hintText = isConnected
       ? 'You are already connected with this business. Pass is disabled; use Message to continue the conversation.'
       : isPending
-        ? 'A connection request is already pending. You can review the profile or wait for the business to respond.'
+        ? (c.relationship_status === 'pending_received' ? 'This business sent you a request. Open Business Matches to accept or reject it.' : 'A connection request is already pending. You can review the profile or wait for the business to respond.')
         : 'Pass skips this company. Connect sends a request. Use profile or enquiry if you need more context first.';
     actionHint.querySelector('span').textContent = hintText;
   }
@@ -2597,6 +2613,10 @@ function resetDiscoverCards() {
     volume_range_compatibility: 10,
     random_compatibility: 15
   };
+  let lastAcceptedConnections = [];
+  let lastSentPendingRequests = [];
+  let lastReceivedPendingRequests = [];
+  let lastMatchesProfile = null;
 
   function getCompatibilityBreakdown(match) {
     return match?.match_reasons?.compatibility_breakdown || match?.compatibility_breakdown || null;
@@ -2637,7 +2657,7 @@ function resetDiscoverCards() {
     card.querySelectorAll('.match-item,.match-placeholder,.dash-empty').forEach(el => el.remove());
 
     if (!matches.length) {
-      setCardEmpty(card, 'No live matches yet. Complete your profile details to improve matching.');
+      setCardEmpty(card, 'No recent connected matches yet. Accepted business matches will appear here.');
       return;
     }
 
@@ -2666,8 +2686,18 @@ function resetDiscoverCards() {
 
   function getConnectionCompany(connection, currentCompanyId) {
     if (!connection) return null;
-    if (Number(connection.company1_id) === Number(currentCompanyId)) return connection.company2;
-    return connection.company1;
+    const company = Number(connection.company1_id) === Number(currentCompanyId) ? connection.company2 : connection.company1;
+    if (!company) return null;
+    const relationNames = (items, nestedKey, fallback = []) =>
+      Array.isArray(items)
+        ? items.map(item => typeof item === 'string' ? item : item?.[nestedKey]?.[`${nestedKey}_name`] || item?.product?.product_name || item?.region?.region_name).filter(Boolean)
+        : fallback;
+    return {
+      ...company,
+      supplied_products: company.supplied_products || relationNames(company.products, 'product'),
+      desired_products: relationNames(company.desired_products, 'product'),
+      target_regions: company.target_regions || relationNames(company.regions, 'region')
+    };
   }
 
   function getPendingIds(sentPending, receivedPending) {
@@ -2692,7 +2722,7 @@ function resetDiscoverCards() {
       ? company.supplied_products.join(', ')
       : (company.company_description || 'No product details yet');
     const action = status === 'connected'
-      ? `<button class="btn-ph-primary match-message-btn" data-company-id="${companyId}"><i class="ri-message-3-line"></i> Message</button>`
+      ? `<button class="btn-ph-primary match-message-btn" data-company-id="${companyId}"><i class="ri-message-3-line"></i> Message</button><button class="btn-ph-secondary match-disconnect-btn" data-company-id="${companyId}"><i class="ri-link-unlink"></i> Disconnect</button>`
       : status === 'pending-sent'
         ? `<button class="btn-ph-primary" disabled style="opacity:.65;"><i class="ri-time-line"></i> Pending</button>`
         : status === 'pending-received'
@@ -2713,16 +2743,21 @@ function resetDiscoverCards() {
         ${stats}
         <div class="ph-actions">
           ${action}
-          <button class="btn-ph-secondary match-enquiry-btn" data-company-id="${companyId}"><i class="ri-question-answer-line"></i> Enquire</button>
           <button class="btn-ph-secondary match-profile-btn" data-company-id="${companyId}"><i class="ri-user-line"></i> View Profile</button>
         </div>
       </div>`;
   }
 
-  function renderMatchesPage(aiMatches, acceptedConnections, sentPending, receivedPending, profile) {
+  function renderMatchesPage(aiMatches, acceptedConnections, sentPending, receivedPending, profile, searchTerm = '') {
     const grid = document.querySelector('#page-matches .placeholder-grid');
     const subtitle = document.querySelector('#page-matches .page-title-row p');
     if (!grid) return;
+
+    lastAcceptedConnections = acceptedConnections || [];
+    lastSentPendingRequests = sentPending || [];
+    lastReceivedPendingRequests = receivedPending || [];
+    lastMatchesProfile = profile || lastMatchesProfile;
+    aiMatches = [];
 
     const currentCompanyId = Number(profile?.company_id);
     const pendingIds = getPendingIds(sentPending, receivedPending);
@@ -2730,12 +2765,28 @@ function resetDiscoverCards() {
       .map(connection => getConnectionCompany(connection, currentCompanyId))
       .filter(Boolean);
     const renderedIds = new Set();
+    const query = String(searchTerm || '').trim().toLowerCase();
+    const matchesQuery = (company) => {
+      if (!query) return true;
+      const values = [
+        company?.company_name,
+        company?.name,
+        company?.location?.country,
+        company?.country,
+        company?.industry?.industry_name,
+        company?.industry,
+        company?.business_type,
+        ...(company?.supplied_products || []),
+        ...(company?.desired_products || [])
+      ];
+      return values.some(value => String(value || '').toLowerCase().includes(query));
+    };
 
     const cards = [];
     sortNewestFirst(receivedPending).forEach(request => {
       const company = request.source;
       const companyId = Number(company?.company_id);
-      if (!companyId || renderedIds.has(companyId)) return;
+      if (!companyId || renderedIds.has(companyId) || !matchesQuery(company)) return;
       renderedIds.add(companyId);
       cards.push(matchCardHtml({
         company,
@@ -2748,7 +2799,7 @@ function resetDiscoverCards() {
     sortNewestFirst(sentPending).forEach(request => {
       const company = request.target;
       const companyId = Number(company?.company_id);
-      if (!companyId || renderedIds.has(companyId)) return;
+      if (!companyId || renderedIds.has(companyId) || !matchesQuery(company)) return;
       renderedIds.add(companyId);
       cards.push(matchCardHtml({
         company,
@@ -2759,7 +2810,7 @@ function resetDiscoverCards() {
 
     acceptedCompanies.forEach(company => {
       const companyId = Number(company?.company_id);
-      if (!companyId || renderedIds.has(companyId)) return;
+      if (!companyId || renderedIds.has(companyId) || !matchesQuery(company)) return;
       renderedIds.add(companyId);
       cards.push(matchCardHtml({
         company,
@@ -2790,10 +2841,10 @@ function resetDiscoverCards() {
 
     grid.innerHTML = cards.length
       ? cards.join('')
-      : `<div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--text-muted);font-size:14px;">No matches yet. Add products, desired products, and target regions to improve your recommendations.</div>`;
+      : `<div style="grid-column:1/-1;padding:34px;text-align:center;color:var(--text-muted);font-size:14px;">${query ? 'No connected or pending matches found for this search.' : 'No connected or pending business matches yet.'}</div>`;
 
     if (subtitle) {
-      subtitle.textContent = `${receivedPending.length} new request${receivedPending.length === 1 ? '' : 's'} • ${acceptedCompanies.length} connected partner${acceptedCompanies.length === 1 ? '' : 's'} • ${aiMatches.length} suggested match${aiMatches.length === 1 ? '' : 'es'}`;
+      subtitle.textContent = `${receivedPending.length} new request${receivedPending.length === 1 ? '' : 's'} • ${acceptedCompanies.length} connected partner${acceptedCompanies.length === 1 ? '' : 's'} • ${sentPending.length} sent pending`;
     }
 
     grid.querySelectorAll('.match-connect-btn').forEach(button => {
@@ -2875,6 +2926,28 @@ function resetDiscoverCards() {
       });
     });
 
+    grid.querySelectorAll('.match-disconnect-btn').forEach(button => {
+      button.addEventListener('click', async () => {
+        const companyId = Number(button.dataset.companyId);
+        const card = button.closest('.placeholder-card');
+        const companyName = card?.querySelector('h4')?.textContent || 'company';
+        if (!window.confirm(`Disconnect from ${companyName}? This will remove the active business match.`)) return;
+
+        button.disabled = true;
+        try {
+          await dashboardPost('/auth/disconnect', {
+            other_company_id: companyId
+          });
+          showUserToast(`Disconnected from ${companyName}.`);
+          window.hydrateOverviewFromBackend?.();
+          if (typeof loadAllDiscoverCompanies === 'function') loadAllDiscoverCompanies();
+        } catch (error) {
+          button.disabled = false;
+          showUserToast(error.message || 'Could not disconnect this match');
+        }
+      });
+    });
+
     grid.querySelectorAll('.match-profile-btn').forEach(button => {
       button.addEventListener('click', async () => {
         const companyId = Number(button.dataset.companyId);
@@ -2893,6 +2966,11 @@ function resetDiscoverCards() {
       });
     });
   }
+
+  window.searchMatchedCompanies = function searchMatchedCompanies(query) {
+    renderMatchesPage([], lastAcceptedConnections, lastSentPendingRequests, lastReceivedPendingRequests, lastMatchesProfile, query);
+    showUserToast(`Showing matched companies for "${query}"`);
+  };
 
   function getOtherCompany(conversation, currentCompanyId) {
     if (!conversation) return null;
@@ -3359,9 +3437,7 @@ function resetDiscoverCards() {
           .map(connection => ({ company: getConnectionCompany(connection, currentCompanyId), match_score: 100 }))
           .filter(match => match.company);
 
-        if (acceptedOverviewMatches.length) {
-          renderLiveMatches(acceptedOverviewMatches);
-        }
+        renderLiveMatches(acceptedOverviewMatches);
         renderMatchesPage([], latestAcceptedConnections, latestSentPending, latestReceivedPending, fastProfile);
 
         if (connectionsResponse.ok) {
@@ -3417,10 +3493,7 @@ function resetDiscoverCards() {
         matchesCorePromise
       ]).then(([matchesResponse, core]) => {
         latestAiMatches = matchesResponse.ok ? (matchesResponse.data.matches || []) : [];
-        if (!core.acceptedOverviewMatches.length || latestAiMatches.length) {
-          renderLiveMatches(latestAiMatches);
-        }
-        renderMatchesPage(latestAiMatches, latestAcceptedConnections, latestSentPending, latestReceivedPending, latestProfile || core.fastProfile);
+        renderMatchesPage([], latestAcceptedConnections, latestSentPending, latestReceivedPending, latestProfile || core.fastProfile);
         renderLiveMarketInsights(latestProfile, latestAiMatches);
         return matchesResponse;
       });
@@ -3458,7 +3531,7 @@ function resetDiscoverCards() {
 document.getElementById('discBtnPass')?.addEventListener('click', () => {
   if (discIndex >= discCompanies.length) return;
   const company = discCompanies[discIndex];
-  if (company.relationship_status === 'connected') {
+  if (company.relationship_status === 'connected' || company.relationship_status === 'accepted') {
     showUserToast('You are already connected with this business.');
     return;
   }
@@ -3481,7 +3554,13 @@ document.getElementById('discBtnConnect')?.addEventListener('click', () => {
     return;
   }
 
-  if (company.relationship_status === 'pending') {
+  if (company.relationship_status === 'pending_received') {
+    navigateTo('matches');
+    showUserToast(`Review ${name}'s request in Business Matches.`);
+    return;
+  }
+
+  if (company.relationship_status === 'pending' || company.relationship_status === 'pending_sent') {
     showUserToast(`A request with ${name} is already pending.`);
     return;
   }

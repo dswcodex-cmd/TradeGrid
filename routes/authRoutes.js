@@ -3,6 +3,7 @@ import {
   sendConnectionRequest,
   acceptConnectionRequest,
   rejectConnectionRequest,
+  disconnectCompany,
   getPendingRequests,
   getSentPendingRequests,
   getMyConnections,
@@ -32,6 +33,8 @@ router.post("/forgot-password/reset", resetPasswordWithCode);
 router.post("/request", authMiddleware, sendConnectionRequest);
 router.post("/accept", authMiddleware, acceptConnectionRequest);
 router.post("/reject", authMiddleware, rejectConnectionRequest);
+router.post("/disconnect", authMiddleware, disconnectCompany);
+router.delete("/connections/:companyId", authMiddleware, disconnectCompany);
 router.get("/pending", authMiddleware, getPendingRequests);
 router.get("/pending-sent", authMiddleware, getSentPendingRequests);
 router.get("/", authMiddleware, getMyConnections);

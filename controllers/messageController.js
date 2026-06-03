@@ -145,6 +145,14 @@ export const getMyConversations = async (req, res) => {
 
     const conversationsWithUnreadCounts = await Promise.all(
       conversations.map(async (conversation) => {
+        const activeMatch = await prisma.companyMatches.findUnique({
+          where: {
+            company1_id_company2_id: normalizeConversationPair(conversation.company1_id, conversation.company2_id)
+          }
+        });
+
+        if (!activeMatch) return null;
+
         const unread_count = await prisma.message.count({
           where: {
             conversation_id: conversation.conversation_id,
@@ -160,7 +168,7 @@ export const getMyConversations = async (req, res) => {
       })
     );
 
-    return res.status(200).json({ conversations: conversationsWithUnreadCounts });
+    return res.status(200).json({ conversations: conversationsWithUnreadCounts.filter(Boolean) });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }

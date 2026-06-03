@@ -79,5 +79,14 @@
         body: JSON.stringify(body),
       });
     },
+    disconnect(companyOrId) {
+      const body = typeof companyOrId === 'object'
+        ? { other_company_id: companyOrId.company_id || companyOrId.id || companyOrId.other_company_id }
+        : { other_company_id: companyOrId };
+      return request('/auth/disconnect', {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+    },
   };
 })();

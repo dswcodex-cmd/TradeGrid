@@ -48,7 +48,8 @@ const state = {
   currentRoomName: null,
   currentTwilioToken: null,
   remoteParticipantName: "",
-  queueRequested: false
+  queueRequested: false,
+  backendTimerActive: false
 };
 
 function getStoredToken() {
@@ -216,6 +217,7 @@ function showWaitingState(messageText = "Finding your next pulse connection...")
   state.currentMatchId = null;
   state.currentRoomName = null;
   state.currentTwilioToken = null;
+  state.backendTimerActive = false;
   state.matchLeft = MATCH_DURATION_SECONDS;
   renderMatch();
   updateMatchUI();
@@ -661,6 +663,7 @@ function bindSocketHandlers(socket) {
     state.matches = [liveMatch, ...state.matches.filter((item) => !String(item.id).startsWith("demo-"))];
     state.currentIdx = 0;
     state.matchLeft = Number(roundDurationSeconds || MATCH_DURATION_SECONDS);
+    state.backendTimerActive = true;
 
     renderMatch();
     updateMatchUI();
@@ -672,12 +675,14 @@ function bindSocketHandlers(socket) {
   });
 
   socket.on("round_tick", ({ remaining }) => {
+    state.backendTimerActive = true;
     state.matchLeft = Number(remaining || 0);
     updateMatchUI();
   });
 
   socket.on("round_over", ({ matchId }) => {
     if (String(matchId) === String(state.currentMatchId)) {
+      state.backendTimerActive = false;
       state.messages.push({
         id: `system-${Date.now()}`,
         from: "them",
@@ -698,6 +703,7 @@ function bindSocketHandlers(socket) {
       text: "This match was skipped. Searching for the next company..."
     });
     renderMessages();
+    state.backendTimerActive = false;
     showWaitingState();
   });
 }
@@ -790,6 +796,11 @@ function startTimers() {
   }, 1000);
 
   setInterval(() => {
+    if (state.backendTimerActive) {
+      updateMatchUI();
+      return;
+    }
+
     if (state.matchLeft > 0) {
       state.matchLeft -= 1;
     } else if (state.matches.length > 1) {

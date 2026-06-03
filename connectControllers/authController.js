@@ -224,6 +224,70 @@ export const rejectConnectionRequest = async (req, res) => {
   }
 };
 
+export const disconnectCompany = async (req, res) => {
+  try {
+    const current_company_id = Number(req.company.company_id);
+    const other_company_id = Number(req.body.other_company_id || req.body.company_id || req.params.companyId);
+
+    if (!other_company_id || Number.isNaN(other_company_id)) {
+      return res.status(400).json({ error: "other_company_id must be a valid number" });
+    }
+
+    if (current_company_id === other_company_id) {
+      return res.status(400).json({ error: "You cannot disconnect from your own company" });
+    }
+
+    const company1_id = Math.min(current_company_id, other_company_id);
+    const company2_id = Math.max(current_company_id, other_company_id);
+
+    const existingMatch = await prisma.companyMatches.findUnique({
+      where: {
+        company1_id_company2_id: {
+          company1_id,
+          company2_id
+        }
+      }
+    });
+
+    if (!existingMatch) {
+      return res.status(404).json({ error: "Active match not found" });
+    }
+
+    await prisma.$transaction([
+      prisma.companyMatches.delete({
+        where: {
+          company1_id_company2_id: {
+            company1_id,
+            company2_id
+          }
+        }
+      }),
+      prisma.companyTargets.deleteMany({
+        where: {
+          OR: [
+            { source_company_id: current_company_id, target_company_id: other_company_id },
+            { source_company_id: other_company_id, target_company_id: current_company_id }
+          ]
+        }
+      }),
+      prisma.notification.create({
+        data: {
+          company_id: other_company_id,
+          type: "connection_disconnected",
+          message: "A company disconnected from your business match",
+          related_company_id: current_company_id
+        }
+      })
+    ]);
+
+    return res.status(200).json({
+      message: "Company disconnected successfully"
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+};
+
 export const getPendingRequests = async (req, res) => {
   try {
     const current_company_id = Number(req.company.company_id);
@@ -276,8 +340,27 @@ export const getMyConnections = async (req, res) => {
         ]
       },
       include: {
-        company1: true,
-        company2: true
+        company1: {
+          include: {
+            industry: true,
+            location: true,
+            products: { include: { product: true } },
+            desired_products: { include: { product: true } },
+            regions: { include: { region: true } }
+          }
+        },
+        company2: {
+          include: {
+            industry: true,
+            location: true,
+            products: { include: { product: true } },
+            desired_products: { include: { product: true } },
+            regions: { include: { region: true } }
+          }
+        }
+      },
+      orderBy: {
+        matched_at: "desc"
       }
     });
 

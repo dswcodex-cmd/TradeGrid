@@ -900,6 +900,26 @@
 
       </form>
 
+      <!-- EMAIL VERIFICATION SCREEN -->
+      <div class="success-screen email-verify-screen" id="emailVerifyScreen">
+        <div class="success-icon"><i class="ri-mail-check-line"></i></div>
+        <h2>Verify Your Email</h2>
+        <p>We sent a one-time verification code to <strong id="verifyEmailTarget">your email</strong>. Enter it below to confirm your email address before your application moves to review.</p>
+        <div class="otp-card">
+          <label for="emailOtpCode">Verification Code</label>
+          <input type="text" id="emailOtpCode" inputmode="numeric" maxlength="8" placeholder="Enter OTP code">
+          <span class="field-error" id="err-emailOtpCode">Invalid or expired verification code.</span>
+          <div class="otp-actions">
+            <button type="button" class="btn-dashboard" id="btnVerifyEmailCode">
+              <i class="ri-shield-check-line"></i> Verify Email
+            </button>
+            <button type="button" class="btn-home" id="btnResendEmailCode">
+              <i class="ri-mail-send-line"></i> Resend Code
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- SUCCESS SCREEN -->
       <div class="success-screen" id="successScreen">
         <div class="success-icon"><i class="ri-check-line"></i></div>

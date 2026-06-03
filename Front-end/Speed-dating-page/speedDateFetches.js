@@ -8,18 +8,23 @@
   }
 
   function getApiBase() {
-    // const url = new URL(window.location.href);
-    // const queryBase = url.searchParams.get("apiBase");
+    const url = new URL(window.location.href);
+    const queryBase = url.searchParams.get("apiBase");
 
-    // if (queryBase) {
-    //   return queryBase.replace(/\/$/, "");
-    // }
+    if (queryBase) {
+      return queryBase.replace(/\/$/, "");
+    }
 
-    // if (window.location.protocol.startsWith("http")) {
-    //   return window.location.origin.replace(/\/$/, "");
-    // }
+    const liveServerPorts = new Set(["5500", "5501", "5502"]);
+    if (window.location.protocol === "file:" || liveServerPorts.has(window.location.port)) {
+      return "http://localhost:5000";
+    }
 
-    return "";
+    if (window.location.protocol.startsWith("http")) {
+      return window.location.origin.replace(/\/$/, "");
+    }
+
+    return "http://localhost:5000";
   }
 
   async function request(path, options = {}) {

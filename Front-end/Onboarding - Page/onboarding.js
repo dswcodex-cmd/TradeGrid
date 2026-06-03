@@ -786,6 +786,7 @@ const totalSteps = 4;
 const uploadedFiles = { regdoc: null, tax: null, id: null, bank: null, licence: null, bbbee: null };
 let regValidationTimer = null;
 let regValidationRequestId = 0;
+let submittedSignupEmail = '';
 
 /* ── Step Navigation ── */
 function goToStep(n) {
@@ -1456,21 +1457,19 @@ async function submitSignupApplication() {
       throw new Error(data.error || data.message || 'Application could not be submitted.');
     }
 
-    try {
-      await fetch(apiUrl('/auth/send-email-verification'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: payload.email })
-      });
-    } catch (error) {
-      console.warn('Verification email could not be sent automatically:', error);
-    }
+    submittedSignupEmail = payload.email;
+    const verificationResponse = await sendSignupEmailVerificationCode(submittedSignupEmail);
 
     document.getElementById('signupForm').style.display = 'none';
-    document.getElementById('successScreen').classList.add('active');
+    document.getElementById('emailVerifyScreen').classList.add('active');
+    document.getElementById('verifyEmailTarget').textContent = submittedSignupEmail;
+    if (verificationResponse.dev_code) {
+      showErr('emailOtpCode', `Development code: ${verificationResponse.dev_code}`);
+    }
     document.querySelector('.steps').style.display = 'none';
     document.querySelector('.form-header').style.display = 'none';
     document.querySelector('.mobile-progress').style.display = 'none';
+    document.getElementById('emailOtpCode')?.focus();
   } catch (error) {
     alert(error.message || 'Application could not be submitted.');
   } finally {
@@ -1480,6 +1479,95 @@ async function submitSignupApplication() {
     }
   }
 }
+
+async function sendSignupEmailVerificationCode(email) {
+  const response = await fetch(apiUrl('/auth/send-email-verification'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || data.message || 'Verification email could not be sent.');
+  return data;
+}
+
+async function verifySignupEmailCode() {
+  const codeInput = document.getElementById('emailOtpCode');
+  const verifyBtn = document.getElementById('btnVerifyEmailCode');
+  const email = submittedSignupEmail || valueOf('businessEmail');
+  const code = codeInput?.value.trim();
+
+  if (!code) {
+    showErr('emailOtpCode', 'Enter the verification code sent to your email.');
+    codeInput?.focus();
+    return;
+  }
+
+  if (verifyBtn) {
+    verifyBtn.disabled = true;
+    verifyBtn.innerHTML = '<i class="ri-loader-4-line"></i> Verifying...';
+  }
+
+  try {
+    const response = await fetch(apiUrl('/auth/verify-email-code'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || data.error || 'Invalid or expired verification code.');
+    }
+
+    clearErr('emailOtpCode');
+    document.getElementById('emailVerifyScreen').classList.remove('active');
+    document.getElementById('successScreen').classList.add('active');
+  } catch (error) {
+    showErr('emailOtpCode', error.message || 'Invalid or expired verification code.');
+    codeInput?.focus();
+  } finally {
+    if (verifyBtn) {
+      verifyBtn.disabled = false;
+      verifyBtn.innerHTML = '<i class="ri-shield-check-line"></i> Verify Email';
+    }
+  }
+}
+
+document.getElementById('btnVerifyEmailCode')?.addEventListener('click', verifySignupEmailCode);
+document.getElementById('btnResendEmailCode')?.addEventListener('click', async () => {
+  const resendBtn = document.getElementById('btnResendEmailCode');
+  const email = submittedSignupEmail || valueOf('businessEmail');
+  if (!email) return;
+
+  if (resendBtn) {
+    resendBtn.disabled = true;
+    resendBtn.innerHTML = '<i class="ri-loader-4-line"></i> Sending...';
+  }
+
+  try {
+    const data = await sendSignupEmailVerificationCode(email);
+    if (data.dev_code) {
+      showErr('emailOtpCode', `Development code: ${data.dev_code}`);
+    } else {
+      clearErr('emailOtpCode');
+      alert('A new verification code has been sent.');
+    }
+  } catch (error) {
+    showErr('emailOtpCode', error.message || 'Could not resend verification code.');
+  } finally {
+    if (resendBtn) {
+      resendBtn.disabled = false;
+      resendBtn.innerHTML = '<i class="ri-mail-send-line"></i> Resend Code';
+    }
+  }
+});
+document.getElementById('emailOtpCode')?.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    verifySignupEmailCode();
+  }
+});
 
 /* ── Drag & drop ── */
 document.querySelectorAll('.upload-zone').forEach(zone => {

@@ -215,7 +215,9 @@ const getDiscoverRelationshipData = async (current_company_id) => {
       ? request.target_company_id
       : request.source_company_id;
     if (!relationshipStatus.has(Number(otherId))) {
-      relationshipStatus.set(Number(otherId), request.status || "pending");
+      const status = String(request.status || "pending").toLowerCase();
+      const direction = Number(request.source_company_id) === Number(current_company_id) ? "sent" : "received";
+      relationshipStatus.set(Number(otherId), status === "pending" ? `pending_${direction}` : status);
     }
   });
 
