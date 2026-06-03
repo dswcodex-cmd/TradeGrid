@@ -114,7 +114,11 @@ body {
   background-color: transparent;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath d='M40 0 L80 23 L80 69 L40 92 L0 69 L0 23 Z' fill='none' stroke='%230D3B3B' stroke-width='1'/%3E%3C/svg%3E");
   background-size: 80px 92px;
+  background-position: 0 0;
   background-repeat: repeat;
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
 }
 
 /* ── Topbar ── */
@@ -292,6 +296,10 @@ body {
 .ml-time { font-size: 10px; color: var(--text-muted); }
 .ml-preview { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ml-unread { background: var(--accent); color: #fff; font-size: 10px; font-weight: 700; min-width: 18px; height: 18px; border-radius: 9px; display: flex; align-items: center; justify-content: center; padding: 0 5px; flex-shrink: 0; }
+.msg-search-empty { padding: 28px 18px; text-align: center; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.msg-search-empty i { width: 38px; height: 38px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: var(--accent-light); color: var(--accent); font-size: 18px; margin-bottom: 2px; }
+.msg-search-empty p { font-size: 13px; font-weight: 700; color: var(--primary); }
+.msg-search-empty span { font-size: 12px; line-height: 1.45; color: var(--text-muted); }
 .msg-chat-panel { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-xl); display: flex; flex-direction: column; overflow: hidden; }
 .msg-chat-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); background: var(--bg); }
 .chat-name { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 1px; }
@@ -928,10 +936,23 @@ body.dark-mode .topbar-img-search-btn { border-color: rgba(255,255,255,0.13); co
 body.dark-mode .topbar-img-search-btn:hover { background: rgba(15,163,177,0.18); color: #0FA3B1; }
 
 /* ── Page background ── */
-body.dark-mode .main-wrapper { background: #0d1f2d; }
+body.dark-mode .main-wrapper {
+  background-color: #0d1f2d;
+  background-image: none;
+}
 body.dark-mode .main-wrapper::before {
-  opacity: 0.075;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath d='M40 0 L80 23 L80 69 L40 92 L0 69 L0 23 Z' fill='none' stroke='%23B5EAF0' stroke-width='1'/%3E%3C/svg%3E");
+  opacity: 0.22;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath d='M40 0 L80 23 L80 69 L40 92 L0 69 L0 23 Z' fill='none' stroke='%23E2EEF4' stroke-width='1.05' opacity='0.72'/%3E%3C/svg%3E");
+  background-size: 80px 92px;
+  background-position: 0 0;
+  background-repeat: repeat;
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+body.dark-mode .page,
+body.dark-mode .page-inner {
+  background: transparent;
 }
 
 /* ── KPI cards ── */
@@ -1011,6 +1032,10 @@ body.dark-mode .msg-list-item.active { background: rgba(15,163,177,0.12); }
 body.dark-mode .ml-top span:first-child { color: #e2eef4; }
 body.dark-mode .ml-time { color: #6a99b0; }
 body.dark-mode .ml-preview { color: #6a99b0; }
+body.dark-mode .msg-search-empty { color: #6a99b0; }
+body.dark-mode .msg-search-empty i { background: rgba(15,163,177,0.14); color: #0FA3B1; }
+body.dark-mode .msg-search-empty p { color: #e2eef4; }
+body.dark-mode .msg-search-empty span { color: #6a99b0; }
 body.dark-mode .chat-name { color: #e2eef4; }
 body.dark-mode .chat-sub  { color: #6a99b0; }
 body.dark-mode .msg-chat-header {
@@ -1317,6 +1342,7 @@ body.dark-mode .chat-bubble.them { color: #e2eef4; }
 body.dark-mode .ml-top span:first-child { color: #e2eef4; }
 body.dark-mode .ml-preview { color: #6a99b0; }
 
+
 /* ── Business Profile — company name in hero ── */
 body.dark-mode .profile-company-name { color: #ffffff; }
 body.dark-mode .profile-tagline { color: rgba(181,234,240,0.75); }
@@ -1441,7 +1467,11 @@ body.dark-mode .btn-edit-profile:hover {
   display: none !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='92' viewBox='0 0 80 92'%3E%3Cpath d='M40 0 L80 23 L80 69 L40 92 L0 69 L0 23 Z' fill='none' stroke='%230D3B3B' stroke-width='1'/%3E%3C/svg%3E");
   background-size: 80px 92px;
+  background-position: 0 0;
   background-repeat: repeat;
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
 }
 
 @media (max-width: 760px) {

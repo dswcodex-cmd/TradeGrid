@@ -21,17 +21,17 @@ let latestAnalyticsReportData = {
 
 const badgeState = {
   matches: {
-    count: 3,           // number of unseen new matches
-    seen: false,
+    count: 0,
   },
   messages: {
-    // Per-conversation unread counts — keys match conversation initials
-    unread: { AT: 2, EI: 3, TG: 0, ME: 0 },
-    seen: false,
+    unread: {},
   },
   verification: {
-    hasIssue: false,    // false = all docs verified, no action needed
-    seen: false,
+    issueCount: 0,
+    hasIssue: false,
+  },
+  notifications: {
+    unreadCount: 0,
   },
 };
 
@@ -42,12 +42,11 @@ function getTotalUnreadMessages() {
 function updateNavBadge(pageId) {
   const navEl = document.querySelector('.nav-item[data-page="' + pageId + '"]');
   if (!navEl) return;
-  // Remove any existing badge
   const existing = navEl.querySelector('.nav-badge');
   if (existing) existing.remove();
 
   if (pageId === 'matches') {
-    const count = badgeState.matches.seen ? 0 : badgeState.matches.count;
+    const count = Number(badgeState.matches.count || 0);
     if (count > 0) {
       const badge = document.createElement('span');
       badge.className = 'nav-badge';
@@ -63,7 +62,7 @@ function updateNavBadge(pageId) {
       navEl.appendChild(badge);
     }
   } else if (pageId === 'verification') {
-    if (badgeState.verification.hasIssue && !badgeState.verification.seen) {
+    if (badgeState.verification.hasIssue) {
       const badge = document.createElement('span');
       badge.className = 'nav-badge pending';
       badge.textContent = '!';
@@ -78,13 +77,83 @@ function refreshAllNavBadges() {
   updateNavBadge('verification');
 }
 
-// Also update the topbar notification bell count
-function updateTopbarNotifCount() {
+function setTopbarNotifCount(count) {
   const el = document.getElementById('notifCount');
   if (!el) return;
-  const count = document.querySelectorAll('.notif-item.unread').length;
-  el.textContent = count;
-  el.style.display = count === 0 ? 'none' : 'flex';
+  const safeCount = Math.max(0, Number(count || 0));
+  badgeState.notifications.unreadCount = safeCount;
+  el.textContent = safeCount;
+  el.style.display = safeCount === 0 ? 'none' : 'flex';
+}
+
+// Also update the topbar notification bell count
+function updateTopbarNotifCount() {
+  const renderedItems = document.querySelectorAll('.notif-item').length;
+  const unreadItems = document.querySelectorAll('.notif-item.unread').length;
+  setTopbarNotifCount(renderedItems ? unreadItems : (badgeState.notifications.unreadCount || 0));
+}
+
+async function dashboardBadgeRequest(path, options = {}) {
+  const token = getDashboardToken();
+  if (!token) return { ok: false, status: 401, data: {} };
+
+  try {
+    const response = await fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(options.headers || {})
+      }
+    });
+    const data = await response.json().catch(() => ({}));
+    return { ok: response.ok, status: response.status, data };
+  } catch (error) {
+    return { ok: false, status: 0, data: { error: error.message } };
+  }
+}
+
+function getVerificationIssueCount(documents = []) {
+  return getMissingDocumentNotifications(documents).length;
+}
+
+function setMessageBadgeFromConversations(conversations = []) {
+  const unread = {};
+  conversations.forEach(conversation => {
+    unread[String(conversation.conversation_id)] = Number(conversation.unread_count || 0);
+  });
+  badgeState.messages.unread = unread;
+  updateNavBadge('messages');
+}
+
+async function refreshDashboardBadgesFromBackend() {
+  const [pendingResponse, messagesResponse, verificationResponse, notificationCountResponse] = await Promise.all([
+    dashboardBadgeRequest('/auth/pending'),
+    dashboardBadgeRequest('/messages/conversations'),
+    dashboardBadgeRequest('/verification'),
+    dashboardBadgeRequest('/auth/notifications/unread-count')
+  ]);
+
+  if (pendingResponse.ok) {
+    badgeState.matches.count = pendingResponse.data.requests?.length || 0;
+    updateNavBadge('matches');
+  }
+
+  if (messagesResponse.ok) {
+    setMessageBadgeFromConversations(messagesResponse.data.conversations || []);
+  }
+
+  const documents = verificationResponse.ok ? (verificationResponse.data.documents || []) : [];
+  if (verificationResponse.ok) {
+    badgeState.verification.issueCount = getVerificationIssueCount(documents);
+    badgeState.verification.hasIssue = badgeState.verification.issueCount > 0;
+    updateNavBadge('verification');
+  }
+
+  if (notificationCountResponse.ok) {
+    const derivedVerificationCount = verificationResponse.ok ? getVerificationIssueCount(documents) : 0;
+    setTopbarNotifCount(Number(notificationCountResponse.data.unread_count || 0) + derivedVerificationCount);
+  }
 }
 
 function navigateTo(pageId) {
@@ -113,21 +182,8 @@ function navigateTo(pageId) {
   } else if (pageId === 'profile') {
     loadBusinessProfile();
   }
-
-  // ── Clear badge when entering the relevant page ──
-  if (pageId === 'matches') {
-    badgeState.matches.seen = true;
-    updateNavBadge('matches');
-  } else if (pageId === 'messages') {
-    badgeState.messages.seen = true;
-    // Clear ALL unread counts when messages page is opened
-    Object.keys(badgeState.messages.unread).forEach(k => { badgeState.messages.unread[k] = 0; });
-    updateNavBadge('messages');
-    // Also clear unread badges in the message list sidebar
-    document.querySelectorAll('.msg-list-item .ml-unread').forEach(b => b.remove());
-  } else if (pageId === 'verification') {
-    badgeState.verification.seen = true;
-    updateNavBadge('verification');
+  if (pageId === 'matches' || pageId === 'messages' || pageId === 'verification') {
+    refreshDashboardBadgesFromBackend().catch(() => {});
   }
 
   closeSidebar();
@@ -142,7 +198,10 @@ document.querySelectorAll('[data-page]').forEach(el => {
 });
 
 // Initialise badges from state on load
-document.addEventListener('DOMContentLoaded', () => { refreshAllNavBadges(); });
+document.addEventListener('DOMContentLoaded', () => {
+  refreshAllNavBadges();
+  refreshDashboardBadgesFromBackend().catch(() => {});
+});
 
 // ── Sidebar ──
 const sidebar        = document.getElementById('sidebar');
@@ -945,7 +1004,7 @@ function renderNotificationPanel(notifications = [], documents = []) {
 
   if (!allNotifications.length) {
     notifListEl.innerHTML = '<div class="notif-empty">No notifications right now.</div>';
-    updateTopbarNotifCount();
+    setTopbarNotifCount(0);
     return;
   }
 
@@ -972,6 +1031,7 @@ function renderNotificationPanel(notifications = [], documents = []) {
       }
       item.classList.remove('unread');
       updateTopbarNotifCount();
+      refreshDashboardBadgesFromBackend().catch(() => {});
       notifPanel.classList.add('hidden');
       navigateTo(item.dataset.target || 'overview');
     });
@@ -999,6 +1059,7 @@ liveNotifMarkAll.addEventListener('click', async () => {
     if (n.dataset.derived !== 'true') n.classList.remove('unread');
   });
   updateTopbarNotifCount();
+  refreshDashboardBadgesFromBackend().catch(() => {});
   showUserToast('Notifications marked as read');
 });
 
@@ -1698,10 +1759,10 @@ async function handleVerifUpload(docId, file) {
     renderVerifTable();
     renderVerifBanner();
     renderOverviewVerifCard();
-    const stillHasIssue = verifDocs.some(d => d.status !== 'verified');
-    badgeState.verification.hasIssue = stillHasIssue;
-    if (!stillHasIssue) badgeState.verification.seen = true;
+    badgeState.verification.issueCount = verifDocs.filter(d => d.status !== 'verified').length;
+    badgeState.verification.hasIssue = badgeState.verification.issueCount > 0;
     updateNavBadge('verification');
+    refreshDashboardBadgesFromBackend().catch(() => {});
     showUserToast(doc.name + ' submitted for verification.');
   } catch (error) {
     showUserToast(error.message || 'Could not submit document');
@@ -1782,7 +1843,60 @@ function messageTime(value) {
 }
 
 const conversationData = {};
+let latestMessageConversations = [];
+let latestMessageCompanyId = 0;
+let messageSearchHydrationPromise = null;
 
+function normalizeMessageSearchText(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getMessageSearchInput() {
+  return document.querySelector('.msg-list-search input');
+}
+
+function getMessageSearchQuery() {
+  return normalizeMessageSearchText(getMessageSearchInput()?.value);
+}
+
+function getConversationSearchHaystack(conversationKey) {
+  const data = conversationData[String(conversationKey)];
+  if (!data) return '';
+  const messageText = (data.messages || [])
+    .map(message => message.text || '')
+    .join(' ');
+  return `${data.name || ''} ${data.sub || ''} ${messageText}`.toLowerCase();
+}
+
+function conversationMatchesSearch(conversationKey, query) {
+  if (!query) return true;
+  return getConversationSearchHaystack(conversationKey).includes(query);
+}
+
+async function hydrateMessagesForSearch(conversations = latestMessageConversations, currentCompanyId = latestMessageCompanyId) {
+  const query = getMessageSearchQuery();
+  if (!query || !conversations.length) return;
+
+  const conversationsToHydrate = conversations.filter(conversation => {
+    const key = String(conversation.conversation_id || '');
+    const cached = conversationData[key];
+    return key && cached && !cached.fullyLoaded;
+  });
+
+  if (!conversationsToHydrate.length) return;
+
+  await Promise.allSettled(conversationsToHydrate.map(async (conversation) => {
+    const key = String(conversation.conversation_id);
+    const response = await messageApiRequest(`/messages/conversations/${conversation.conversation_id}`);
+    const cached = conversationData[key];
+    if (!cached) return;
+    cached.messages = (response.conversation?.messages || []).map(message => ({
+      type: Number(message.sender_company_id) === Number(currentCompanyId) ? 'me' : 'them',
+      text: message.content || ''
+    }));
+    cached.fullyLoaded = true;
+  }));
+}
 function cacheConversation(conversation, currentCompanyId) {
   if (!conversation?.conversation_id) return null;
   const partner = getConversationPartner(conversation, currentCompanyId);
@@ -1791,16 +1905,20 @@ function cacheConversation(conversation, currentCompanyId) {
   const lastMessage = conversation.messages?.[0];
   const conversationKey = String(conversation.conversation_id);
 
+  const existing = conversationData[conversationKey];
   conversationData[conversationKey] = {
     name,
     sub: 'Conversation',
     avatar,
     conversationId: conversation.conversation_id,
     partnerCompanyId: partner.company_id || null,
-    messages: lastMessage ? [{
-      type: Number(lastMessage.sender_company_id) === Number(currentCompanyId) ? 'me' : 'them',
-      text: lastMessage.content
-    }] : []
+    messages: existing?.fullyLoaded
+      ? existing.messages
+      : (lastMessage ? [{
+          type: Number(lastMessage.sender_company_id) === Number(currentCompanyId) ? 'me' : 'them',
+          text: lastMessage.content
+        }] : []),
+    fullyLoaded: Boolean(existing?.fullyLoaded)
   };
 
   return {
@@ -1815,14 +1933,7 @@ function cacheConversation(conversation, currentCompanyId) {
 async function loadConversation(conversationKey) {
   const data = conversationData[String(conversationKey)];
   if (!data) return;
-
-  // Clear this conversation's unread count and refresh nav badge
-  if (badgeState.messages.unread[data.avatar] !== undefined) {
-    badgeState.messages.unread[data.avatar] = 0;
-  }
-  updateNavBadge('messages');
-
-  const chatHeader = document.querySelector('.msg-chat-header');
+const chatHeader = document.querySelector('.msg-chat-header');
   if (chatHeader) {
     chatHeader.innerHTML = `
       <div class="ml-avatar">${data.avatar}</div>
@@ -1847,10 +1958,12 @@ async function loadConversation(conversationKey) {
         type: Number(message.sender_company_id) === currentCompanyId ? 'me' : 'them',
         text: message.content
       }));
+      data.fullyLoaded = true;
 
       await messageApiRequest(`/messages/conversations/${data.conversationId}/read`, {
         method: 'PATCH'
       }).catch(() => {});
+      refreshDashboardBadgesFromBackend().catch(() => {});
     }
   } catch (error) {
     showUserToast(error.message || 'Could not load conversation');
@@ -1878,8 +1991,16 @@ function renderMessagesList(conversations, currentCompanyId) {
   const panel = document.querySelector('.msg-list-panel');
   if (!panel) return;
 
-  panel.querySelectorAll('.msg-list-item').forEach(item => item.remove());
+  latestMessageConversations = conversations;
+  latestMessageCompanyId = currentCompanyId;
+
+  panel.querySelectorAll('.msg-list-item,.msg-search-empty').forEach(item => item.remove());
   const search = panel.querySelector('.msg-list-search');
+  const searchQuery = getMessageSearchQuery();
+
+  if (search) {
+    search.style.display = '';
+  }
 
   if (!conversations.length) {
     if (preferredConversationId && conversationData[String(preferredConversationId)]) {
@@ -1919,14 +2040,16 @@ function renderMessagesList(conversations, currentCompanyId) {
     return;
   }
 
+  let renderedCount = 0;
   conversations.forEach((conversation, index) => {
     const cached = cacheConversation(conversation, currentCompanyId);
     if (!cached) return;
     const { key: conversationKey, name, avatar, lastMessage, unread } = cached;
+    if (!conversationMatchesSearch(conversationKey, searchQuery)) return;
 
     const item = document.createElement('div');
     const isSelected = Number(conversation.conversation_id) === Number(preferredConversationId || activeConversationId);
-    item.className = 'msg-list-item' + (isSelected || (index === 0 && !activeConversationId && !preferredConversationId) ? ' active' : '');
+    item.className = 'msg-list-item' + (isSelected || (renderedCount === 0 && !activeConversationId && !preferredConversationId) ? ' active' : '');
     item.dataset.conversationId = conversation.conversation_id;
     item.dataset.conversationKey = conversationKey;
     item.innerHTML = `
@@ -1945,10 +2068,18 @@ function renderMessagesList(conversations, currentCompanyId) {
     });
 
     panel.appendChild(item);
+    renderedCount++;
   });
 
+  if (searchQuery && renderedCount === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'msg-search-empty';
+    empty.innerHTML = '<i class="ri-chat-search-line"></i><p>No messages found for this search.</p><span>Search checks conversation names and all message text.</span>';
+    panel.appendChild(empty);
+  }
+
   const preferredKey = preferredConversationId ? String(preferredConversationId) : null;
-  if (preferredKey && conversationData[preferredKey]) {
+  if (!searchQuery && preferredKey && conversationData[preferredKey]) {
     if (!panel.querySelector(`[data-conversation-key="${preferredKey}"]`)) {
       const preferred = conversationData[preferredKey];
       const item = document.createElement('div');
@@ -1972,12 +2103,31 @@ function renderMessagesList(conversations, currentCompanyId) {
     return;
   }
 
+  if (searchQuery) {
+    return;
+  }
+
   const shouldSelectFirst = !activeConversationId || !conversations.some(c => Number(c.conversation_id) === Number(activeConversationId));
   if (shouldSelectFirst) {
     const firstConversationKey = panel.querySelector('.msg-list-item[data-conversation-key]')?.dataset.conversationKey;
     if (firstConversationKey) loadConversation(firstConversationKey);
   }
 }
+
+getMessageSearchInput()?.addEventListener('input', () => {
+  renderMessagesList(latestMessageConversations, latestMessageCompanyId);
+
+  const query = getMessageSearchQuery();
+  if (!query) return;
+
+  const hydrationRun = hydrateMessagesForSearch(latestMessageConversations, latestMessageCompanyId)
+    .then(() => {
+      if (messageSearchHydrationPromise === hydrationRun && getMessageSearchQuery() === query) {
+        renderMessagesList(latestMessageConversations, latestMessageCompanyId);
+      }
+    });
+  messageSearchHydrationPromise = hydrationRun;
+});
 
 async function openConversationFromMatch(companyId) {
   const created = await messageApiRequest('/messages/conversations', {
@@ -2014,25 +2164,7 @@ async function openConversationFromMatch(companyId) {
   return created.conversation;
 }
 
-// Message list switcher
-document.querySelectorAll('.msg-list-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.msg-list-item').forEach(i => i.classList.remove('active'));
-    item.classList.add('active');
-    const unread = item.querySelector('.ml-unread');
-    if (unread) unread.remove();
-    const initials = item.querySelector('.ml-avatar')?.textContent?.trim();
-    if (initials) {
-      // Clear that conversation's unread count
-      if (badgeState.messages.unread[initials] !== undefined) {
-        badgeState.messages.unread[initials] = 0;
-      }
-      updateNavBadge('messages');
-      loadConversation(initials);
-    }
-  });
-});
-
+// Message list items are rendered with backend conversation IDs in renderMessagesList().
 // ── Messages send ──
 const chatInput = document.querySelector('.msg-chat-input input');
 const chatSend  = document.getElementById('chatSendBtn');
@@ -3237,6 +3369,7 @@ function resetDiscoverCards() {
     if (!conversations.length) {
       setCardEmpty(card, 'No conversations yet. Messages will appear here when partners contact you.');
       renderMessagesList([], currentCompanyId);
+      setMessageBadgeFromConversations([]);
       updateKpi('Unread Messages', 0, 'No unread messages');
       return;
     }
@@ -3286,15 +3419,7 @@ function resetDiscoverCards() {
       });
       card.insertBefore(item, header.nextSibling);
     });
-
-    badgeState.messages.unread = {};
-    conversations.forEach(conversation => {
-      const otherCompany = getOtherCompany(conversation, currentCompanyId) || {};
-      const avatar = initials(otherCompany.company_name);
-      const lastMessage = conversation.messages?.[0];
-      badgeState.messages.unread[avatar] = Number(conversation.unread_count || 0);
-    });
-    updateNavBadge('messages');
+    setMessageBadgeFromConversations(conversations);
     updateKpi('Unread Messages', unreadCount, unreadCount === 1 ? '1 unread conversation' : `${unreadCount} unread conversations`);
   }
 
@@ -3370,7 +3495,8 @@ function resetDiscoverCards() {
 
     renderVerifTable();
     renderVerifBanner();
-    badgeState.verification.hasIssue = verifDocs.some(doc => doc.status !== 'verified');
+    badgeState.verification.issueCount = verifDocs.filter(doc => doc.status !== 'verified').length;
+    badgeState.verification.hasIssue = badgeState.verification.issueCount > 0;
     updateNavBadge('verification');
   }
 
@@ -3680,6 +3806,10 @@ function resetDiscoverCards() {
         latestAcceptedConnections = connectionsResponse.ok ? (connectionsResponse.data.matches || []) : [];
         latestReceivedPending = pendingReceivedResponse.ok ? (pendingReceivedResponse.data.requests || []) : [];
         latestSentPending = pendingSentResponse.ok ? (pendingSentResponse.data.requests || []) : [];
+        if (pendingReceivedResponse.ok) {
+          badgeState.matches.count = latestReceivedPending.length;
+          updateNavBadge('matches');
+        }
         const currentCompanyId = Number(latestProfile?.company_id || storedProfile.company_id || getStoredCompanyId());
         const fastProfile = latestProfile || { company_id: currentCompanyId };
         const acceptedOverviewMatches = latestAcceptedConnections
@@ -3720,6 +3850,11 @@ function resetDiscoverCards() {
       const verificationPromise = dashboardRequest('/verification').then(verificationResponse => {
         latestDocuments = verificationResponse.ok ? (verificationResponse.data.documents || []) : [];
         renderLiveVerification(latestDocuments);
+        if (verificationResponse.ok) {
+          badgeState.verification.issueCount = getVerificationIssueCount(latestDocuments);
+          badgeState.verification.hasIssue = badgeState.verification.issueCount > 0;
+          updateNavBadge('verification');
+        }
         return verificationResponse;
       });
 
@@ -3729,6 +3864,10 @@ function resetDiscoverCards() {
       ]).then(([notificationsResponse]) => {
         const notifications = notificationsResponse.ok ? (notificationsResponse.data.notifications || []) : [];
         renderNotificationPanel(notifications, latestDocuments);
+        if (notificationsResponse.ok) {
+          const unreadNotifications = notifications.filter(notification => !notification.is_read).length;
+          setTopbarNotifCount(unreadNotifications + getVerificationIssueCount(latestDocuments));
+        }
         return notificationsResponse;
       });
 
