@@ -25,6 +25,10 @@ const demoMatches = [
   }
 ];
 
+const SESSION_DURATION_SECONDS = 3600;
+const MATCH_DURATION_SECONDS = 600;
+const MATCH_URGENT_SECONDS = 60;
+
 const state = {
   apiBase: "",
   token: "",
@@ -32,8 +36,8 @@ const state = {
   socket: null,
   localStream: null,
   twilioRoom: null,
-  sessionLeft: 3600,
-  matchLeft: 600,
+  sessionLeft: SESSION_DURATION_SECONDS,
+  matchLeft: MATCH_DURATION_SECONDS,
   currentIdx: 0,
   muted: false,
   vidOff: false,
@@ -212,7 +216,7 @@ function showWaitingState(messageText = "Finding your next pulse connection...")
   state.currentMatchId = null;
   state.currentRoomName = null;
   state.currentTwilioToken = null;
-  state.matchLeft = 600;
+  state.matchLeft = MATCH_DURATION_SECONDS;
   renderMatch();
   updateMatchUI();
   updateVideoStatus(messageText);
@@ -297,7 +301,7 @@ function updateSessionUI() {
   timerEl.textContent = formatTime(state.sessionLeft);
   timerEl.className = `session-timer${state.sessionLeft <= 300 ? " urgent" : ""}`;
 
-  const percentage = ((3600 - state.sessionLeft) / 3600) * 100;
+  const percentage = ((SESSION_DURATION_SECONDS - state.sessionLeft) / SESSION_DURATION_SECONDS) * 100;
   document.getElementById("sessionBar").style.width = `${percentage}%`;
 
   const offset = 157 - (157 * percentage / 100);
@@ -305,12 +309,12 @@ function updateSessionUI() {
 }
 
 function updateMatchUI() {
-  const urgent = state.matchLeft <= 60;
+  const urgent = state.matchLeft <= MATCH_URGENT_SECONDS;
   document.getElementById("matchTimerBox").className = `match-timer-box${urgent ? " urgent" : ""}`;
   document.getElementById("matchTimer").textContent = formatTime(state.matchLeft);
   document.getElementById("matchTimer").className = `match-time${urgent ? " urgent" : ""}`;
 
-  const percentage = ((600 - state.matchLeft) / 600) * 100;
+  const percentage = ((MATCH_DURATION_SECONDS - state.matchLeft) / MATCH_DURATION_SECONDS) * 100;
   const progressBar = document.getElementById("matchBar");
   progressBar.style.width = `${percentage}%`;
   progressBar.className = `match-progress-fill${urgent ? " urgent" : ""}`;
@@ -566,7 +570,7 @@ async function nextMatch() {
 
   if (state.currentIdx < state.matches.length - 1) {
     state.currentIdx += 1;
-    state.matchLeft = 600;
+    state.matchLeft = MATCH_DURATION_SECONDS;
     renderMatch();
     updateMatchUI();
   }
@@ -656,7 +660,7 @@ function bindSocketHandlers(socket) {
 
     state.matches = [liveMatch, ...state.matches.filter((item) => !String(item.id).startsWith("demo-"))];
     state.currentIdx = 0;
-    state.matchLeft = Number(roundDurationSeconds || 600);
+    state.matchLeft = Number(roundDurationSeconds || MATCH_DURATION_SECONDS);
 
     renderMatch();
     updateMatchUI();
@@ -790,7 +794,6 @@ function startTimers() {
       state.matchLeft -= 1;
     } else if (state.matches.length > 1) {
       nextMatch();
-      state.matchLeft = 600;
     }
 
     updateMatchUI();

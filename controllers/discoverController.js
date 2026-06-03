@@ -245,6 +245,7 @@ export const discoverCompanies = async (req, res) => {
     } = req.query;
     const searchTerms = expandSearchTerms(search);
     const { relationshipStatus, unavailableCompanyIds } = await getDiscoverRelationshipData(current_company_id);
+
     const excludedCompanyIds = searchTerms.length ? [current_company_id] : unavailableCompanyIds;
 
     const companies = await prisma.company.findMany({
@@ -524,15 +525,15 @@ If none are related return an empty array: []`
       )
     );
     const matchedProductIds = matchedProducts.map((product) => product.product_id);
-    const unavailableCompanyIds = await getUnavailableDiscoverCompanyIds(current_company_id);
+    const { unavailableCompanyIds } = await getDiscoverRelationshipData(current_company_id);
     const relatedTerms = expandSearchTerms([productName, ...allMatchedNames].join(" "));
     const relatedSearchOr = buildCompanySearchOr(relatedTerms);
 
     const companies = await prisma.company.findMany({
       where: {
         company_id: {
-          notIn: unavailableCompanyIds
-        },
+              notIn: unavailableCompanyIds.map(Number)        
+            },
         account_status: "active",
         profile_visibility: true,
         OR: [
