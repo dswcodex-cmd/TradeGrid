@@ -267,7 +267,7 @@ model Event {
   event_date          DateTime
   status              EventStatus      @default(UPCOMING)
   total_rounds        Int              @default(12)
-  round_duration_secs Int              @default(180)
+  round_duration_secs Int              @default(600)
   break_duration_secs Int              @default(120)
   current_round       Int              @default(0)
   created_at          DateTime         @default(now())
