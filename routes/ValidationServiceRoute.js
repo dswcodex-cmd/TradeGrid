@@ -44,6 +44,23 @@ router.get("/countries/:code", (req, res) => {
 });
 
 // ── GET /validate/:country/:regNumber ─────────────────────────────────────────
+
+// Compatibility endpoint for clients that validate with query parameters.
+router.get("/validate", (req, res) => {
+  const countryCode = req.query.countryCode || req.query.country || req.query.code;
+  const regNumber = req.query.regNumber || req.query.registrationNumber || req.query.registration_number;
+
+  if (!countryCode || !regNumber) {
+    return res.status(400).json({
+      success: false,
+      error:   "Query must include both 'countryCode' and 'regNumber'.",
+      example: "/validate?countryCode=ZA&regNumber=2015%2F123456%2F07",
+    });
+  }
+
+  const result = validateCompanyReg(String(countryCode), String(regNumber));
+  res.json({ success: result.valid, data: result });
+});
 router.get("/validate/:country/:regNumber", (req, res) => {
   const { country, regNumber } = req.params;
   const result = validateCompanyReg(country, decodeURIComponent(regNumber));
@@ -64,8 +81,7 @@ router.post("/validate", (req, res) => {
   }
 
   const result = validateCompanyReg(countryCode, regNumber);
-  const status = result.valid ? 200 : 422;
-  res.status(status).json({ success: result.valid, data: result });
+  res.json({ success: result.valid, data: result });
 });
 
 // ── POST /validate/batch ───────────────────────────────────────────────────────
@@ -107,7 +123,7 @@ router.use((req, res) => {
   res.status(404).json({
     success: false,
     error:   `Route ${req.method} ${req.originalUrl} not found.`,
-    docs:    "GET /health  |  GET /countries  |  GET /countries/:code  |  POST /validate  |  POST /validate/batch  |  GET /validate/:country/:regNumber",
+    docs:    "GET /health  |  GET /countries  |  GET /countries/:code  |  GET /validate  |  POST /validate  |  POST /validate/batch  |  GET /validate/:country/:regNumber",
   });
 });
 

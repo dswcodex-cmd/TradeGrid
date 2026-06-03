@@ -307,29 +307,57 @@ paymentModalClose.addEventListener('click', closePaymentModal);
 btnPaymentCancel.addEventListener('click', closePaymentModal);
 paymentModalBackdrop.addEventListener('click', (e) => { if (e.target === paymentModalBackdrop) closePaymentModal(); });
 
-btnPaymentSend.addEventListener('click', () => {
+btnPaymentSend.addEventListener('click', async () => {
   const amount   = parseFloat(payAmount.value);
   const ref      = payReference.value.trim();
   const currency = payCurrency.value;
-  const symbol   = currencySymbols[currency] || currency;
   if (!amount || amount <= 0) {
     payAmount.focus(); payAmount.style.borderColor = '#dc2626';
     setTimeout(() => { payAmount.style.borderColor = ''; }, 1500);
     return;
   }
-  const amountDisplay = `${currency} ${symbol}${amount.toLocaleString('en-ZA', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-  const refDisplay    = ref ? ` · ${ref}` : '';
-  const bubbleText    = `Payment of ${amountDisplay} sent${refDisplay}`;
-  const chatBody = document.querySelector('.msg-chat-body');
-  if (chatBody) {
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble payment-bubble';
-    bubble.innerHTML = `<i class="ri-money-dollar-circle-line"></i>${bubbleText}`;
-    chatBody.appendChild(bubble);
-    chatBody.scrollTop = chatBody.scrollHeight;
+
+  const conversation = conversationData[String(activeConversationId)] || {};
+  const recipientCompanyId = conversation.partnerCompanyId || activePaymentRecipientCompanyId;
+  if (!recipientCompanyId) {
+    showUserToast('Could not find the payment recipient. Re-open the conversation and try again.');
+    return;
   }
-  closePaymentModal();
-  showUserToast('Payment sent successfully!');
+
+  btnPaymentSend.disabled = true;
+  try {
+    const token = getDashboardToken();
+    const response = await fetch('/payments/initialize', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        recipient_company_id: recipientCompanyId,
+        amount: Math.round(amount),
+        currency,
+        description: ref || `TradeGrid payment for conversation ${activeConversationId}`
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || 'Could not initialize payment.');
+    }
+
+    if (!data.authorization_url) {
+      throw new Error('Paystack did not return a checkout link.');
+    }
+
+    closePaymentModal();
+    showUserToast('Redirecting to Paystack...');
+    window.location.href = data.authorization_url;
+  } catch (error) {
+    showUserToast(error.message || 'Payment could not be started.');
+  } finally {
+    btnPaymentSend.disabled = false;
+  }
 });
 
 // ============================================================
@@ -979,15 +1007,13 @@ const topbarSearchBtn   = document.getElementById('topbarSearchBtn');
 const topbarSearchInput = document.getElementById('topbarSearchInput');
 topbarSearchBtn.addEventListener('click', async () => {
   const q = topbarSearchInput.value.trim();
-  if (!q) return;
-  showUserToast('Searching for "' + q + '"...');
-
   const matchesPage = document.getElementById('page-matches');
   if (matchesPage?.classList.contains('active') && typeof window.searchMatchedCompanies === 'function') {
     window.searchMatchedCompanies(q);
     return;
   }
-
+  if (!q) return;
+  showUserToast('Searching for "' + q + '"...');
   try {
     const params = new URLSearchParams({ search: q });
     const token = getDashboardToken();
@@ -1460,14 +1486,43 @@ function renderOverviewVerifCard() {
   });
 }
 
+function openStoredDocumentUrl(fileUrl, fileName = 'document.pdf') {
+  if (!fileUrl) return false;
+
+  if (String(fileUrl).startsWith('data:')) {
+    try {
+      const [meta, base64] = String(fileUrl).split(',');
+      const mimeType = meta.match(/data:(.*?);base64/)?.[1] || 'application/pdf';
+      const byteString = atob(base64 || '');
+      const bytes = new Uint8Array(byteString.length);
+      for (let i = 0; i < byteString.length; i += 1) bytes[i] = byteString.charCodeAt(i);
+      const blobUrl = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
+      window.open(blobUrl, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+      return true;
+    } catch (error) {
+      console.error('Could not open stored document', error);
+      return false;
+    }
+  }
+
+  const opened = window.open(fileUrl, '_blank', 'noopener');
+  if (!opened) {
+    const link = document.createElement('a');
+    link.href = fileUrl;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.download = fileName;
+    link.click();
+  }
+  return true;
+}
+
 async function viewDocument(docId) {
   const doc = verifDocs.find(d => String(d.id) === String(docId));
   if (!doc) return;
 
-  if (doc.localUrl) {
-    window.open(doc.localUrl, '_blank', 'noopener');
-    return;
-  }
+  if (openStoredDocumentUrl(doc.localUrl || doc.file_url, doc.file_name || doc.name)) return;
 
   try {
     if (Number.isFinite(Number(docId))) {
@@ -1480,10 +1535,7 @@ async function viewDocument(docId) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || 'Could not load document');
       const fileUrl = data.document?.file_url || doc.file_url;
-      if (fileUrl) {
-        window.open(fileUrl, '_blank', 'noopener');
-        return;
-      }
+      if (openStoredDocumentUrl(fileUrl, data.document?.file_name || doc.file_name || doc.name)) return;
     }
     showUserToast('No PDF file is available to view for ' + doc.name + '.');
   } catch (error) {
@@ -1610,6 +1662,7 @@ document.querySelectorAll('.toggle input').forEach(toggle => {
 // ============================================================
 let activeConversationId = null;
 let preferredConversationId = null;
+let activePaymentRecipientCompanyId = null;
 
 async function messageApiRequest(path, options = {}) {
   const token = getDashboardToken();
@@ -1667,6 +1720,7 @@ function cacheConversation(conversation, currentCompanyId) {
     sub: 'Conversation',
     avatar,
     conversationId: conversation.conversation_id,
+    partnerCompanyId: partner.company_id || null,
     messages: lastMessage ? [{
       type: Number(lastMessage.sender_company_id) === Number(currentCompanyId) ? 'me' : 'them',
       text: lastMessage.content
@@ -1707,6 +1761,7 @@ async function loadConversation(conversationKey) {
   if (payRecipientName) payRecipientName.textContent = data.name;
 
   activeConversationId = data.conversationId || activeConversationId;
+  activePaymentRecipientCompanyId = data.partnerCompanyId || activePaymentRecipientCompanyId;
 
   try {
     if (data.conversationId) {
@@ -1915,6 +1970,7 @@ chatSend?.addEventListener('click', async () => {
     return;
   }
 
+  if (chatInput) chatInput.value = '';
   chatSend.disabled = true;
   try {
     const sent = await messageApiRequest(`/messages/conversations/${activeConversationId}/messages`, {
@@ -1945,9 +2001,9 @@ chatSend?.addEventListener('click', async () => {
     }
     const unreadTotal = getTotalUnreadMessages();
     updateKpi('Unread Messages', unreadTotal, unreadTotal === 1 ? '1 unread message' : `${unreadTotal} unread messages`);
-    if (chatInput) chatInput.value = '';
     showUserToast('Message sent');
   } catch (error) {
+    if (chatInput) chatInput.value = val;
     showUserToast(error.message || 'Could not send message');
   } finally {
     chatSend.disabled = false;
@@ -2968,8 +3024,9 @@ function resetDiscoverCards() {
   }
 
   window.searchMatchedCompanies = function searchMatchedCompanies(query) {
-    renderMatchesPage([], lastAcceptedConnections, lastSentPendingRequests, lastReceivedPendingRequests, lastMatchesProfile, query);
-    showUserToast(`Showing matched companies for "${query}"`);
+    const cleanedQuery = String(query || '').trim();
+    renderMatchesPage([], lastAcceptedConnections, lastSentPendingRequests, lastReceivedPendingRequests, lastMatchesProfile, cleanedQuery);
+    showUserToast(cleanedQuery ? `Showing matched companies for "${cleanedQuery}"` : 'Showing all matched companies');
   };
 
   function getOtherCompany(conversation, currentCompanyId) {

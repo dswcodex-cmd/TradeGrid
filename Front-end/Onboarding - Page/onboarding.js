@@ -863,7 +863,7 @@ function scheduleRegistrationNumberFormatValidation() {
       return;
     }
 
-    if (!countryCode) return;
+    if (!countryCode || regNumber.length < 4) return;
     validateRegistrationNumberFormat('Invalid format', false);
   }, 300);
 }
